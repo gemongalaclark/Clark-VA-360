@@ -69,16 +69,16 @@ export function requestGoogleCalendarAccess({ clientId, onTokenReceived, onError
 }
 
 /**
- * Mock demo login for instant testing without requiring Google Cloud Console OAuth setup
+ * Personal / Demo sign in helper for testing without requiring Google Cloud Console OAuth setup
  */
-export function loginDemoUser(customEmail = 'clark.client@gmail.com') {
+export function loginDemoUser(name = 'Clark Gemongala', email = 'gemongalaclark.official@gmail.com') {
   return {
     accessToken: 'demo_token_' + Math.random().toString(36).substring(2),
     user: {
-      name: 'Clark VA 360 Client',
-      email: customEmail,
-      picture: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop&crop=faces',
-      id: 'demo-user-123'
+      name: name || 'Clark Gemongala',
+      email: email || 'gemongalaclark.official@gmail.com',
+      picture: null,
+      id: 'user-' + Date.now()
     },
     isDemo: true
   };

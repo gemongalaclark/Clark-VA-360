@@ -5,12 +5,14 @@ import SchedulerDashboard from './SchedulerDashboard';
 import UploadModal from './UploadModal';
 import SchedulePreviewModal from './SchedulePreviewModal';
 import GoogleOAuthModal from './GoogleOAuthModal';
+import GoogleSignInModal from './GoogleSignInModal';
 import { scanScheduleWithGemini, SAMPLE_SCHEDULES } from './geminiScanner';
 import {
   requestGoogleCalendarAccess,
   loginDemoUser,
   sendEventsToGoogleCalendar
 } from './googleCalendarApi';
+import { supabase } from '../../lib/supabase';
 import styles from './GoogleCalendarAutoScheduler.module.css';
 
 export default function GoogleCalendarAutoScheduler({ onBackToPortfolio }) {
@@ -43,6 +45,7 @@ export default function GoogleCalendarAutoScheduler({ onBackToPortfolio }) {
 
   // UI state
   const [isSigningIn, setIsSigningIn] = useState(false);
+  const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -56,6 +59,23 @@ export default function GoogleCalendarAutoScheduler({ onBackToPortfolio }) {
   const [syncProgress, setSyncProgress] = useState('');
   const [syncResult, setSyncResult] = useState(null);
   const [errorMessage, setErrorMessage] = useState(null);
+
+  // Check existing Supabase session if any
+  useEffect(() => {
+    if (supabase) {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session?.user) {
+          setUser({
+            name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0],
+            email: session.user.email,
+            picture: session.user.user_metadata?.avatar_url || null,
+            accessToken: session.provider_token || null,
+            id: session.user.id
+          });
+        }
+      });
+    }
+  }, []);
 
   // Save changes to localStorage
   useEffect(() => {
@@ -72,20 +92,49 @@ export default function GoogleCalendarAutoScheduler({ onBackToPortfolio }) {
 
   // Auth Handlers
   const handleGoogleSignIn = () => {
-    setIsSigningIn(true);
     setErrorMessage(null);
 
-    // If no client ID configured yet, prompt or provide seamless demo fallback
-    if (!googleClientId) {
-      // Auto-fallback to Demo account with clear notice
-      const demoAuth = loginDemoUser('visitor.clark360@gmail.com');
-      setUser(demoAuth.user);
-      setIsSigningIn(false);
-      return;
+    // If client ID is present, trigger official Google OAuth directly
+    if (googleClientId) {
+      setIsSigningIn(true);
+      requestGoogleCalendarAccess({
+        clientId: googleClientId,
+        onTokenReceived: (authData) => {
+          setUser({
+            ...authData.user,
+            accessToken: authData.accessToken,
+            isDemo: authData.isDemo
+          });
+          setIsSigningIn(false);
+        },
+        onError: (err) => {
+          setIsSigningIn(false);
+          setErrorMessage(err.message || 'Google OAuth failed.');
+          setIsSignInModalOpen(true);
+        }
+      });
+    } else {
+      // Open dialog so user can use their own Gmail or enter Client ID
+      setIsSignInModalOpen(true);
     }
+  };
 
+  const handleDemoSignIn = () => {
+    const demo = loginDemoUser('Clark Gemongala', 'gemongalaclark.official@gmail.com');
+    setUser(demo.user);
+  };
+
+  const handleConfirmPersonalLogin = (name, email) => {
+    const customAuth = loginDemoUser(name, email);
+    setUser(customAuth.user);
+  };
+
+  const handleRequestGoogleOAuth = (clientId) => {
+    setGoogleClientId(clientId);
+    localStorage.setItem('clark_google_client_id', clientId);
+    setIsSigningIn(true);
     requestGoogleCalendarAccess({
-      clientId: googleClientId,
+      clientId,
       onTokenReceived: (authData) => {
         setUser({
           ...authData.user,
@@ -95,28 +144,20 @@ export default function GoogleCalendarAutoScheduler({ onBackToPortfolio }) {
         setIsSigningIn(false);
       },
       onError: (err) => {
-        console.warn('Google OAuth error, falling back to instant demo:', err.message);
-        // Fallback to demo mode so user isn't blocked
-        const demoAuth = loginDemoUser('visitor.clark360@gmail.com');
-        setUser(demoAuth.user);
         setIsSigningIn(false);
+        setErrorMessage(err.message || 'Google OAuth failed.');
       }
-    });
-  };
-
-  const handleDemoSignIn = () => {
-    const demo = loginDemoUser('client.executive@gmail.com');
-    setUser({
-      ...demo.user,
-      accessToken: demo.accessToken,
-      isDemo: true
     });
   };
 
   const handleSignOut = () => {
     setUser(null);
+    localStorage.removeItem('clark_scheduler_user');
     setCurrentBatch(null);
     setSyncResult(null);
+    if (supabase) {
+      supabase.auth.signOut().catch(() => {});
+    }
   };
 
   // Scanning Handlers
@@ -277,6 +318,16 @@ export default function GoogleCalendarAutoScheduler({ onBackToPortfolio }) {
           />
         )}
       </main>
+
+      {/* Sign In Options Modal */}
+      <GoogleSignInModal
+        isOpen={isSignInModalOpen}
+        onClose={() => setIsSignInModalOpen(false)}
+        onConfirmPersonalLogin={handleConfirmPersonalLogin}
+        googleClientId={googleClientId}
+        onSaveClientId={handleSaveClientId}
+        onRequestGoogleOAuth={handleRequestGoogleOAuth}
+      />
 
       {/* Upload Modal */}
       <UploadModal

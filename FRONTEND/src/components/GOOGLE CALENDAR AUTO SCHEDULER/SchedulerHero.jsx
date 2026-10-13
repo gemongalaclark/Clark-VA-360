@@ -62,14 +62,14 @@ export default function SchedulerHero({
             <span>{isSigningIn ? 'Connecting to Google...' : 'Sign in using your Gmail Account'}</span>
           </button>
 
-          {/* Quick Demo Mode button for seamless testing */}
+          {/* Quick Sign In button */}
           <button
             onClick={onDemoSignIn}
             className={styles.demoLoginBtn}
-            title="Instantly test drive without Google Cloud OAuth consent"
+            title="Instant sign in with Clark Gemongala profile"
           >
             <Zap size={16} />
-            <span>Try Instant Demo Account (1-Click)</span>
+            <span>Quick Sign In as Clark Gemongala</span>
             <ArrowRight size={14} />
           </button>
         </div>
