@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Mail, MapPin, Send, CheckCircle, AlertCircle } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 import styles from './Contact.module.css';
 
 export default function Contact() {
@@ -10,6 +11,7 @@ export default function Contact() {
     message: '',
   });
   const [status, setStatus] = useState(null); // 'sending' | 'success' | 'error'
+  const [errorMessage, setErrorMessage] = useState('');
 
   const handleChange = (e) => {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -18,16 +20,31 @@ export default function Contact() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setStatus('sending');
+    setErrorMessage('');
 
-    // TODO: Connect to Supabase backend once configured
-    // For now, simulate a send
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const { error } = await supabase
+        .from('contact_messages')
+        .insert([
+          {
+            name: form.name.trim(),
+            email: form.email.trim(),
+            subject: form.subject.trim(),
+            message: form.message.trim(),
+          },
+        ]);
+
+      if (error) {
+        throw error;
+      }
+
       setStatus('success');
       setForm({ name: '', email: '', subject: '', message: '' });
       setTimeout(() => setStatus(null), 5000);
-    } catch {
+    } catch (err) {
+      console.error('Failed to send message:', err);
       setStatus('error');
+      setErrorMessage(err.message || 'Something went wrong. Please try again or email me directly.');
     }
   };
 
@@ -170,7 +187,7 @@ export default function Contact() {
             {status === 'error' && (
               <div className={styles.errorMsg}>
                 <AlertCircle size={18} />
-                Something went wrong. Please try again or email me directly.
+                {errorMessage || 'Something went wrong. Please try again or email me directly.'}
               </div>
             )}
 

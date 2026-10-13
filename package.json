@@ -1,0 +1,8 @@
+{
+  "name": "clark-va-360-root",
+  "private": true,
+  "scripts": {
+    "dev": "npm --prefix FRONTEND run dev",
+    "build": "npm --prefix FRONTEND run build"
+  }
+}
