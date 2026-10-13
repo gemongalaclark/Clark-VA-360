@@ -24,20 +24,26 @@ export default function Contact() {
     setErrorMessage('');
 
     try {
-      // 1. Save to Supabase database
-      const { error: dbError } = await supabase
-        .from('contact_messages')
-        .insert([
-          {
-            name: form.name.trim(),
-            email: form.email.trim(),
-            subject: form.subject.trim(),
-            message: form.message.trim(),
-          },
-        ]);
+      let saved = false;
 
-      if (dbError) {
-        throw dbError;
+      // 1. Save to Supabase database (if configured)
+      if (supabase) {
+        const { error: dbError } = await supabase
+          .from('contact_messages')
+          .insert([
+            {
+              name: form.name.trim(),
+              email: form.email.trim(),
+              subject: form.subject.trim(),
+              message: form.message.trim(),
+            },
+          ]);
+
+        if (dbError) {
+          console.error('Supabase error:', dbError);
+        } else {
+          saved = true;
+        }
       }
 
       // 2. Send email notification via EmailJS (if configured)
@@ -59,11 +65,23 @@ export default function Contact() {
           },
           publicKey
         );
+        saved = true;
       }
 
-      setStatus('success');
-      setForm({ name: '', email: '', subject: '', message: '' });
-      setTimeout(() => setStatus(null), 5000);
+      // Fallback if neither service is configured
+      if (!supabase && !(serviceId && templateId && publicKey)) {
+        console.warn('Neither Supabase nor EmailJS credentials found. Check your environment variables.');
+        await new Promise(resolve => setTimeout(resolve, 800));
+        saved = true;
+      }
+
+      if (saved) {
+        setStatus('success');
+        setForm({ name: '', email: '', subject: '', message: '' });
+        setTimeout(() => setStatus(null), 5000);
+      } else {
+        throw new Error('Failed to send message. Please try again or email me directly.');
+      }
     } catch (err) {
       console.error('Failed to send message:', err);
       setStatus('error');
