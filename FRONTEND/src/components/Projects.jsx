@@ -1,18 +1,19 @@
 import { useState, useRef } from 'react';
-import { ChevronLeft, ChevronRight, ExternalLink, Github } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ExternalLink, Sparkles, Calendar, ArrowUpRight } from 'lucide-react';
 import styles from './Projects.module.css';
 
-/* Projects data – blank placeholders for now */
+/* Projects data */
 const projects = [
   {
     id: 1,
-    title: 'Coming Soon',
-    description: 'My first VA project will be showcased here. Stay tuned!',
-    tags: [],
+    title: "Google Calendar AUTO Scheduler",
+    description: "Gemini AI-powered schedule scanner that automatically extracts shift rotas, PDF timetables, and spreadsheets to sync directly into Google Calendar.",
+    tags: ['Gemini AI', 'Google Calendar API', 'Multimodal OCR', 'React'],
     image: null,
-    liveUrl: null,
+    liveUrl: '/auto-scheduler',
     githubUrl: null,
-    placeholder: true,
+    placeholder: false,
+    featured: true,
   },
   {
     id: 2,
@@ -47,11 +48,49 @@ const projects = [
 ];
 
 function ProjectCard({ project }) {
+  const handleCardClick = (e) => {
+    // If clicking a link or button directly, allow default
+    if (e.target.closest('a') || e.target.closest('button')) return;
+    if (project.liveUrl) {
+      window.open(project.liveUrl, '_blank', 'noopener,noreferrer');
+    }
+  };
+
   return (
-    <div className={styles.card} id={`project-${project.id}`}>
-      {/* Image / placeholder */}
+    <div
+      className={`${styles.card} ${project.featured ? styles.featuredCard : ''}`}
+      id={`project-${project.id}`}
+      onClick={handleCardClick}
+      style={{ cursor: project.liveUrl ? 'pointer' : 'default' }}
+    >
+      {/* Featured Ribbon Badge */}
+      {project.featured && (
+        <div className={styles.featuredRibbon}>
+          <Sparkles size={12} />
+          <span>Featured AI Project</span>
+        </div>
+      )}
+
+      {/* Image / Graphic preview */}
       <div className={styles.cardImage}>
-        {project.image ? (
+        {project.featured ? (
+          <div className={styles.featuredGraphic}>
+            <div className={styles.featuredGlow} />
+            <div className={styles.featuredGraphicInner}>
+              <div className={styles.graphicLogoWrap}>
+                <img src="/images/logo.png" alt="Clark VA 360 Logo" className={styles.graphicLogoImg} />
+              </div>
+              <div className={styles.graphicCalWrap}>
+                <Calendar size={28} className={styles.graphicCalIcon} />
+                <span className={styles.graphicCalText}>Auto Scheduler</span>
+              </div>
+              <div className={styles.graphicBadgeRow}>
+                <span className={styles.graphicAiPill}><Sparkles size={11} /> Gemini AI</span>
+                <span className={styles.graphicSyncPill}>Google Sync</span>
+              </div>
+            </div>
+          </div>
+        ) : project.image ? (
           <img src={project.image} alt={project.title} />
         ) : (
           <div className={styles.placeholderImg}>
@@ -59,16 +98,18 @@ function ProjectCard({ project }) {
             <span className={styles.placeholderText}>Project Preview<br />Coming Soon</span>
           </div>
         )}
+
         {!project.placeholder && (
           <div className={styles.cardOverlay}>
             {project.liveUrl && (
-              <a href={project.liveUrl} target="_blank" rel="noopener noreferrer" className={styles.overlayBtn}>
-                <ExternalLink size={16} /> Live Demo
-              </a>
-            )}
-            {project.githubUrl && (
-              <a href={project.githubUrl} target="_blank" rel="noopener noreferrer" className={styles.overlayBtnOutline}>
-                <Github size={16} /> Code
+              <a
+                href={project.liveUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={styles.overlayBtn}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <ExternalLink size={16} /> Open Web App
               </a>
             )}
           </div>
@@ -77,7 +118,21 @@ function ProjectCard({ project }) {
 
       {/* Content */}
       <div className={styles.cardContent}>
-        <h3 className={styles.cardTitle}>{project.title}</h3>
+        <div className={styles.cardHeaderRow}>
+          <h3 className={styles.cardTitle}>{project.title}</h3>
+          {project.liveUrl && (
+            <a
+              href={project.liveUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.cardArrowLink}
+              title="Open Google Calendar Auto Scheduler in new tab"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <ArrowUpRight size={18} />
+            </a>
+          )}
+        </div>
         <p className={styles.cardDesc}>{project.description}</p>
         {project.tags.length > 0 && (
           <div className={styles.tagRow}>
@@ -184,7 +239,7 @@ export default function Projects() {
 
         {/* Coming soon note */}
         <p className={styles.comingSoonNote}>
-          🚀 Projects will be added as I complete them during my VA training. Stay tuned!
+          🚀 Click Project #1 to test drive the live Google Calendar AUTO Scheduler powered by Gemini AI!
         </p>
       </div>
     </section>
