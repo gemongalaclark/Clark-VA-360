@@ -1,0 +1,119 @@
+.skills {
+  background: var(--bg-section);
+}
+
+/* Tool group */
+.toolGroup {
+  margin-bottom: 60px;
+}
+
+.toolGroup:last-child {
+  margin-bottom: 0;
+}
+
+.groupHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 28px;
+  padding: 20px 24px;
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(203,37,37,0.08);
+  box-shadow: var(--shadow-sm);
+}
+
+.groupBadge {
+  font-size: 2rem;
+  flex-shrink: 0;
+  line-height: 1;
+  margin-top: 2px;
+}
+
+.groupTitle {
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin-bottom: 4px;
+}
+
+.groupDesc {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+/* Tool grid */
+.toolGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 16px;
+}
+
+/* Tool card */
+.toolCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 12px;
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-normal);
+  cursor: default;
+}
+
+.toolCard:hover {
+  border-color: rgba(203,37,37,0.3);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-4px);
+  background: var(--off-white);
+}
+
+.iconBox {
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  background: var(--bg-light);
+  overflow: hidden;
+}
+
+.toolIcon {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+}
+
+.toolEmoji {
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+.toolName {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-body);
+  text-align: center;
+  line-height: 1.3;
+}
+
+@media (max-width: 640px) {
+  .toolGrid {
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: 12px;
+  }
+
+  .toolCard {
+    padding: 16px 8px;
+  }
+
+  .groupHeader {
+    flex-direction: column;
+    gap: 12px;
+  }
+}
