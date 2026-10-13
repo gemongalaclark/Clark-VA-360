@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Mail, MapPin, Send, CheckCircle, AlertCircle } from 'lucide-react';
+import emailjs from '@emailjs/browser';
 import { supabase } from '../lib/supabase';
 import styles from './Contact.module.css';
 
@@ -23,7 +24,8 @@ export default function Contact() {
     setErrorMessage('');
 
     try {
-      const { error } = await supabase
+      // 1. Save to Supabase database
+      const { error: dbError } = await supabase
         .from('contact_messages')
         .insert([
           {
@@ -34,8 +36,29 @@ export default function Contact() {
           },
         ]);
 
-      if (error) {
-        throw error;
+      if (dbError) {
+        throw dbError;
+      }
+
+      // 2. Send email notification via EmailJS (if configured)
+      const serviceId = import.meta.env.VITE_EMAILJS_SERVICE_ID;
+      const templateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
+      const publicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
+
+      if (serviceId && templateId && publicKey) {
+        await emailjs.send(
+          serviceId,
+          templateId,
+          {
+            name: form.name.trim(),
+            from_name: form.name.trim(),
+            email: form.email.trim(),
+            from_email: form.email.trim(),
+            subject: form.subject.trim(),
+            message: form.message.trim(),
+          },
+          publicKey
+        );
       }
 
       setStatus('success');
