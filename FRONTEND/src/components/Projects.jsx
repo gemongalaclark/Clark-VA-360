@@ -203,7 +203,7 @@ export default function Projects() {
             <div
               ref={trackRef}
               className={styles.track}
-              style={{ transform: `translateX(calc(-${currentIndex * (100 / visibleCount)}% - ${currentIndex * (24 / visibleCount)}px))` }}
+              style={{ transform: `translateX(calc(-${currentIndex} * (100cqw / ${visibleCount} + ${24 / visibleCount}px)))` }}
             >
               {projects.map(project => (
                 <div key={project.id} className={styles.slide}>

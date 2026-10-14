@@ -12,7 +12,11 @@
 
 .trackOuter {
   flex: 1;
+  min-width: 0;
   overflow: hidden;
+  /* Size slides against the visible viewport, not the growing track */
+  container-type: inline-size;
+  container-name: projects-carousel;
 }
 
 .track {
@@ -22,10 +26,13 @@
   will-change: transform;
 }
 
-/* Each slide takes 1/3 width on desktop */
+/* Each slide takes 1/3 of the visible carousel width on desktop */
 .slide {
-  min-width: calc(33.333% - 16px);
-  flex-shrink: 0;
+  flex: 0 0 calc((100cqw - 48px) / 3);
+  width: calc((100cqw - 48px) / 3);
+  max-width: calc((100cqw - 48px) / 3);
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 /* Nav buttons */
@@ -101,6 +108,8 @@
   overflow: hidden;
   transition: all var(--transition-normal);
   height: 100%;
+  width: 100%;
+  min-width: 0;
   display: flex;
   flex-direction: column;
 }
@@ -156,21 +165,28 @@
   letter-spacing: 0.5px;
 }
 
-/* Card overlay buttons */
+/* Card overlay buttons — above graphic content so hover text doesn't clash */
 .cardOverlay {
   position: absolute;
   inset: 0;
-  background: rgba(203,37,37,0.85);
+  z-index: 5;
+  background: rgba(203, 37, 37, 0.94);
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 12px;
   opacity: 0;
   transition: opacity var(--transition-normal);
+  pointer-events: none;
 }
 
 .card:hover .cardOverlay {
   opacity: 1;
+  pointer-events: auto;
+}
+
+.card:hover .featuredGraphicInner {
+  opacity: 0;
 }
 
 .overlayBtn {
@@ -311,7 +327,8 @@
   align-items: center;
   gap: 8px;
   text-align: center;
-  z-index: 2;
+  z-index: 1;
+  transition: opacity var(--transition-normal);
 }
 
 .graphicLogoWrap {
@@ -408,13 +425,17 @@
 /* ── Responsive ── */
 @media (max-width: 900px) {
   .slide {
-    min-width: calc(50% - 12px);
+    flex: 0 0 calc((100cqw - 24px) / 2);
+    width: calc((100cqw - 24px) / 2);
+    max-width: calc((100cqw - 24px) / 2);
   }
 }
 
 @media (max-width: 600px) {
   .slide {
-    min-width: 85%;
+    flex: 0 0 85cqw;
+    width: 85cqw;
+    max-width: 85cqw;
   }
 
   .navBtn {
@@ -429,6 +450,8 @@
 
 @media (max-width: 400px) {
   .slide {
-    min-width: 92%;
+    flex: 0 0 92cqw;
+    width: 92cqw;
+    max-width: 92cqw;
   }
 }
