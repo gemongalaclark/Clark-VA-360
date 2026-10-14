@@ -1,23 +1,22 @@
 import * as XLSX from 'xlsx';
 
 const FALLBACK_GEMINI_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
+const SCHEDULER_API_BASE = (import.meta.env.VITE_SCHEDULER_API_URL || '').replace(/\/$/, '');
 
 const GEMINI_MODELS = [
-  'gemini-3.5-flash-lite',
-  'gemini-3.1-flash-lite',
-  'gemini-3.8-flash',
-  'gemini-3.5-flash'
+  'gemini-2.5-flash',
+  'gemini-2.0-flash',
+  'gemini-2.0-flash-lite',
+  'gemini-flash-latest',
+  'gemini-1.5-flash'
 ];
 
-/**
- * Convert a File object to base64 string
- */
 export function fileToBase64(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
       const result = reader.result;
-      const base64 = result.split(',')[1];
+      const base64 = String(result).split(',')[1];
       resolve(base64);
     };
     reader.onerror = (error) => reject(error);
@@ -25,20 +24,14 @@ export function fileToBase64(file) {
   });
 }
 
-/**
- * Parse an Excel / CSV file into CSV text
- */
 export async function parseSpreadsheetToCsv(file) {
   const data = await file.arrayBuffer();
   const workbook = XLSX.read(data, { type: 'array' });
-  const firstSheetName = workbook.SheetNames[0];
-  const worksheet = workbook.Sheets[firstSheetName];
-  return XLSX.utils.sheet_to_csv(worksheet);
+  return workbook.SheetNames.map((name) => {
+    return `--- SHEET: ${name} ---\n${XLSX.utils.sheet_to_csv(workbook.Sheets[name])}`;
+  }).join('\n\n');
 }
 
-/**
- * Build Gemini extraction prompt
- */
 function buildSchedulePrompt(referenceDate) {
   return `
 You are the AI Schedule Extraction Intelligence Engine for "Clark VA 360's Google Auto Scheduler".
@@ -70,17 +63,55 @@ RULES:
 `;
 }
 
-/**
- * Scan schedule file or text with Gemini AI
- */
-export async function scanScheduleWithGemini({
-  file,
-  textData,
-  referenceDate = new Date().toISOString().split('T')[0],
-  apiKey = null,
-  onStatusUpdate = () => {}
-}) {
+function normalizeEvents(parsedEvents, referenceDate) {
+  return (parsedEvents || []).map((evt, idx) => ({
+    id: evt.id || `evt-${Date.now()}-${idx}`,
+    title: evt.title || `Shift Event ${idx + 1}`,
+    dayOfWeek: evt.dayOfWeek || 'Monday',
+    date: evt.date || referenceDate,
+    startTime: evt.startTime || '09:00',
+    endTime: evt.endTime || '10:00',
+    description: evt.description || 'Auto-scheduled by Clark VA 360',
+    location: evt.location || '',
+    category: evt.category || 'Work'
+  }));
+}
+
+function parseEventsFromText(text) {
+  const parsed = JSON.parse(text);
+  return Array.isArray(parsed) ? parsed : (parsed.events || []);
+}
+
+async function scanWithBackend({ file, textData, referenceDate, onStatusUpdate }) {
+  onStatusUpdate('Sending schedule to Clark VA 360 scanner...');
+
+  const form = new FormData();
+  form.append('referenceDate', referenceDate);
+  if (file) form.append('file', file);
+  if (textData) form.append('textSchedule', textData);
+
+  const response = await fetch(`${SCHEDULER_API_BASE}/api/scheduler/analyze`, {
+    method: 'POST',
+    body: form
+  });
+
+  const data = await response.json();
+  if (!response.ok || !data.success) {
+    throw new Error(data.error || 'Scheduler backend could not read this file.');
+  }
+
+  return {
+    success: true,
+    modelUsed: data.modelUsed || 'Gemini AI',
+    events: normalizeEvents(data.events, referenceDate)
+  };
+}
+
+async function scanWithGeminiDirect({ file, textData, referenceDate, apiKey, onStatusUpdate }) {
   const activeKey = apiKey || import.meta.env.VITE_GEMINI_API_KEY || FALLBACK_GEMINI_KEY;
+  if (!activeKey) {
+    throw new Error('Gemini API key is missing. Add VITE_GEMINI_API_KEY or run the scheduler backend.');
+  }
 
   onStatusUpdate('Preparing schedule file...');
 
@@ -149,7 +180,7 @@ export async function scanScheduleWithGemini({
       if (data.error) {
         lastError = new Error(`[${model}] ${data.error.message}`);
         console.warn(`Gemini model ${model} skipped:`, data.error.message);
-        continue; // Try next model in priority cascade
+        continue;
       }
 
       const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -159,8 +190,7 @@ export async function scanScheduleWithGemini({
 
       let parsedEvents = [];
       try {
-        const parsed = JSON.parse(text);
-        parsedEvents = Array.isArray(parsed) ? parsed : (parsed.events || []);
+        parsedEvents = parseEventsFromText(text);
       } catch {
         const match = text.match(/\[[\s\S]*\]/);
         if (match) {
@@ -170,23 +200,10 @@ export async function scanScheduleWithGemini({
         }
       }
 
-      // Add unique IDs and normalize fields
-      const normalizedEvents = parsedEvents.map((evt, idx) => ({
-        id: evt.id || `evt-${Date.now()}-${idx}`,
-        title: evt.title || `Shift Event ${idx + 1}`,
-        dayOfWeek: evt.dayOfWeek || 'Monday',
-        date: evt.date || referenceDate,
-        startTime: evt.startTime || '09:00',
-        endTime: evt.endTime || '10:00',
-        description: evt.description || 'Auto-scheduled by Clark VA 360',
-        location: evt.location || '',
-        category: evt.category || 'Work'
-      }));
-
       return {
         success: true,
         modelUsed: model,
-        events: normalizedEvents
+        events: normalizeEvents(parsedEvents, referenceDate)
       };
     } catch (err) {
       lastError = err;
@@ -197,9 +214,21 @@ export async function scanScheduleWithGemini({
   throw lastError || new Error('All Gemini AI models failed. Please verify your connection or try again.');
 }
 
-/**
- * Built-in sample schedules for instant 1-click test runs
- */
+export async function scanScheduleWithGemini({
+  file,
+  textData,
+  referenceDate = new Date().toISOString().split('T')[0],
+  apiKey = null,
+  onStatusUpdate = () => {}
+}) {
+  try {
+    return await scanWithBackend({ file, textData, referenceDate, onStatusUpdate });
+  } catch (backendError) {
+    console.warn('Scheduler backend unavailable, using client Gemini:', backendError.message);
+    return scanWithGeminiDirect({ file, textData, referenceDate, apiKey, onStatusUpdate });
+  }
+}
+
 export const SAMPLE_SCHEDULES = {
   vaRoster: {
     name: 'VA Client Support Roster (Weekly)',

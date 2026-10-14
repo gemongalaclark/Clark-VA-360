@@ -1,91 +1,43 @@
 /**
- * Google Identity Services & Google Calendar API helper for Clark VA 360 Auto Scheduler
+ * Google Calendar API helper for Clark VA 360 Auto Scheduler
  */
 
-const CALENDAR_SCOPE = 'https://www.googleapis.com/auth/calendar.events';
+const SCHEDULER_API_BASE = (import.meta.env.VITE_SCHEDULER_API_URL || '').replace(/\/$/, '');
 
-/**
- * Request Google Calendar OAuth Access Token via Google Identity Services (GIS)
- */
-export function requestGoogleCalendarAccess({ clientId, onTokenReceived, onError }) {
-  if (!window.google?.accounts?.oauth2) {
-    onError(new Error('Google Identity Services SDK is not loaded. Check internet connection.'));
-    return;
-  }
-
-  if (!clientId) {
-    onError(new Error('Google Client ID is missing. You can enter your Google Client ID or use Demo Mode.'));
-    return;
-  }
-
-  try {
-    const tokenClient = window.google.accounts.oauth2.initTokenClient({
-      client_id: clientId,
-      scope: `${CALENDAR_SCOPE} email profile openid`,
-      prompt: 'consent',
-      callback: async (tokenResponse) => {
-        if (tokenResponse.error) {
-          onError(new Error(tokenResponse.error_description || tokenResponse.error));
-          return;
-        }
-
-        const accessToken = tokenResponse.access_token;
-        try {
-          // Fetch user profile info
-          const profileRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-            headers: { Authorization: `Bearer ${accessToken}` }
-          });
-          const profile = await profileRes.json();
-
-          onTokenReceived({
-            accessToken,
-            user: {
-              name: profile.name || 'Google User',
-              email: profile.email || 'user@gmail.com',
-              picture: profile.picture || null,
-              id: profile.sub
-            },
-            isDemo: false
-          });
-        } catch (err) {
-          // Fallback user object
-          onTokenReceived({
-            accessToken,
-            user: {
-              name: 'Connected Google Account',
-              email: 'connected.user@gmail.com',
-              picture: null
-            },
-            isDemo: false
-          });
-        }
-      }
-    });
-
-    tokenClient.requestAccessToken();
-  } catch (err) {
-    onError(err);
-  }
+export function normalizeTime(value, fallback = '09:00') {
+  if (!value) return fallback;
+  const match = String(value).trim().match(/^(\d{1,2}):(\d{2})/);
+  if (!match) return fallback;
+  const hours = String(Math.min(23, Number(match[1]))).padStart(2, '0');
+  return `${hours}:${match[2]}`;
 }
 
-/**
- * Personal / Demo sign in helper for testing without requiring Google Cloud Console OAuth setup
- */
-export function loginDemoUser(name = 'Clark Gemongala', email = 'gemongalaclark.official@gmail.com') {
+function toLocalDateTime(date, time) {
+  const safeTime = normalizeTime(time);
+  return `${date}T${safeTime}:00`;
+}
+
+function buildGoogleEventPayload(evt, timeZone) {
   return {
-    accessToken: 'demo_token_' + Math.random().toString(36).substring(2),
-    user: {
-      name: name || 'Clark Gemongala',
-      email: email || 'gemongalaclark.official@gmail.com',
-      picture: null,
-      id: 'user-' + Date.now()
+    summary: evt.title,
+    description: `${evt.description || 'Auto-scheduled by Clark VA 360'}\n\nCategory: ${evt.category || 'General'}\nGenerated with Clark VA 360 Google Auto Scheduler`,
+    location: evt.location || '',
+    start: {
+      dateTime: toLocalDateTime(evt.date, evt.startTime),
+      timeZone
     },
-    isDemo: true
+    end: {
+      dateTime: toLocalDateTime(evt.date, evt.endTime),
+      timeZone
+    },
+    reminders: {
+      useDefault: true
+    }
   };
 }
 
 /**
- * Send events directly to Google Calendar API
+ * Send events to Google Calendar (backend first, then browser Calendar API)
  */
 export async function sendEventsToGoogleCalendar({
   accessToken,
@@ -94,62 +46,44 @@ export async function sendEventsToGoogleCalendar({
   onProgress = () => {}
 }) {
   if (isDemo) {
-    // Simulate real Google Calendar sync with realistic delay and real ICS generation
-    const synced = [];
-    for (let i = 0; i < events.length; i++) {
-      onProgress(i + 1, events.length, events[i].title);
-      await new Promise(r => setTimeout(r, 450));
-      synced.push({
-        id: `demo-cal-${i}`,
-        title: events[i].title,
-        htmlLink: 'https://calendar.google.com/calendar/r'
-      });
+    throw new Error('Demo accounts cannot write to Google Calendar. Sign in with Gmail first.');
+  }
+
+  if (!accessToken) {
+    throw new Error('Missing Google Calendar access token. Sign in with Gmail and allow Calendar access.');
+  }
+
+  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Manila';
+
+  try {
+    const res = await fetch(`${SCHEDULER_API_BASE}/api/scheduler/send-to-calendar`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accessToken, events, timeZone })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.success) return { ...data, isDemo: false };
     }
-    return {
-      success: true,
-      syncedCount: synced.length,
-      failedCount: 0,
-      events: synced,
-      isDemo: true
-    };
+  } catch {
+    // Backend optional — fall through to direct Calendar API
   }
 
   const synced = [];
   const errors = [];
-  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Manila';
 
   for (let i = 0; i < events.length; i++) {
     const evt = events[i];
     onProgress(i + 1, events.length, evt.title);
 
     try {
-      const startDateTime = `${evt.date}T${evt.startTime}:00`;
-      const endDateTime = `${evt.date}T${evt.endTime}:00`;
-
-      const payload = {
-        summary: evt.title,
-        description: `${evt.description || 'Auto-scheduled by Clark VA 360'}\n\nCategory: ${evt.category || 'General'}\nGenerated with Clark VA 360 Google Auto Scheduler`,
-        location: evt.location || '',
-        start: {
-          dateTime: new Date(startDateTime).toISOString(),
-          timeZone
-        },
-        end: {
-          dateTime: new Date(endDateTime).toISOString(),
-          timeZone
-        },
-        reminders: {
-          useDefault: true
-        }
-      };
-
       const res = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${accessToken}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(buildGoogleEventPayload(evt, timeZone))
       });
 
       const data = await res.json();
@@ -173,14 +107,14 @@ export async function sendEventsToGoogleCalendar({
   };
 }
 
-/**
- * Generate standard .ics (iCalendar) file for download and offline import
- */
 export function generateIcsFile(events, calendarName = 'Clark VA 360 Auto Schedule') {
-  const formatUtc = (dateStr, timeStr) => {
-    const d = new Date(`${dateStr}T${timeStr}:00`);
-    return d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+  const formatLocal = (dateStr, timeStr) => {
+    const [h, m] = normalizeTime(timeStr).split(':');
+    return `${dateStr.replace(/-/g, '')}T${h}${m}00`;
   };
+
+  const now = new Date();
+  const stamp = now.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
 
   let ics = [
     'BEGIN:VCALENDAR',
@@ -192,16 +126,12 @@ export function generateIcsFile(events, calendarName = 'Clark VA 360 Auto Schedu
   ];
 
   events.forEach((evt, idx) => {
-    const dtStart = formatUtc(evt.date, evt.startTime);
-    const dtEnd = formatUtc(evt.date, evt.endTime);
-    const now = formatUtc(new Date().toISOString().split('T')[0], '12:00');
-
     ics.push('BEGIN:VEVENT');
     ics.push(`UID:clark-va-360-${Date.now()}-${idx}@clarkva360.com`);
-    ics.push(`DTSTAMP:${now}`);
-    ics.push(`DTSTART:${dtStart}`);
-    ics.push(`DTEND:${dtEnd}`);
-    ics.push(`SUMMARY:${evt.title.replace(/\n/g, ' ')}`);
+    ics.push(`DTSTAMP:${stamp}`);
+    ics.push(`DTSTART:${formatLocal(evt.date, evt.startTime)}`);
+    ics.push(`DTEND:${formatLocal(evt.date, evt.endTime)}`);
+    ics.push(`SUMMARY:${String(evt.title || '').replace(/\n/g, ' ')}`);
     ics.push(`DESCRIPTION:${(evt.description || 'Clark VA 360 Auto Scheduled Event').replace(/\n/g, '\\n')}`);
     if (evt.location) ics.push(`LOCATION:${evt.location}`);
     ics.push('STATUS:CONFIRMED');
@@ -212,9 +142,6 @@ export function generateIcsFile(events, calendarName = 'Clark VA 360 Auto Schedu
   return ics.join('\r\n');
 }
 
-/**
- * Trigger download of .ics file
- */
 export function downloadIcsFile(events, filename = 'clark_va_schedule.ics') {
   const icsData = generateIcsFile(events);
   const blob = new Blob([icsData], { type: 'text/calendar;charset=utf-8' });

@@ -59,7 +59,7 @@ export default function GoogleOAuthModal({
               className={styles.settingsInput}
             />
             <p className={styles.fieldHelper}>
-              Active Key preloaded with Google Plus Student plan. Supports multimodal image, PDF, and spreadsheet OCR.
+              Used as a fallback if the scheduler backend is offline. Image, PDF, and spreadsheet scans are supported.
             </p>
           </div>
 
@@ -77,7 +77,7 @@ export default function GoogleOAuthModal({
               className={styles.settingsInput}
             />
             <p className={styles.fieldHelper}>
-              Leave blank to use the built-in Instant Demo Account, or add your Google Cloud Console Client ID to connect real personal accounts.
+              Optional. Gmail sign-in uses Supabase Google Auth. This Client ID is only needed for extra GIS calendar tokens.
             </p>
           </div>
 

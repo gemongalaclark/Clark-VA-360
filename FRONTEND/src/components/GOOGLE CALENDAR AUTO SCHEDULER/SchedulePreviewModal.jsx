@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Calendar, CheckCircle2, Clock, MapPin, Tag, Trash2, Plus, Download, ExternalLink, ArrowLeft, Sparkles, AlertCircle, Edit3, Save } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Calendar, CheckCircle2, Clock, MapPin, Tag, Trash2, Plus, Download, ExternalLink, ArrowLeft, Sparkles, Edit3, Save } from 'lucide-react';
 import { downloadIcsFile } from './googleCalendarApi';
 import styles from './GoogleCalendarAutoScheduler.module.css';
 
@@ -18,13 +18,19 @@ export default function SchedulePreviewModal({
   const [editableEvents, setEditableEvents] = useState(events);
   const [activeDayFilter, setActiveDayFilter] = useState('ALL');
   const [editingId, setEditingId] = useState(null);
+  const [confirmed, setConfirmed] = useState(false);
+
+  useEffect(() => {
+    setEditableEvents(events);
+    setConfirmed(false);
+    setEditingId(null);
+    setActiveDayFilter('ALL');
+  }, [events]);
 
   if (!isOpen) return null;
 
-  // Days of week list
   const DAYS = ['ALL', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
-  // Filter events
   const filteredEvents = activeDayFilter === 'ALL'
     ? editableEvents
     : editableEvents.filter(e => e.dayOfWeek?.toLowerCase() === activeDayFilter.toLowerCase());
@@ -59,14 +65,14 @@ export default function SchedulePreviewModal({
     downloadIcsFile(editableEvents, `clark_va_schedule_${Date.now()}.ics`);
   };
 
-  const handleSendToCalendar = () => {
+  const handleGo = () => {
+    if (!confirmed) return;
     onSendToGoogleCalendar(editableEvents);
   };
 
   return (
     <div className={styles.modalOverlay}>
       <div className={`${styles.modalCard} ${styles.previewModalCard}`}>
-        {/* Header */}
         <div className={styles.previewHeader}>
           <div>
             <div className={styles.previewBadgeRow}>
@@ -81,7 +87,7 @@ export default function SchedulePreviewModal({
               Verify Schedule <span>Preview</span>
             </h2>
             <p className={styles.previewSubtitle}>
-              Double-check that the allotted schedule and timings are accurate before sending to your Google Calendar.
+              Review {sourceName}. If the schedule is right, confirm below and press Go to upload it to Google Calendar.
             </p>
           </div>
 
@@ -99,7 +105,6 @@ export default function SchedulePreviewModal({
           )}
         </div>
 
-        {/* Sync Success State */}
         {syncResult ? (
           <div className={styles.syncSuccessCard}>
             <div className={styles.successCheckWrap}>
@@ -142,9 +147,7 @@ export default function SchedulePreviewModal({
             </button>
           </div>
         ) : (
-          /* Normal Preview & Edit State */
           <>
-            {/* Day Filter Tabs */}
             <div className={styles.dayFilterScroll}>
               {DAYS.map(day => {
                 const count = day === 'ALL'
@@ -164,7 +167,6 @@ export default function SchedulePreviewModal({
               })}
             </div>
 
-            {/* Events List */}
             <div className={styles.eventsScrollList}>
               {filteredEvents.length === 0 ? (
                 <div className={styles.noEventsNotice}>
@@ -284,7 +286,6 @@ export default function SchedulePreviewModal({
               )}
             </div>
 
-            {/* Syncing Progress Banner */}
             {isSyncing && (
               <div className={styles.syncingBanner}>
                 <div className={styles.syncingSpinner} />
@@ -295,7 +296,16 @@ export default function SchedulePreviewModal({
               </div>
             )}
 
-            {/* Footer */}
+            <label className={styles.confirmScheduleRow}>
+              <input
+                type="checkbox"
+                checked={confirmed}
+                onChange={(e) => setConfirmed(e.target.checked)}
+                disabled={isSyncing || editableEvents.length === 0}
+              />
+              <span>This schedule looks right. Upload these events to my Google Calendar.</span>
+            </label>
+
             <div className={styles.previewFooter}>
               <div className={styles.previewFooterLeft}>
                 <button
@@ -320,13 +330,13 @@ export default function SchedulePreviewModal({
               <button
                 type="button"
                 className={styles.sendToCalendarBtn}
-                onClick={handleSendToCalendar}
-                disabled={isSyncing || editableEvents.length === 0}
+                onClick={handleGo}
+                disabled={isSyncing || editableEvents.length === 0 || !confirmed}
                 id="send-to-google-calendar-btn"
               >
                 <Calendar size={18} />
                 <span>
-                  {isSyncing ? 'Syncing...' : `Send ${editableEvents.length} Events to Google Calendar`}
+                  {isSyncing ? 'Uploading...' : `Go — Upload ${editableEvents.length} Events`}
                 </span>
               </button>
             </div>

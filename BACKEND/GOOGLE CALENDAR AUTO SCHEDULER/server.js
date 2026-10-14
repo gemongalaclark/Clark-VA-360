@@ -22,11 +22,11 @@ const upload = multer({
 
 // Priority list of Gemini models to use
 const GEMINI_MODELS = [
-  'gemini-3.5-flash-lite',
-  'gemini-3.1-flash-lite',
-  'gemini-3.8-flash',
-  'gemini-3.5-flash',
-  'gemini-flash-latest'
+  'gemini-2.5-flash',
+  'gemini-2.0-flash',
+  'gemini-2.0-flash-lite',
+  'gemini-flash-latest',
+  'gemini-1.5-flash'
 ];
 
 /**
@@ -148,8 +148,9 @@ app.post('/api/scheduler/analyze', upload.single('file'), async (req, res) => {
           sheetCsv = file.buffer.toString('utf-8');
         } else {
           const workbook = XLSX.read(file.buffer, { type: 'buffer' });
-          const firstSheetName = workbook.SheetNames[0];
-          sheetCsv = XLSX.utils.sheet_to_csv(workbook.Sheets[firstSheetName]);
+          sheetCsv = workbook.SheetNames.map((name) => {
+            return `--- SHEET: ${name} ---\n${XLSX.utils.sheet_to_csv(workbook.Sheets[name])}`;
+          }).join('\n\n');
         }
 
         contents.push({
@@ -272,19 +273,24 @@ app.post('/api/scheduler/send-to-calendar', async (req, res) => {
 
     for (const evt of events) {
       try {
-        const startDateTime = `${evt.date}T${evt.startTime}:00`;
-        const endDateTime = `${evt.date}T${evt.endTime}:00`;
+        const padTime = (value, fallback) => {
+          const match = String(value || fallback).trim().match(/^(\d{1,2}):(\d{2})/);
+          if (!match) return fallback;
+          return `${String(match[1]).padStart(2, '0')}:${match[2]}`;
+        };
+        const startDateTime = `${evt.date}T${padTime(evt.startTime, '09:00')}:00`;
+        const endDateTime = `${evt.date}T${padTime(evt.endTime, '10:00')}:00`;
 
         const googleEventPayload = {
           summary: evt.title,
           description: `${evt.description || 'Auto-scheduled by Clark VA 360'}\n\nCategory: ${evt.category || 'General'}\nGenerated via Clark VA 360 Google Auto Scheduler`,
           location: evt.location || '',
           start: {
-            dateTime: new Date(startDateTime).toISOString(),
+            dateTime: startDateTime,
             timeZone
           },
           end: {
-            dateTime: new Date(endDateTime).toISOString(),
+            dateTime: endDateTime,
             timeZone
           },
           reminders: {

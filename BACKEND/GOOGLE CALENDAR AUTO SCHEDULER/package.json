@@ -9,7 +9,6 @@
     "dev": "node --watch server.js"
   },
   "dependencies": {
-    "clark-va-360-root": "file:../..",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",

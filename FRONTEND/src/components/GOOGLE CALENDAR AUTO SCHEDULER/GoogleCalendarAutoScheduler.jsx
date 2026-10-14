@@ -5,26 +5,20 @@ import SchedulerDashboard from './SchedulerDashboard';
 import UploadModal from './UploadModal';
 import SchedulePreviewModal from './SchedulePreviewModal';
 import GoogleOAuthModal from './GoogleOAuthModal';
-import GoogleSignInModal from './GoogleSignInModal';
 import { scanScheduleWithGemini, SAMPLE_SCHEDULES } from './geminiScanner';
-import {
-  requestGoogleCalendarAccess,
-  loginDemoUser,
-  sendEventsToGoogleCalendar
-} from './googleCalendarApi';
+import { sendEventsToGoogleCalendar } from './googleCalendarApi';
 import { supabase } from '../../lib/supabase';
+import {
+  mapSessionToSchedulerUser,
+  registerSchedulerUser,
+  signInWithGoogle,
+  signOutScheduler
+} from './schedulerAuth';
 import styles from './GoogleCalendarAutoScheduler.module.css';
 
 export default function GoogleCalendarAutoScheduler({ onBackToPortfolio }) {
-  // Stored state
-  const [user, setUser] = useState(() => {
-    try {
-      const saved = localStorage.getItem('clark_scheduler_user');
-      return saved ? JSON.parse(saved) : null;
-    } catch {
-      return null;
-    }
-  });
+  const [user, setUser] = useState(null);
+  const [authReady, setAuthReady] = useState(false);
 
   const [history, setHistory] = useState(() => {
     try {
@@ -43,14 +37,11 @@ export default function GoogleCalendarAutoScheduler({ onBackToPortfolio }) {
     return localStorage.getItem('clark_gemini_api_key') || import.meta.env.VITE_GEMINI_API_KEY || '';
   });
 
-  // UI state
   const [isSigningIn, setIsSigningIn] = useState(false);
-  const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
-  // Scanning & Syncing state
   const [isScanning, setIsScanning] = useState(false);
   const [scanStatus, setScanStatus] = useState('');
   const [currentBatch, setCurrentBatch] = useState(null);
@@ -60,107 +51,68 @@ export default function GoogleCalendarAutoScheduler({ onBackToPortfolio }) {
   const [syncResult, setSyncResult] = useState(null);
   const [errorMessage, setErrorMessage] = useState(null);
 
-  // Check existing Supabase session if any
   useEffect(() => {
-    if (supabase) {
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session?.user) {
-          setUser({
-            name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0],
-            email: session.user.email,
-            picture: session.user.user_metadata?.avatar_url || null,
-            accessToken: session.provider_token || null,
-            id: session.user.id
-          });
-        }
-      });
-    }
-  }, []);
+    let unsubscribe = () => {};
 
-  // Save changes to localStorage
-  useEffect(() => {
-    if (user) {
-      localStorage.setItem('clark_scheduler_user', JSON.stringify(user));
-    } else {
-      localStorage.removeItem('clark_scheduler_user');
+    const applySession = async (session) => {
+      if (!session?.user) {
+        setUser(null);
+        return;
+      }
+      const mapped = mapSessionToSchedulerUser(session);
+      setUser(mapped);
+      await registerSchedulerUser(session);
+    };
+
+    if (!supabase) {
+      setAuthReady(true);
+      return undefined;
     }
-  }, [user]);
+
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      await applySession(session);
+      setAuthReady(true);
+    });
+
+    const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_OUT') {
+        setUser(null);
+        return;
+      }
+      await applySession(session);
+    });
+
+    unsubscribe = () => data.subscription.unsubscribe();
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('clark_scheduler_history', JSON.stringify(history));
   }, [history]);
 
-  // Auth Handlers
-  const handleGoogleSignIn = () => {
+  const handleGoogleSignIn = async () => {
     setErrorMessage(null);
-
-    // If client ID is present, trigger official Google OAuth directly
-    if (googleClientId) {
-      setIsSigningIn(true);
-      requestGoogleCalendarAccess({
-        clientId: googleClientId,
-        onTokenReceived: (authData) => {
-          setUser({
-            ...authData.user,
-            accessToken: authData.accessToken,
-            isDemo: authData.isDemo
-          });
-          setIsSigningIn(false);
-        },
-        onError: (err) => {
-          setIsSigningIn(false);
-          setErrorMessage(err.message || 'Google OAuth failed.');
-          setIsSignInModalOpen(true);
-        }
-      });
-    } else {
-      // Open dialog so user can use their own Gmail or enter Client ID
-      setIsSignInModalOpen(true);
+    setIsSigningIn(true);
+    try {
+      await signInWithGoogle();
+    } catch (err) {
+      setErrorMessage(err.message || 'Google sign-in failed. Enable the Google provider in Supabase.');
+      setIsSigningIn(false);
     }
   };
 
-  const handleDemoSignIn = () => {
-    const demo = loginDemoUser('Clark Gemongala', 'gemongalaclark.official@gmail.com');
-    setUser(demo.user);
-  };
-
-  const handleConfirmPersonalLogin = (name, email) => {
-    const customAuth = loginDemoUser(name, email);
-    setUser(customAuth.user);
-  };
-
-  const handleRequestGoogleOAuth = (clientId) => {
-    setGoogleClientId(clientId);
-    localStorage.setItem('clark_google_client_id', clientId);
-    setIsSigningIn(true);
-    requestGoogleCalendarAccess({
-      clientId,
-      onTokenReceived: (authData) => {
-        setUser({
-          ...authData.user,
-          accessToken: authData.accessToken,
-          isDemo: authData.isDemo
-        });
-        setIsSigningIn(false);
-      },
-      onError: (err) => {
-        setIsSigningIn(false);
-        setErrorMessage(err.message || 'Google OAuth failed.');
-      }
-    });
-  };
-
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
     setUser(null);
-    localStorage.removeItem('clark_scheduler_user');
     setCurrentBatch(null);
     setSyncResult(null);
-    if (supabase) {
-      supabase.auth.signOut().catch(() => {});
+    localStorage.removeItem('clark_scheduler_user');
+    try {
+      await signOutScheduler();
+    } catch {
+      // local sign-out is enough if the network request fails
     }
   };
 
-  // Scanning Handlers
   const handleAnalyzeFile = async (file, referenceDate) => {
     try {
       setIsScanning(true);
@@ -184,6 +136,7 @@ export default function GoogleCalendarAutoScheduler({ onBackToPortfolio }) {
       setCurrentBatch(batch);
       setIsUploadOpen(false);
       setIsPreviewOpen(true);
+      setSyncResult(null);
     } catch (err) {
       console.error('Scan error:', err);
       setErrorMessage(err.message || 'Failed to scan schedule with Gemini AI.');
@@ -217,6 +170,7 @@ export default function GoogleCalendarAutoScheduler({ onBackToPortfolio }) {
       setCurrentBatch(batch);
       setIsUploadOpen(false);
       setIsPreviewOpen(true);
+      setSyncResult(null);
     } catch (err) {
       console.error('Sample scan error:', err);
       setErrorMessage(err.message || 'Failed to scan sample schedule.');
@@ -226,24 +180,31 @@ export default function GoogleCalendarAutoScheduler({ onBackToPortfolio }) {
     }
   };
 
-  // Google Calendar Sync Handler
   const handleSendToGoogleCalendar = async (eventsToSync) => {
     try {
       setIsSyncing(true);
-      setSyncProgress('Initiating Google Calendar synchronization...');
+      setSyncProgress('Uploading events to your Google Calendar...');
+
+      if (!user?.accessToken) {
+        throw new Error('Google Calendar access is missing. Sign out and sign in with Gmail again, then grant Calendar permission.');
+      }
 
       const result = await sendEventsToGoogleCalendar({
-        accessToken: user?.accessToken,
+        accessToken: user.accessToken,
         events: eventsToSync,
-        isDemo: user?.isDemo !== false,
+        isDemo: false,
         onProgress: (current, total, title) => {
           setSyncProgress(`Adding event ${current} of ${total}: "${title}"`);
         }
       });
 
+      if (!result.success) {
+        const firstError = result.errors?.[0]?.error;
+        throw new Error(firstError || 'Google Calendar rejected the events. Sign in again and retry.');
+      }
+
       setSyncResult(result);
 
-      // Save to history
       if (currentBatch) {
         const updatedBatch = {
           ...currentBatch,
@@ -285,7 +246,6 @@ export default function GoogleCalendarAutoScheduler({ onBackToPortfolio }) {
 
   return (
     <div className={styles.appWrapper}>
-      {/* Navbar */}
       <SchedulerNav
         user={user}
         onSignOut={handleSignOut}
@@ -293,7 +253,6 @@ export default function GoogleCalendarAutoScheduler({ onBackToPortfolio }) {
         onBackToPortfolio={onBackToPortfolio}
       />
 
-      {/* Main Content Area */}
       <main className={styles.mainContent}>
         {errorMessage && (
           <div className={styles.topErrorBanner}>
@@ -302,10 +261,13 @@ export default function GoogleCalendarAutoScheduler({ onBackToPortfolio }) {
           </div>
         )}
 
-        {!user ? (
+        {!authReady ? (
+          <div className={styles.heroWrapper}>
+            <p className={styles.heroSubtitle}>Checking your Gmail session...</p>
+          </div>
+        ) : !user ? (
           <SchedulerHero
             onGoogleSignIn={handleGoogleSignIn}
-            onDemoSignIn={handleDemoSignIn}
             isSigningIn={isSigningIn}
           />
         ) : (
@@ -319,17 +281,6 @@ export default function GoogleCalendarAutoScheduler({ onBackToPortfolio }) {
         )}
       </main>
 
-      {/* Sign In Options Modal */}
-      <GoogleSignInModal
-        isOpen={isSignInModalOpen}
-        onClose={() => setIsSignInModalOpen(false)}
-        onConfirmPersonalLogin={handleConfirmPersonalLogin}
-        googleClientId={googleClientId}
-        onSaveClientId={handleSaveClientId}
-        onRequestGoogleOAuth={handleRequestGoogleOAuth}
-      />
-
-      {/* Upload Modal */}
       <UploadModal
         isOpen={isUploadOpen}
         onClose={() => setIsUploadOpen(false)}
@@ -339,7 +290,6 @@ export default function GoogleCalendarAutoScheduler({ onBackToPortfolio }) {
         scanStatus={scanStatus}
       />
 
-      {/* Schedule Preview & Edit Modal */}
       {currentBatch && (
         <SchedulePreviewModal
           isOpen={isPreviewOpen}
@@ -355,7 +305,6 @@ export default function GoogleCalendarAutoScheduler({ onBackToPortfolio }) {
         />
       )}
 
-      {/* Settings Modal */}
       <GoogleOAuthModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}

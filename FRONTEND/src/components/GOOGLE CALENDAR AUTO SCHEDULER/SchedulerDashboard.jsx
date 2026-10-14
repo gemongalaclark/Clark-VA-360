@@ -17,10 +17,10 @@ export default function SchedulerDashboard({
       <div className={styles.dashHeader}>
         <div>
           <h2 className={styles.dashGreeting}>
-            Welcome, <span>{user.name.split(' ')[0] || 'VA Client'}</span>! 👋
+            Welcome, <span>{(user.name || 'VA Client').split(' ')[0]}</span>! 👋
           </h2>
           <p className={styles.dashSubtext}>
-            {user.email} • Connected to Google Calendar
+            {user.email} • {user.accessToken ? 'Connected to Google Calendar' : 'Signed in — reconnect Gmail to grant Calendar access'}
           </p>
         </div>
         <button
@@ -46,7 +46,7 @@ export default function SchedulerDashboard({
           </h3>
 
           <p className={styles.firstTimeDesc}>
-            Transform your handwritten shift rotas, classroom timetables, work rosters, or Excel spreadhseets
+            Transform your handwritten shift rotas, classroom timetables, work rosters, or Excel spreadsheets
             into clean Google Calendar events in seconds with Gemini AI.
           </p>
 

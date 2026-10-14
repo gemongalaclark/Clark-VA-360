@@ -1,7 +1,21 @@
 import { useState, useRef } from 'react';
 import { X, Upload, FileText, Image as ImageIcon, FileSpreadsheet, Sparkles, AlertCircle, Calendar, Check, Zap } from 'lucide-react';
-import { SAMPLE_SCHEDULES } from './geminiScanner';
 import styles from './GoogleCalendarAutoScheduler.module.css';
+
+function toISODateLocal(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+function getMondayISO(weekOffset = 0) {
+  const today = new Date();
+  const day = today.getDay();
+  const diffToMonday = day === 0 ? -6 : 1 - day;
+  const monday = new Date(today.getFullYear(), today.getMonth(), today.getDate() + diffToMonday + weekOffset * 7);
+  return toISODateLocal(monday);
+}
 
 export default function UploadModal({
   isOpen,
@@ -14,14 +28,7 @@ export default function UploadModal({
   const [selectedFile, setSelectedFile] = useState(null);
   const [filePreview, setFilePreview] = useState(null);
   const [isDragOver, setIsDragOver] = useState(false);
-  const [referenceDate, setReferenceDate] = useState(() => {
-    const today = new Date();
-    // Default to this week's Monday
-    const day = today.getDay();
-    const diff = today.getDate() - day + (day === 0 ? -6 : 1);
-    const monday = new Date(today.setDate(diff));
-    return monday.toISOString().split('T')[0];
-  });
+  const [referenceDate, setReferenceDate] = useState(() => getMondayISO(0));
   const [errorMessage, setErrorMessage] = useState(null);
 
   const fileInputRef = useRef(null);
@@ -86,10 +93,8 @@ export default function UploadModal({
     onAnalyzeSample(key, referenceDate);
   };
 
-  const setWeekOffset = (days) => {
-    const d = new Date();
-    d.setDate(d.getDate() + days);
-    setReferenceDate(d.toISOString().split('T')[0]);
+  const setWeekOffset = (weeks) => {
+    setReferenceDate(getMondayISO(weeks));
   };
 
   return (
@@ -202,7 +207,7 @@ export default function UploadModal({
               <button
                 type="button"
                 className={styles.quickDateBtn}
-                onClick={() => setWeekOffset(7)}
+                onClick={() => setWeekOffset(1)}
                 disabled={isScanning}
               >
                 Next Week
