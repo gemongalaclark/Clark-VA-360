@@ -54,7 +54,7 @@ const vaTools = [
   {
     id: 'meta-business',
     name: 'Meta Business Suite',
-    icon: '/images/icons/meta.png',
+    icon: '/images/icons/meta suite.png',
     type: 'img',
   },
   {
