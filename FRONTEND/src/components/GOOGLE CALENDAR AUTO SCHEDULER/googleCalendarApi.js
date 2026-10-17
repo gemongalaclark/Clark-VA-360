@@ -17,7 +17,11 @@ function toLocalDateTime(date, time) {
   return `${date}T${safeTime}:00`;
 }
 
-function buildGoogleEventPayload(evt, timeZone) {
+function buildGoogleEventPayload(evt, timeZone, reminderMinutes) {
+  const reminders = reminderMinutes != null
+    ? { useDefault: false, overrides: [{ method: 'popup', minutes: reminderMinutes }] }
+    : { useDefault: false, overrides: [] };
+
   return {
     summary: evt.title,
     description: `${evt.description || 'Auto-scheduled by Clark VA 360'}\n\nCategory: ${evt.category || 'General'}\nGenerated with Clark VA 360 Google Auto Scheduler`,
@@ -30,9 +34,7 @@ function buildGoogleEventPayload(evt, timeZone) {
       dateTime: toLocalDateTime(evt.date, evt.endTime),
       timeZone
     },
-    reminders: {
-      useDefault: true
-    }
+    reminders
   };
 }
 
@@ -42,6 +44,7 @@ function buildGoogleEventPayload(evt, timeZone) {
 export async function sendEventsToGoogleCalendar({
   accessToken,
   events,
+  reminderMinutes = null,
   isDemo = false,
   onProgress = () => {}
 }) {
@@ -59,7 +62,7 @@ export async function sendEventsToGoogleCalendar({
     const res = await fetch(`${SCHEDULER_API_BASE}/api/scheduler/send-to-calendar`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ accessToken, events, timeZone })
+      body: JSON.stringify({ accessToken, events, timeZone, reminderMinutes })
     });
     if (res.ok) {
       const data = await res.json();
@@ -83,7 +86,7 @@ export async function sendEventsToGoogleCalendar({
           Authorization: `Bearer ${accessToken}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(buildGoogleEventPayload(evt, timeZone))
+        body: JSON.stringify(buildGoogleEventPayload(evt, timeZone, reminderMinutes))
       });
 
       const data = await res.json();

@@ -113,7 +113,7 @@ export default function GoogleCalendarAutoScheduler({ onBackToPortfolio }) {
     }
   };
 
-  const handleAnalyzeFile = async (file, referenceDate) => {
+  const handleAnalyzeFile = async (file, referenceDate, reminderMinutes) => {
     try {
       setIsScanning(true);
       setErrorMessage(null);
@@ -130,7 +130,8 @@ export default function GoogleCalendarAutoScheduler({ onBackToPortfolio }) {
         sourceName: file.name,
         timestamp: new Date().toISOString(),
         modelUsed: result.modelUsed,
-        events: result.events
+        events: result.events,
+        reminderMinutes: reminderMinutes ?? null
       };
 
       setCurrentBatch(batch);
@@ -146,7 +147,7 @@ export default function GoogleCalendarAutoScheduler({ onBackToPortfolio }) {
     }
   };
 
-  const handleAnalyzeSample = async (sampleKey, referenceDate) => {
+  const handleAnalyzeSample = async (sampleKey, referenceDate, reminderMinutes) => {
     try {
       setIsScanning(true);
       setErrorMessage(null);
@@ -164,7 +165,8 @@ export default function GoogleCalendarAutoScheduler({ onBackToPortfolio }) {
         sourceName: sample.name,
         timestamp: new Date().toISOString(),
         modelUsed: result.modelUsed,
-        events: result.events
+        events: result.events,
+        reminderMinutes: reminderMinutes ?? null
       };
 
       setCurrentBatch(batch);
@@ -180,7 +182,7 @@ export default function GoogleCalendarAutoScheduler({ onBackToPortfolio }) {
     }
   };
 
-  const handleSendToGoogleCalendar = async (eventsToSync) => {
+  const handleSendToGoogleCalendar = async (eventsToSync, reminderMinutes) => {
     try {
       setIsSyncing(true);
       setSyncProgress('Uploading events to your Google Calendar...');
@@ -192,6 +194,7 @@ export default function GoogleCalendarAutoScheduler({ onBackToPortfolio }) {
       const result = await sendEventsToGoogleCalendar({
         accessToken: user.accessToken,
         events: eventsToSync,
+        reminderMinutes: reminderMinutes ?? currentBatch?.reminderMinutes ?? null,
         isDemo: false,
         onProgress: (current, total, title) => {
           setSyncProgress(`Adding event ${current} of ${total}: "${title}"`);
@@ -275,7 +278,7 @@ export default function GoogleCalendarAutoScheduler({ onBackToPortfolio }) {
             user={user}
             history={history}
             onOpenUploadModal={() => setIsUploadOpen(true)}
-            onOpenSample={(sampleKey) => handleAnalyzeSample(sampleKey, new Date().toISOString().split('T')[0])}
+            onOpenSample={(sampleKey) => handleAnalyzeSample(sampleKey, new Date().toISOString().split('T')[0], 30)}
             onViewPreviousBatch={handleViewPreviousBatch}
           />
         )}
@@ -297,6 +300,7 @@ export default function GoogleCalendarAutoScheduler({ onBackToPortfolio }) {
           events={currentBatch.events}
           sourceName={currentBatch.sourceName}
           modelUsed={currentBatch.modelUsed}
+          reminderMinutes={currentBatch.reminderMinutes}
           onSendToGoogleCalendar={handleSendToGoogleCalendar}
           isSyncing={isSyncing}
           syncProgress={syncProgress}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Calendar, CheckCircle2, Clock, MapPin, Tag, Trash2, Plus, Download, ExternalLink, ArrowLeft, Sparkles, Edit3, Save } from 'lucide-react';
+import { Calendar, CheckCircle2, Clock, MapPin, Tag, Trash2, Plus, Download, ExternalLink, ArrowLeft, Sparkles, Edit3, Save, Bell, BellOff } from 'lucide-react';
 import { downloadIcsFile } from './googleCalendarApi';
 import styles from './GoogleCalendarAutoScheduler.module.css';
 
@@ -9,6 +9,7 @@ export default function SchedulePreviewModal({
   events = [],
   sourceName = 'Uploaded Schedule',
   modelUsed = 'Gemini AI',
+  reminderMinutes = null,
   onSendToGoogleCalendar,
   isSyncing,
   syncProgress,
@@ -67,7 +68,7 @@ export default function SchedulePreviewModal({
 
   const handleGo = () => {
     if (!confirmed) return;
-    onSendToGoogleCalendar(editableEvents);
+    onSendToGoogleCalendar(editableEvents, reminderMinutes);
   };
 
   return (
@@ -81,6 +82,11 @@ export default function SchedulePreviewModal({
               </span>
               <span className={styles.eventCountBadge}>
                 {editableEvents.length} Events Detected
+              </span>
+              <span className={styles.reminderBadge}>
+                {reminderMinutes != null
+                  ? <><Bell size={13} /> Reminder: {reminderMinutes >= 1440 ? '1 day' : reminderMinutes >= 60 ? `${reminderMinutes / 60}h` : `${reminderMinutes}m`} before</>
+                  : <><BellOff size={13} /> No reminders</>}
               </span>
             </div>
             <h2 className={styles.previewTitle}>

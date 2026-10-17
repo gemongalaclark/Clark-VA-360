@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { X, Upload, FileText, Image as ImageIcon, FileSpreadsheet, Sparkles, AlertCircle, Calendar, Check, Zap } from 'lucide-react';
+import { X, Upload, FileText, Image as ImageIcon, FileSpreadsheet, Sparkles, AlertCircle, Calendar, Check, Zap, Bell, BellOff } from 'lucide-react';
 import styles from './GoogleCalendarAutoScheduler.module.css';
 
 function toISODateLocal(date) {
@@ -29,6 +29,8 @@ export default function UploadModal({
   const [filePreview, setFilePreview] = useState(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [referenceDate, setReferenceDate] = useState(() => getMondayISO(0));
+  const [reminderEnabled, setReminderEnabled] = useState(true);
+  const [reminderMinutes, setReminderMinutes] = useState(30);
   const [errorMessage, setErrorMessage] = useState(null);
 
   const fileInputRef = useRef(null);
@@ -86,11 +88,11 @@ export default function UploadModal({
       setErrorMessage('Please choose or drop a schedule file first.');
       return;
     }
-    onAnalyzeFile(selectedFile, referenceDate);
+    onAnalyzeFile(selectedFile, referenceDate, reminderEnabled ? reminderMinutes : null);
   };
 
   const handleSampleClick = (key) => {
-    onAnalyzeSample(key, referenceDate);
+    onAnalyzeSample(key, referenceDate, reminderEnabled ? reminderMinutes : null);
   };
 
   const setWeekOffset = (weeks) => {
@@ -215,6 +217,44 @@ export default function UploadModal({
             </div>
             <p className={styles.fieldHelper}>
               Gemini will assign Monday–Sunday shifts to specific calendar dates based on this week anchor.
+            </p>
+          </div>
+
+          {/* Reminder Settings */}
+          <div className={styles.referenceDateSection}>
+            <label className={styles.fieldLabel}>
+              {reminderEnabled ? <Bell size={15} /> : <BellOff size={15} />}
+              <span>Event Reminders:</span>
+            </label>
+            <div className={styles.dateControlRow}>
+              <label className={styles.reminderToggleLabel}>
+                <input
+                  type="checkbox"
+                  checked={reminderEnabled}
+                  onChange={(e) => setReminderEnabled(e.target.checked)}
+                  disabled={isScanning}
+                />
+                <span>{reminderEnabled ? 'Enabled' : 'Disabled'}</span>
+              </label>
+              {reminderEnabled && (
+                <select
+                  value={reminderMinutes}
+                  onChange={(e) => setReminderMinutes(Number(e.target.value))}
+                  className={styles.reminderSelect}
+                  disabled={isScanning}
+                >
+                  <option value={10}>10 minutes before</option>
+                  <option value={30}>30 minutes before</option>
+                  <option value={60}>1 hour before</option>
+                  <option value={120}>2 hours before</option>
+                  <option value={1440}>1 day before</option>
+                </select>
+              )}
+            </div>
+            <p className={styles.fieldHelper}>
+              {reminderEnabled
+                ? `A popup reminder will fire ${reminderMinutes >= 1440 ? '1 day' : reminderMinutes >= 60 ? `${reminderMinutes / 60} hour(s)` : `${reminderMinutes} minutes`} before each event.`
+                : 'No reminders will be added to the calendar events.'}
             </p>
           </div>
 

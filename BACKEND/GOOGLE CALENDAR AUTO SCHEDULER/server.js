@@ -252,7 +252,7 @@ app.post('/api/scheduler/analyze', upload.single('file'), async (req, res) => {
 // Endpoint to batch create events in Google Calendar via access token
 app.post('/api/scheduler/send-to-calendar', async (req, res) => {
   try {
-    const { accessToken, events, timeZone = 'Asia/Manila' } = req.body;
+    const { accessToken, events, timeZone = 'Asia/Manila', reminderMinutes = null } = req.body;
 
     if (!accessToken) {
       return res.status(401).json({
@@ -281,6 +281,10 @@ app.post('/api/scheduler/send-to-calendar', async (req, res) => {
         const startDateTime = `${evt.date}T${padTime(evt.startTime, '09:00')}:00`;
         const endDateTime = `${evt.date}T${padTime(evt.endTime, '10:00')}:00`;
 
+        const reminders = reminderMinutes != null
+          ? { useDefault: false, overrides: [{ method: 'popup', minutes: Number(reminderMinutes) }] }
+          : { useDefault: false, overrides: [] };
+
         const googleEventPayload = {
           summary: evt.title,
           description: `${evt.description || 'Auto-scheduled by Clark VA 360'}\n\nCategory: ${evt.category || 'General'}\nGenerated via Clark VA 360 Google Auto Scheduler`,
@@ -293,9 +297,7 @@ app.post('/api/scheduler/send-to-calendar', async (req, res) => {
             dateTime: endDateTime,
             timeZone
           },
-          reminders: {
-            useDefault: true
-          }
+          reminders
         };
 
         const calRes = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {

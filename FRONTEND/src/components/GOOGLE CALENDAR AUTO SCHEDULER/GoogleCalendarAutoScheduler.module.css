@@ -2017,3 +2017,58 @@
     justify-content: center;
   }
 }
+
+/* ============================================================
+   REMINDER TOGGLE
+   ============================================================ */
+
+.reminderToggleLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #1a1a2e;
+  cursor: pointer;
+  user-select: none;
+}
+
+.reminderToggleLabel input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #cb2525;
+  cursor: pointer;
+}
+
+.reminderSelect {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #ced4da;
+  font-family: inherit;
+  font-size: 0.88rem;
+  background: #ffffff;
+  color: #1a1a2e;
+  cursor: pointer;
+}
+
+.reminderSelect:focus {
+  outline: none;
+  border-color: #cb2525;
+  box-shadow: 0 0 0 3px rgba(203, 37, 37, 0.1);
+}
+
+.reminderBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  background: #fff8e1;
+  color: #b07d00;
+  border: 1px solid rgba(176, 125, 0, 0.25);
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
