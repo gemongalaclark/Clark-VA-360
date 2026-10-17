@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import LandingPage from './pages/LandingPage';
 import AuthPage from './pages/AuthPage';
@@ -14,6 +14,10 @@ export default function TeamSyncWorkspace({ onBackToPortfolio }) {
   const [profile, setProfile] = useState(null);
   const [currentRoom, setCurrentRoom] = useState(null);
   const [userRole, setUserRole] = useState(null);
+  const pageRef = useRef('loading');
+
+  /* Keep ref in sync so auth listener always sees current page */
+  useEffect(() => { pageRef.current = page; }, [page]);
 
   useEffect(() => {
     if (!supabase) { setPage('landing'); return; }
@@ -28,6 +32,8 @@ export default function TeamSyncWorkspace({ onBackToPortfolio }) {
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      /* Never interrupt an in-progress OTP auth flow */
+      if (pageRef.current === 'auth') return;
       setSession(session);
       if (session) {
         loadUserData(session.user);
