@@ -69,8 +69,8 @@ export default function TeamSyncWorkspace({ onBackToPortfolio }) {
       if (active) {
         setCurrentRoom(active.rooms);
         setUserRole(active.role);
-        /* Avoid resetting page if already on dashboard — prevents visible refresh flicker */
-        if (pageRef.current !== 'dashboard') setPage('dashboard');
+        /* Don't redirect if user intentionally navigated to room-select or is already on dashboard */
+        if (!['dashboard', 'room-select'].includes(pageRef.current)) setPage('dashboard');
       } else if (pending) {
         setCurrentRoom(pending.rooms);
         if (pageRef.current !== 'waiting') setPage('waiting');
@@ -130,14 +130,23 @@ export default function TeamSyncWorkspace({ onBackToPortfolio }) {
     setPage(role === 'pending' ? 'waiting' : 'dashboard');
   };
 
-  const handleLeaveRoom = async () => {
-    if (!session || !currentRoom) return;
+  /* Navigate to room-select without deleting membership (user can re-enter from their rooms list) */
+  const handleSwitchRoom = () => {
+    setPage('room-select');
+  };
+
+  /* Truly leave a room — deletes the membership row */
+  const handleLeaveRoom = async (roomId) => {
+    const targetRoom = roomId ?? currentRoom?.id;
+    if (!session || !targetRoom) return;
     await supabase.from('room_members')
       .delete()
       .eq('user_id', session.user.id)
-      .eq('room_id', currentRoom.id);
-    setCurrentRoom(null);
-    setUserRole(null);
+      .eq('room_id', targetRoom);
+    if (!roomId || roomId === currentRoom?.id) {
+      setCurrentRoom(null);
+      setUserRole(null);
+    }
     setPage('room-select');
   };
 
@@ -175,7 +184,9 @@ export default function TeamSyncWorkspace({ onBackToPortfolio }) {
     return (
       <RoomSelectionPage
         profile={profile}
+        session={session}
         onRoomJoined={handleRoomJoined}
+        onLeaveRoom={handleLeaveRoom}
         onSignOut={handleSignOut}
       />
     );
@@ -193,6 +204,7 @@ export default function TeamSyncWorkspace({ onBackToPortfolio }) {
         role={userRole}
         session={session}
         onSignOut={handleSignOut}
+        onSwitchRoom={handleSwitchRoom}
         onLeaveRoom={handleLeaveRoom}
       />
     );

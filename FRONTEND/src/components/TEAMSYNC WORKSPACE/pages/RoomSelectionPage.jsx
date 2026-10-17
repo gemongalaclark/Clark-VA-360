@@ -1,9 +1,9 @@
-import { useState } from 'react';
-import { Plus, Hash, ArrowRight, Copy, Check, Loader, X, LogOut } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Plus, Hash, ArrowRight, Copy, Check, Loader, X, LogOut, LogIn } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import styles from './RoomSelectionPage.module.css';
 
-export default function RoomSelectionPage({ profile, onRoomJoined, onSignOut }) {
+export default function RoomSelectionPage({ profile, session, onRoomJoined, onLeaveRoom, onSignOut }) {
   const [mode, setMode] = useState(null); // null | 'create' | 'join'
   const [roomName, setRoomName] = useState('');
   const [roomCode, setRoomCode] = useState('');
@@ -11,6 +11,25 @@ export default function RoomSelectionPage({ profile, onRoomJoined, onSignOut }) 
   const [error, setError] = useState('');
   const [createdRoom, setCreatedRoom] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [myRooms, setMyRooms] = useState([]);
+  const [leavingId, setLeavingId] = useState(null);
+
+  useEffect(() => {
+    if (!profile || !supabase) return;
+    supabase
+      .from('room_members')
+      .select('role, joined_at, rooms(id, name, room_code)')
+      .eq('user_id', profile.id)
+      .order('joined_at', { ascending: false })
+      .then(({ data }) => setMyRooms(data ?? []));
+  }, [profile]);
+
+  const handleLeaveThisRoom = async (roomId) => {
+    setLeavingId(roomId);
+    await onLeaveRoom(roomId);
+    setMyRooms(prev => prev.filter(m => m.rooms?.id !== roomId));
+    setLeavingId(null);
+  };
 
   const fullName = profile ? `${profile.first_name} ${profile.last_name}` : 'there';
   const initials = profile ? `${profile.first_name[0]}${profile.last_name[0]}`.toUpperCase() : 'U';
@@ -131,6 +150,58 @@ export default function RoomSelectionPage({ profile, onRoomJoined, onSignOut }) 
                 <span className={styles.optionTagSecondary}>Employee</span>
               </button>
             </div>
+
+            {/* Your Rooms */}
+            {myRooms.length > 0 && (
+              <div className={styles.yourRooms}>
+                <h3 className={styles.yourRoomsTitle}>Your Rooms</h3>
+                <div className={styles.roomList}>
+                  {myRooms.map((m, i) => {
+                    const room = m.rooms;
+                    if (!room) return null;
+                    const isPending = m.role === 'pending';
+                    return (
+                      <div key={i} className={styles.roomListItem}>
+                        <div className={styles.roomListLeft}>
+                          <div className={styles.roomListAvatar}>
+                            {room.name.slice(0, 2).toUpperCase()}
+                          </div>
+                          <div className={styles.roomListInfo}>
+                            <span className={styles.roomListName}>{room.name}</span>
+                            <span className={styles.roomListCode}>#{room.room_code}</span>
+                          </div>
+                        </div>
+                        <div className={styles.roomListRight}>
+                          <span className={
+                            m.role === 'owner' ? styles.roleOwner
+                            : m.role === 'employee' ? styles.roleEmployee
+                            : styles.rolePending
+                          }>
+                            {m.role === 'owner' ? '⭐ Owner' : m.role === 'employee' ? '👤 Employee' : '⏳ Pending'}
+                          </span>
+                          <button
+                            className={styles.enterBtn}
+                            onClick={() => onRoomJoined(room, m.role)}
+                            title="Enter room"
+                          >
+                            <LogIn size={14} />
+                            {isPending ? 'Check Status' : 'Enter'}
+                          </button>
+                          <button
+                            className={styles.roomLeaveBtn}
+                            onClick={() => handleLeaveThisRoom(room.id)}
+                            disabled={leavingId === room.id}
+                            title="Leave room"
+                          >
+                            {leavingId === room.id ? <Loader size={13} className={styles.spin} /> : <X size={13} />}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           /* Create / Join form */

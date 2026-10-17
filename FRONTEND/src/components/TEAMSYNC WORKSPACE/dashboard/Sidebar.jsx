@@ -12,7 +12,7 @@ const employeeNav = [
   { id: 'tasks',     label: 'My Tasks',  icon: <ListTodo size={18} /> },
 ];
 
-export default function Sidebar({ role, currentTab, setTab, room, profile, onSignOut, onLeaveRoom, collapsed, setCollapsed }) {
+export default function Sidebar({ role, currentTab, setTab, room, profile, onSignOut, onSwitchRoom, onLeaveRoom, collapsed, setCollapsed }) {
   const nav = role === 'owner' ? ownerNav : employeeNav;
   const initials = profile ? `${profile.first_name[0]}${profile.last_name[0]}`.toUpperCase() : 'U';
   const fullName = profile ? `${profile.first_name} ${profile.last_name}` : 'User';
@@ -65,8 +65,8 @@ export default function Sidebar({ role, currentTab, setTab, room, profile, onSig
         <div className={styles.collapsedActions}>
           <button
             className={styles.collapsedActionBtn}
-            onClick={onLeaveRoom}
-            title={role === 'owner' ? 'Switch Room' : 'Leave Room'}
+            onClick={onSwitchRoom}
+            title="Switch Room"
           >
             <ArrowLeft size={16} />
           </button>
@@ -81,11 +81,8 @@ export default function Sidebar({ role, currentTab, setTab, room, profile, onSig
             <span className={styles.roomCardCode}>{room.room_code}</span>
           </div>
           <p className={styles.roomCardName}>{room.name}</p>
-          <button
-            className={role === 'owner' ? styles.switchRoomBtn : styles.leaveBtn}
-            onClick={onLeaveRoom}
-          >
-            {role === 'owner' ? '← Switch Room' : 'Leave Room'}
+          <button className={styles.switchRoomBtn} onClick={onSwitchRoom}>
+            ← Switch Room
           </button>
         </div>
       )}

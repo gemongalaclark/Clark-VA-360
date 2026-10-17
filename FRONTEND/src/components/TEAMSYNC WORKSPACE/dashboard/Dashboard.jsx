@@ -8,7 +8,7 @@ import EmpOverviewPage from './employee/EmpOverviewPage';
 import TaskPage from './employee/TaskPage';
 import styles from './Dashboard.module.css';
 
-export default function Dashboard({ profile, room, role, session, onSignOut, onLeaveRoom }) {
+export default function Dashboard({ profile, room, role, session, onSignOut, onSwitchRoom, onLeaveRoom }) {
   const [currentTab, setCurrentTab] = useState('overview');
   const [collapsed, setCollapsed] = useState(false);
 
@@ -34,6 +34,7 @@ export default function Dashboard({ profile, room, role, session, onSignOut, onL
         room={room}
         profile={profile}
         onSignOut={onSignOut}
+        onSwitchRoom={onSwitchRoom}
         onLeaveRoom={onLeaveRoom}
         collapsed={collapsed}
         setCollapsed={setCollapsed}
