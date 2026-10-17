@@ -36,7 +36,11 @@ export default function AuthPage({ mode, setMode, onSuccess, onBack }) {
       options: { shouldCreateUser: true },
     });
     setLoading(false);
-    if (otpError) { setError(otpError.message); return; }
+    if (otpError) {
+      const msg = otpError.message && otpError.message !== '{}' ? otpError.message : null;
+      setError(msg || 'Failed to send verification code. Make sure your email is correct and try again.');
+      return;
+    }
     setStep('verify');
     startCooldown();
   };
