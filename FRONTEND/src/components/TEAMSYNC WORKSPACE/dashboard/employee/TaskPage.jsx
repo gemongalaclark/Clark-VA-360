@@ -94,30 +94,33 @@ export default function TaskPage({ room, profile }) {
   return (
     <div className={styles.page}>
       {/* Header */}
-      <div className={styles.card}>
-        <div className={styles.taskPageHeader}>
-          <div>
-            <h2 className={styles.taskPageTitle}>My Tasks</h2>
-            <p style={{ fontSize: '0.82rem', color: '#6c757d', marginTop: 2 }}>
-              Submit tasks to <strong>{room.name}</strong> for owner review.
-            </p>
-          </div>
-          <button className={styles.addTaskBtn} onClick={() => setShowModal(true)}>
-            <Plus size={16} /> Submit New Task
-          </button>
+      <div className={styles.pageHeader}>
+        <div>
+          <p className={styles.pageTitle}>My Tasks</p>
+          <p className={styles.pageSubtitle}>
+            Submit completed work to <strong>{room.name}</strong> for owner review.
+          </p>
         </div>
+        <button className={styles.addTaskBtn} onClick={() => setShowModal(true)}>
+          <Plus size={16} /> Submit New Task
+        </button>
       </div>
 
       {/* Filter tabs */}
       <div className={styles.filterRow}>
-        {['all', 'pending', 'approved', 'rejected'].map(f => (
+        {[
+          { key: 'all',      label: 'All',      activeClass: styles.filterActive },
+          { key: 'pending',  label: 'Pending',  activeClass: styles.filterPendingActive },
+          { key: 'approved', label: 'Approved', activeClass: styles.filterApprovedActive },
+          { key: 'rejected', label: 'Rejected', activeClass: styles.filterRejectedActive },
+        ].map(({ key, label, activeClass }) => (
           <button
-            key={f}
-            className={`${styles.filterTab} ${filter === f ? styles.filterActive : ''}`}
-            onClick={() => setFilter(f)}
+            key={key}
+            className={`${styles.filterTab} ${filter === key ? activeClass : ''}`}
+            onClick={() => setFilter(key)}
           >
-            {f.charAt(0).toUpperCase() + f.slice(1)}
-            <span className={styles.filterCount}>{counts[f]}</span>
+            {label}
+            <span className={styles.filterCount}>{counts[key]}</span>
           </button>
         ))}
       </div>
@@ -126,9 +129,23 @@ export default function TaskPage({ room, profile }) {
       <div className={styles.card}>
         {filtered.length === 0 ? (
           <div className={styles.emptyState}>
-            {filter === 'all'
-              ? 'You haven\'t submitted any tasks yet. Click "Submit New Task" to start!'
-              : `No ${filter} tasks yet.`}
+            {filter === 'all' ? (
+              <>
+                <span className={styles.emptyIcon}>✍️</span>
+                <span className={styles.emptyText}>No tasks submitted yet</span>
+                <span className={styles.emptySubtext}>Click "Submit New Task" above to log your first task</span>
+              </>
+            ) : filter === 'pending' ? (
+              <>
+                <span className={styles.emptyIcon}>🎉</span>
+                <span className={styles.emptyText}>No tasks pending review</span>
+              </>
+            ) : (
+              <>
+                <span className={styles.emptyIcon}>{filter === 'approved' ? '✅' : '❌'}</span>
+                <span className={styles.emptyText}>No {filter} tasks yet</span>
+              </>
+            )}
           </div>
         ) : (
           <div className={styles.myTaskList}>

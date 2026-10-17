@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ClipboardCheck, CheckCircle, XCircle, Clock, TrendingUp } from 'lucide-react';
+import { ClipboardCheck, CheckCircle, XCircle, Clock, TrendingUp, Hash } from 'lucide-react';
 import { supabase } from '../../../../lib/supabase';
 import styles from '../SharedPages.module.css';
 
@@ -108,12 +108,30 @@ export default function EmpOverviewPage({ room, profile }) {
 
   if (loading) return <div className={styles.loading}><div className={styles.spinner} /></div>;
 
+  const approvalRate = stats.submitted > 0 ? Math.round((stats.approved / stats.submitted) * 100) : null;
+
   return (
     <div className={styles.page}>
+      {/* Welcome header */}
+      <div className={styles.pageHeader}>
+        <div>
+          <p className={styles.pageTitle}>Welcome back, {profile?.first_name} 👋</p>
+          <p className={styles.pageSubtitle}>
+            Here's a summary of your work in <strong>{room?.name}</strong>.
+          </p>
+        </div>
+        {approvalRate !== null && (
+          <div className={styles.pageHeaderBadge}>
+            <TrendingUp size={14} />
+            {approvalRate}% approval rate
+          </div>
+        )}
+      </div>
+
       {/* Stat cards */}
       <div className={styles.statGrid}>
         {statCards.map((s, i) => (
-          <div key={i} className={styles.statCard}>
+          <div key={i} className={styles.statCard} style={{ borderTop: `3px solid ${s.color}` }}>
             <div className={styles.statCardTop}>
               <div>
                 <p className={styles.statLabel}>{s.label}</p>
@@ -123,10 +141,17 @@ export default function EmpOverviewPage({ room, profile }) {
                 {s.icon}
               </div>
             </div>
-            {stats.submitted > 0 && s.label === 'Approved' && (
+            {s.label === 'Approved' && stats.submitted > 0 && (
               <div className={styles.statChange}>
-                <TrendingUp size={12} className={styles.positive} />
-                <span className={styles.positive}>{Math.round((stats.approved / stats.submitted) * 100)}% approval rate</span>
+                <TrendingUp size={12} />
+                <span className={styles.positive}>{approvalRate}% approval rate</span>
+              </div>
+            )}
+            {s.label !== 'Approved' && (
+              <div className={styles.statBottom}>
+                <span style={{ fontSize: '0.72rem', color: '#ced4da' }}>
+                  {s.label === 'Total Submitted' ? 'All time' : s.label === 'Pending Review' ? 'Awaiting review' : 'Reviewed'}
+                </span>
               </div>
             )}
           </div>
@@ -144,13 +169,30 @@ export default function EmpOverviewPage({ room, profile }) {
 
         {/* Room info panel */}
         <div className={`${styles.card} ${styles.roomStatsCard}`}>
-          <h3 className={styles.cardTitle} style={{ color: '#fff' }}>Your Room</h3>
-          <div className={styles.bigPercent} style={{ fontSize: '2rem', marginTop: 12 }}>
-            {room.name}
+          <p className={styles.cardTitle} style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Your Room</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '14px 0 6px' }}>
+            <div style={{
+              width: 42, height: 42, borderRadius: 12, flexShrink: 0,
+              background: 'rgba(203,37,37,0.25)', border: '1px solid rgba(203,37,37,0.3)',
+              color: '#f08080', fontFamily: 'Poppins', fontSize: '0.8rem', fontWeight: 800,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              {room.name.slice(0, 2).toUpperCase()}
+            </div>
+            <div>
+              <p style={{ fontFamily: 'Poppins', fontWeight: 800, color: '#fff', fontSize: '1rem', marginBottom: 2 }}>{room.name}</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'rgba(255,255,255,0.35)' }}>
+                <Hash size={11} />
+                <span style={{ fontFamily: 'Poppins', fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em' }}>{room.room_code}</span>
+              </div>
+            </div>
           </div>
-          <p className={styles.bigPercentLabel} style={{ fontFamily: 'Poppins', letterSpacing: '0.1em', marginBottom: 28 }}>
-            {room.room_code}
-          </p>
+          <div className={styles.progressBar} style={{ margin: '16px 0' }}>
+            <div
+              className={styles.progressFill}
+              style={{ width: `${stats.submitted > 0 ? (stats.approved / stats.submitted) * 100 : 0}%` }}
+            />
+          </div>
           <div className={styles.roomStatRow}>
             <div className={styles.roomStat}>
               <strong>{stats.approved}</strong>
@@ -171,11 +213,17 @@ export default function EmpOverviewPage({ room, profile }) {
       </div>
 
       {/* Recent tasks */}
-      {recentTasks.length > 0 && (
-        <div className={styles.card}>
-          <div className={styles.cardHeader}>
-            <h3 className={styles.cardTitle}>Recent Tasks</h3>
+      <div className={styles.card}>
+        <div className={styles.cardHeader}>
+          <h3 className={styles.cardTitle}>Recent Tasks</h3>
+        </div>
+        {recentTasks.length === 0 ? (
+          <div className={styles.emptyState}>
+            <span className={styles.emptyIcon}>📋</span>
+            <span className={styles.emptyText}>No tasks yet</span>
+            <span className={styles.emptySubtext}>Go to "My Tasks" to submit your first task</span>
           </div>
+        ) : (
           <div className={styles.taskList}>
             {recentTasks.map(task => {
               const sc = STATUS_COLORS[task.status];
@@ -195,8 +243,8 @@ export default function EmpOverviewPage({ room, profile }) {
               );
             })}
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

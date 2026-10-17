@@ -1,28 +1,35 @@
+/* ── Sidebar shell ───────────────────────────────────────── */
 .sidebar {
   width: 260px;
-  min-height: 100vh;
-  background: #1a1a2e;
+  height: 100vh;
+  background: #13132a;
   display: flex;
   flex-direction: column;
-  padding: 0;
   flex-shrink: 0;
   transition: width 0.25s ease;
-  position: relative;
-  z-index: 10;
+  position: sticky;
+  top: 0;
+  overflow: hidden;
 }
 
-.sidebar.collapsed {
-  width: 72px;
+.sidebar.collapsed { width: 72px; }
+
+/* ── Header ─────────────────────────────────────────────── */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 14px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  gap: 8px;
 }
 
-/* Logo area */
 .logoArea {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 20px 18px 16px;
-  border-bottom: 1px solid rgba(255,255,255,0.07);
-  position: relative;
+  min-width: 0;
+  flex: 1;
 }
 
 .logoMark {
@@ -33,182 +40,226 @@
   font-family: 'Poppins', sans-serif;
   font-size: 0.8rem; font-weight: 800;
   display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 12px rgba(203,37,37,0.35);
 }
 
 .logoText {
-  display: flex; flex-direction: column; gap: 0;
-  overflow: hidden; flex: 1;
+  display: flex; flex-direction: column; gap: 1px;
+  overflow: hidden;
 }
 
 .logoName {
   font-family: 'Poppins', sans-serif;
-  font-size: 0.88rem; font-weight: 800;
+  font-size: 0.9rem; font-weight: 800;
   color: #fff; white-space: nowrap;
 }
 
 .logoSub {
-  font-size: 0.65rem; font-weight: 500;
-  color: rgba(255,255,255,0.45);
+  font-size: 0.62rem; font-weight: 500;
+  color: rgba(255,255,255,0.35);
   white-space: nowrap;
 }
 
 .collapseBtn {
-  position: absolute; right: -12px; top: 50%;
-  transform: translateY(-50%);
-  width: 24px; height: 24px; border-radius: 50%;
-  background: #2d2d5e; border: 2px solid #1a1a2e;
-  color: rgba(255,255,255,0.6);
+  width: 26px; height: 26px; border-radius: 8px; flex-shrink: 0;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.4);
   display: flex; align-items: center; justify-content: center;
   cursor: pointer; transition: all 0.2s;
-  z-index: 5;
 }
-.collapseBtn:hover { background: #cb2525; color: #fff; }
+.collapseBtn:hover { background: rgba(203,37,37,0.25); color: #fff; border-color: rgba(203,37,37,0.3); }
 
-/* Role badge */
-.roleBadge {
-  padding: 10px 18px 0;
+/* ── Role strip ─────────────────────────────────────────── */
+.roleStrip {
+  padding: 12px 14px 6px;
 }
 
-.ownerBadge, .employeeBadge {
-  font-size: 0.7rem; font-weight: 600;
+.ownerTag {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 0.68rem; font-weight: 700;
   padding: 4px 10px; border-radius: 9999px;
-  display: inline-block;
+  background: rgba(203,37,37,0.15);
+  border: 1px solid rgba(203,37,37,0.25);
+  color: #f08080;
 }
-.ownerBadge { background: rgba(203,37,37,0.2); color: #da7979; }
-.employeeBadge { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.6); }
 
-/* Nav */
+.employeeTag {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 0.68rem; font-weight: 700;
+  padding: 4px 10px; border-radius: 9999px;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.55);
+}
+
+/* ── Navigation section ─────────────────────────────────── */
+.navSection {
+  padding: 14px 10px 0;
+}
+
+.sectionLabel {
+  font-size: 0.62rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.1em;
+  color: rgba(255,255,255,0.22);
+  padding: 0 8px;
+  margin-bottom: 6px;
+}
+
 .nav {
-  padding: 16px 10px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 }
 
 .navItem {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 11px 12px;
-  border-radius: 12px;
+  gap: 11px;
+  padding: 10px 12px;
+  border-radius: 10px;
   border: none;
   background: transparent;
-  color: rgba(255,255,255,0.55);
+  color: rgba(255,255,255,0.45);
   font-family: 'Inter', sans-serif;
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.18s;
   text-align: left;
   position: relative;
   white-space: nowrap;
+  width: 100%;
 }
 
 .navItem:hover {
-  background: rgba(255,255,255,0.07);
-  color: rgba(255,255,255,0.85);
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.8);
 }
 
 .navActive {
-  background: #fff !important;
-  color: #cb2525 !important;
+  background: rgba(255,255,255,0.1) !important;
+  color: #fff !important;
   font-weight: 600;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.2);
 }
 
-.navIcon { flex-shrink: 0; display: flex; align-items: center; }
+/* Red left accent on active item */
+.navActive::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 20%; bottom: 20%;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: #cb2525;
+}
+
+.navIcon {
+  flex-shrink: 0;
+  display: flex; align-items: center;
+  color: inherit;
+}
+
 .navLabel { flex: 1; }
 
-.navActiveDot {
-  width: 6px; height: 6px; border-radius: 50%;
-  background: #cb2525;
-  flex-shrink: 0;
-}
+/* ── Spacer ─────────────────────────────────────────────── */
+.spacer { flex: 1; min-height: 16px; }
 
-.spacer { flex: 1; }
-
-/* Room card */
-.roomCard {
-  margin: 0 10px 12px;
-  background: rgba(255,255,255,0.06);
-  border-radius: 14px;
-  padding: 14px;
-  border: 1px solid rgba(255,255,255,0.08);
-}
-
-.roomCardTop {
-  display: flex; align-items: center; gap: 6px;
-  margin-bottom: 6px;
-  color: rgba(255,255,255,0.4);
-}
-
-.roomCardCode {
-  font-family: 'Poppins', sans-serif;
-  font-size: 0.75rem; font-weight: 700;
-  color: #da7979;
-  letter-spacing: 0.08em;
-}
-
-.roomCardName {
-  font-size: 0.8rem; font-weight: 600;
-  color: rgba(255,255,255,0.75);
-  margin-bottom: 10px;
-  line-height: 1.4;
-}
-
-.leaveBtn {
-  width: 100%;
-  padding: 6px;
-  background: rgba(203,37,37,0.15);
-  color: #da7979;
-  border: 1px solid rgba(203,37,37,0.2);
-  border-radius: 8px;
-  font-size: 0.72rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.leaveBtn:hover { background: rgba(203,37,37,0.3); color: #fff; }
-
-.switchRoomBtn {
-  width: 100%;
-  padding: 6px;
-  background: rgba(255,255,255,0.06);
-  color: rgba(255,255,255,0.5);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 8px;
-  font-size: 0.72rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.switchRoomBtn:hover { background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.85); }
-
-/* Collapsed-mode action buttons */
+/* ── Collapsed action buttons ───────────────────────────── */
 .collapsedActions {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 0 10px 10px;
+  padding: 0 10px 12px;
   gap: 6px;
 }
 .collapsedActionBtn {
   width: 42px; height: 42px; border-radius: 12px;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.1);
-  color: rgba(255,255,255,0.45);
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.4);
   display: flex; align-items: center; justify-content: center;
   cursor: pointer; transition: all 0.2s;
 }
-.collapsedActionBtn:hover { background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.85); }
+.collapsedActionBtn:hover { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.85); }
 
-/* User area */
+/* ── Room section ───────────────────────────────────────── */
+.roomSection {
+  padding: 0 10px 10px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  padding-top: 14px;
+  margin-top: 4px;
+}
+
+.roomCard {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.roomCardRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.roomCardAvatar {
+  width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0;
+  background: rgba(203,37,37,0.2);
+  border: 1px solid rgba(203,37,37,0.25);
+  color: #f08080;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.7rem; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.roomCardInfo { flex: 1; min-width: 0; }
+
+.roomCardName {
+  font-size: 0.82rem; font-weight: 600;
+  color: rgba(255,255,255,0.8);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  margin-bottom: 2px;
+}
+
+.roomCardCodeRow {
+  display: flex; align-items: center; gap: 3px;
+  color: rgba(255,255,255,0.3);
+}
+
+.roomCardCode {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.68rem; font-weight: 700;
+  color: rgba(255,255,255,0.35);
+  letter-spacing: 0.08em;
+}
+
+.switchRoomBtn {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  width: 100%; padding: 7px;
+  background: rgba(255,255,255,0.05);
+  color: rgba(255,255,255,0.4);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  font-size: 0.72rem; font-weight: 600;
+  cursor: pointer; transition: all 0.2s;
+}
+.switchRoomBtn:hover {
+  background: rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.8);
+  border-color: rgba(255,255,255,0.15);
+}
+
+/* ── User area ──────────────────────────────────────────── */
 .userArea {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 14px 14px 20px;
-  border-top: 1px solid rgba(255,255,255,0.07);
+  padding: 12px 14px 16px;
+  border-top: 1px solid rgba(255,255,255,0.06);
 }
 
 .avatar {
@@ -223,6 +274,7 @@
 .userInfo {
   display: flex; flex-direction: column;
   overflow: hidden; flex: 1;
+  gap: 1px;
 }
 
 .userName {
@@ -231,21 +283,21 @@
 }
 
 .userEmail {
-  font-size: 0.68rem; color: rgba(255,255,255,0.4);
+  font-size: 0.65rem; color: rgba(255,255,255,0.3);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
 .signOutBtn {
   width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0;
-  background: rgba(255,255,255,0.07);
-  border: 1px solid rgba(255,255,255,0.1);
-  color: rgba(255,255,255,0.5);
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.35);
   display: flex; align-items: center; justify-content: center;
   cursor: pointer; transition: all 0.2s;
 }
-.signOutBtn:hover { background: rgba(203,37,37,0.3); color: #fff; border-color: rgba(203,37,37,0.4); }
+.signOutBtn:hover { background: rgba(203,37,37,0.25); color: #fff; border-color: rgba(203,37,37,0.3); }
 
-/* Mobile hidden */
+/* ── Mobile: hide sidebar ───────────────────────────────── */
 @media (max-width: 768px) {
   .sidebar { display: none; }
 }
