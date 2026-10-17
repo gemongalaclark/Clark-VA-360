@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Users, ClipboardCheck, CheckCircle, Clock, TrendingUp, MoreVertical } from 'lucide-react';
+import { Users, ClipboardCheck, CheckCircle, Clock, TrendingUp, Activity } from 'lucide-react';
 import { supabase } from '../../../../lib/supabase';
 import styles from '../SharedPages.module.css';
 
@@ -133,12 +133,32 @@ export default function OverviewPage({ room, profile }) {
 
   if (loading) return <div className={styles.loading}><div className={styles.spinner} /></div>;
 
+  const approvalRate = stats.submitted > 0 ? Math.round((stats.approved / stats.submitted) * 100) : null;
+
   return (
     <div className={styles.page}>
+      {/* Welcome header */}
+      <div className={styles.pageHeader}>
+        <div>
+          <p className={styles.pageTitle}>
+            Welcome back, {profile?.first_name} 👋
+          </p>
+          <p className={styles.pageSubtitle}>
+            Here's what's happening in <strong>{room?.name}</strong> today.
+          </p>
+        </div>
+        {approvalRate !== null && (
+          <div className={styles.pageHeaderBadge}>
+            <Activity size={14} />
+            {approvalRate}% approval rate
+          </div>
+        )}
+      </div>
+
       {/* Stat Cards */}
       <div className={styles.statGrid}>
         {statCards.map((s, i) => (
-          <div key={i} className={styles.statCard}>
+          <div key={i} className={styles.statCard} style={{ borderTop: `3px solid ${s.color}` }}>
             <div className={styles.statCardTop}>
               <div>
                 <p className={styles.statLabel}>{s.label}</p>
@@ -153,7 +173,13 @@ export default function OverviewPage({ room, profile }) {
                 <TrendingUp size={12} /> {s.change} approval rate
               </div>
             )}
-            {!s.change && <div className={styles.statBottom}><span className={styles.viewLink}>View More</span></div>}
+            {!s.change && (
+              <div className={styles.statBottom}>
+                <span style={{ fontSize: '0.72rem', color: '#ced4da' }}>
+                  {s.label === 'Employees' ? 'Active members' : s.label === 'Tasks Submitted' ? 'All time' : 'Awaiting review'}
+                </span>
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -165,7 +191,11 @@ export default function OverviewPage({ room, profile }) {
             <h3 className={styles.cardTitle}>Top Employees</h3>
           </div>
           {employees.length === 0 ? (
-            <div className={styles.emptyState}>No employee data yet</div>
+            <div className={styles.emptyState}>
+              <span className={styles.emptyIcon}>👥</span>
+              <span className={styles.emptyText}>No employee activity yet</span>
+              <span className={styles.emptySubtext}>Employees will appear here once they submit tasks</span>
+            </div>
           ) : (
             <div className={styles.employeeTable}>
               {employees.map((emp, i) => (

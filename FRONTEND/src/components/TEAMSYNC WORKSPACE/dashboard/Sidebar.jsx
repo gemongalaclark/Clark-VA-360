@@ -1,4 +1,4 @@
-import { LayoutDashboard, ClipboardCheck, Users, ListTodo, Hash, LogOut, ChevronLeft, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, ClipboardCheck, Users, ListTodo, Hash, LogOut, ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react';
 import styles from './Sidebar.module.css';
 
 const ownerNav = [
@@ -60,7 +60,20 @@ export default function Sidebar({ role, currentTab, setTab, room, profile, onSig
 
       <div className={styles.spacer} />
 
-      {/* Room info card */}
+      {/* Collapsed: switch room icon button */}
+      {collapsed && (
+        <div className={styles.collapsedActions}>
+          <button
+            className={styles.collapsedActionBtn}
+            onClick={onLeaveRoom}
+            title={role === 'owner' ? 'Switch Room' : 'Leave Room'}
+          >
+            <ArrowLeft size={16} />
+          </button>
+        </div>
+      )}
+
+      {/* Room info card (expanded) */}
       {!collapsed && room && (
         <div className={styles.roomCard}>
           <div className={styles.roomCardTop}>
@@ -68,9 +81,12 @@ export default function Sidebar({ role, currentTab, setTab, room, profile, onSig
             <span className={styles.roomCardCode}>{room.room_code}</span>
           </div>
           <p className={styles.roomCardName}>{room.name}</p>
-          {role === 'employee' && (
-            <button className={styles.leaveBtn} onClick={onLeaveRoom}>Leave Room</button>
-          )}
+          <button
+            className={role === 'owner' ? styles.switchRoomBtn : styles.leaveBtn}
+            onClick={onLeaveRoom}
+          >
+            {role === 'owner' ? '← Switch Room' : 'Leave Room'}
+          </button>
         </div>
       )}
 

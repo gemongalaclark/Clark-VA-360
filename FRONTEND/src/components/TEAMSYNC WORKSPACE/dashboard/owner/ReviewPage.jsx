@@ -70,14 +70,19 @@ export default function ReviewPage({ room, profile }) {
     <div className={styles.page}>
       {/* Filter tabs */}
       <div className={styles.filterRow}>
-        {['all', 'pending', 'approved', 'rejected'].map(f => (
+        {[
+          { key: 'all',      label: 'All',      activeClass: styles.filterActive },
+          { key: 'pending',  label: 'Pending',  activeClass: styles.filterPendingActive },
+          { key: 'approved', label: 'Approved', activeClass: styles.filterApprovedActive },
+          { key: 'rejected', label: 'Rejected', activeClass: styles.filterRejectedActive },
+        ].map(({ key, label, activeClass }) => (
           <button
-            key={f}
-            className={`${styles.filterTab} ${filter === f ? styles.filterActive : ''}`}
-            onClick={() => setFilter(f)}
+            key={key}
+            className={`${styles.filterTab} ${filter === key ? activeClass : ''}`}
+            onClick={() => setFilter(key)}
           >
-            {f.charAt(0).toUpperCase() + f.slice(1)}
-            <span className={styles.filterCount}>{counts[f]}</span>
+            {label}
+            <span className={styles.filterCount}>{counts[key]}</span>
           </button>
         ))}
       </div>
@@ -86,7 +91,24 @@ export default function ReviewPage({ room, profile }) {
       <div className={styles.card}>
         {filtered.length === 0 ? (
           <div className={styles.emptyState}>
-            {filter === 'pending' ? 'No tasks pending review 🎉' : `No ${filter} tasks yet`}
+            {filter === 'pending' ? (
+              <>
+                <span className={styles.emptyIcon}>🎉</span>
+                <span className={styles.emptyText}>All caught up!</span>
+                <span className={styles.emptySubtext}>No tasks are waiting for review</span>
+              </>
+            ) : filter === 'all' ? (
+              <>
+                <span className={styles.emptyIcon}>📋</span>
+                <span className={styles.emptyText}>No tasks submitted yet</span>
+                <span className={styles.emptySubtext}>Tasks from employees will appear here</span>
+              </>
+            ) : (
+              <>
+                <span className={styles.emptyIcon}>{filter === 'approved' ? '✅' : '❌'}</span>
+                <span className={styles.emptyText}>No {filter} tasks yet</span>
+              </>
+            )}
           </div>
         ) : (
           <div className={styles.taskList}>

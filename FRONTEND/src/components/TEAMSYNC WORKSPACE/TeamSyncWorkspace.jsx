@@ -34,6 +34,8 @@ export default function TeamSyncWorkspace({ onBackToPortfolio }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       /* Never interrupt an in-progress OTP auth flow */
       if (pageRef.current === 'auth') return;
+      /* Token refresh just updates session silently — no reload needed */
+      if (event === 'TOKEN_REFRESHED') { setSession(session); return; }
       setSession(session);
       if (session) {
         loadUserData(session.user);
@@ -67,10 +69,11 @@ export default function TeamSyncWorkspace({ onBackToPortfolio }) {
       if (active) {
         setCurrentRoom(active.rooms);
         setUserRole(active.role);
-        setPage('dashboard');
+        /* Avoid resetting page if already on dashboard — prevents visible refresh flicker */
+        if (pageRef.current !== 'dashboard') setPage('dashboard');
       } else if (pending) {
         setCurrentRoom(pending.rooms);
-        setPage('waiting');
+        if (pageRef.current !== 'waiting') setPage('waiting');
       } else {
         setPage(prof ? 'room-select' : 'landing');
       }

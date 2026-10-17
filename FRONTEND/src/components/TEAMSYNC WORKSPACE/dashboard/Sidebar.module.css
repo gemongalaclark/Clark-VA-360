@@ -170,6 +170,38 @@
 }
 .leaveBtn:hover { background: rgba(203,37,37,0.3); color: #fff; }
 
+.switchRoomBtn {
+  width: 100%;
+  padding: 6px;
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.5);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.switchRoomBtn:hover { background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.85); }
+
+/* Collapsed-mode action buttons */
+.collapsedActions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 10px 10px;
+  gap: 6px;
+}
+.collapsedActionBtn {
+  width: 42px; height: 42px; border-radius: 12px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.45);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.2s;
+}
+.collapsedActionBtn:hover { background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.85); }
+
 /* User area */
 .userArea {
   display: flex;
