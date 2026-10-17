@@ -20,9 +20,9 @@ export default function TaskPage({ room, profile }) {
   const [filter, setFilter] = useState('all');
   const [deletingId, setDeletingId] = useState(null);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (silent = false) => {
     if (!room || !profile || !supabase) return;
-    setLoading(true);
+    if (!silent) setLoading(true);
     const { data } = await supabase
       .from('tasks')
       .select('*')
@@ -43,7 +43,7 @@ export default function TaskPage({ room, profile }) {
       .on('postgres_changes', {
         event: '*', schema: 'public', table: 'tasks',
         filter: `room_id=eq.${room.id}`,
-      }, () => load())
+      }, () => load(true))
       .subscribe();
     return () => supabase.removeChannel(channel);
   }, [room, profile, load]);

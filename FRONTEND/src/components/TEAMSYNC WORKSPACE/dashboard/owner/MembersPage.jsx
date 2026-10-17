@@ -9,9 +9,9 @@ export default function MembersPage({ room, profile }) {
   const [actionId, setActionId] = useState(null);
   const [copied, setCopied] = useState(false);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (silent = false) => {
     if (!room || !supabase) return;
-    setLoading(true);
+    if (!silent) setLoading(true);
     const { data } = await supabase
       .from('room_members')
       .select('*, profiles(*)')
@@ -29,7 +29,7 @@ export default function MembersPage({ room, profile }) {
     const channel = supabase
       .channel('ts-members-page')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'room_members', filter: `room_id=eq.${room.id}` },
-        () => load())
+        () => load(true))
       .subscribe();
     return () => supabase.removeChannel(channel);
   }, [room, load]);

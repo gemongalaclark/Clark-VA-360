@@ -100,7 +100,11 @@ export default function TopBar({ currentTab, profile, session, room }) {
 
         {/* Notifications */}
         <div className={styles.bellWrap} ref={notifsRef}>
-          <button className={styles.bellBtn} onClick={() => setShowNotifs(v => !v)}>
+          <button className={styles.bellBtn} onClick={() => {
+            const opening = !showNotifs;
+            setShowNotifs(opening);
+            if (opening && unread > 0) markAllRead();
+          }}>
             <Bell size={18} />
             {unread > 0 && <span className={styles.badge}>{unread > 9 ? '9+' : unread}</span>}
           </button>
@@ -109,11 +113,6 @@ export default function TopBar({ currentTab, profile, session, room }) {
             <div className={styles.dropdown}>
               <div className={styles.dropdownHeader}>
                 <span>Notifications</span>
-                {unread > 0 && (
-                  <button className={styles.markReadBtn} onClick={markAllRead}>
-                    Mark all read
-                  </button>
-                )}
               </div>
               <div className={styles.notifList}>
                 {notifications.length === 0 ? (

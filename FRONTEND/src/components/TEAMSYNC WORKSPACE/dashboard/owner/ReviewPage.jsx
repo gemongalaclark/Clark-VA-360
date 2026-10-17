@@ -17,9 +17,9 @@ export default function ReviewPage({ room, profile }) {
   const [expandedId, setExpandedId] = useState(null);
   const [notes, setNotes] = useState('');
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (silent = false) => {
     if (!room || !supabase) return;
-    setLoading(true);
+    if (!silent) setLoading(true);
     const { data } = await supabase
       .from('tasks')
       .select('*, profiles(*)')
@@ -37,7 +37,7 @@ export default function ReviewPage({ room, profile }) {
     const channel = supabase
       .channel('ts-review-tasks')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks', filter: `room_id=eq.${room.id}` },
-        () => load())
+        () => load(true))
       .subscribe();
     return () => supabase.removeChannel(channel);
   }, [room, load]);

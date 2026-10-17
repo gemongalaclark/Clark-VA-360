@@ -67,12 +67,13 @@ export default function TeamSyncWorkspace({ onBackToPortfolio }) {
       const pending = memberships.find(m => m.role === 'pending');
 
       if (active) {
-        setCurrentRoom(active.rooms);
-        setUserRole(active.role);
+        /* Stable references — only update state when the value actually changed */
+        setCurrentRoom(prev => prev?.id === active.rooms?.id ? prev : active.rooms);
+        setUserRole(prev => prev === active.role ? prev : active.role);
         /* Don't redirect if user intentionally navigated to room-select or is already on dashboard */
         if (!['dashboard', 'room-select'].includes(pageRef.current)) setPage('dashboard');
       } else if (pending) {
-        setCurrentRoom(pending.rooms);
+        setCurrentRoom(prev => prev?.id === pending.rooms?.id ? prev : pending.rooms);
         if (pageRef.current !== 'waiting') setPage('waiting');
       } else {
         setPage(prof ? 'room-select' : 'landing');

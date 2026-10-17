@@ -8,10 +8,10 @@
 /* Page header welcome banner */
 .pageHeader {
   background: #fff;
-  border-radius: 16px;
+  border-radius: 20px;
   padding: 22px 24px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-  border: 1px solid #f0f0f0;
+  box-shadow: 0 4px 24px rgba(203,37,37,0.07);
+  border: 1px solid rgba(203,37,37,0.06);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -54,10 +54,10 @@
 /* Card */
 .card {
   background: #fff;
-  border-radius: 16px;
+  border-radius: 20px;
   padding: 24px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-  border: 1px solid #f0f0f0;
+  box-shadow: 0 4px 24px rgba(203,37,37,0.07);
+  border: 1px solid rgba(203,37,37,0.06);
 }
 
 .cardHeader {
@@ -79,10 +79,10 @@
 
 .statCard {
   background: #fff;
-  border-radius: 16px;
+  border-radius: 20px;
   padding: 20px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-  border: 1px solid #f0f0f0;
+  box-shadow: 0 4px 24px rgba(203,37,37,0.07);
+  border: 1px solid rgba(203,37,37,0.06);
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -132,7 +132,7 @@
 .empRow {
   display: flex; align-items: center; gap: 12px;
   padding: 12px 0;
-  border-bottom: 1px solid #f8f9fa;
+  border-bottom: 1px solid rgba(203,37,37,0.06);
 }
 .empRow:last-child { border-bottom: none; }
 
@@ -172,7 +172,7 @@
 
 /* Room stats card */
 .roomStatsCard {
-  background: linear-gradient(135deg, #1a1a2e 0%, #2d2d5e 100%) !important;
+  background: linear-gradient(135deg, #0d0d1c 0%, #1a1a2e 50%, #2d2d5e 100%) !important;
   border: none !important;
   display: flex;
   flex-direction: column;
@@ -248,7 +248,7 @@
 /* Task list */
 .taskList { display: flex; flex-direction: column; }
 .taskItem {
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid rgba(203,37,37,0.06);
   padding: 0;
   transition: background 0.15s;
 }
@@ -338,8 +338,8 @@
 .roomCodeCard {
   display: flex; align-items: center; justify-content: space-between;
   flex-wrap: wrap; gap: 16px;
-  border: 1.5px dashed #dee2e6 !important;
-  background: #f8f9fa !important;
+  border: 1.5px dashed rgba(203,37,37,0.2) !important;
+  background: rgba(203,37,37,0.02) !important;
 }
 .roomCodeInfo {}
 .roomCodeTitle { font-family: 'Poppins', sans-serif; font-size: 0.95rem; font-weight: 700; color: #1a1a2e; margin-bottom: 4px; }
@@ -369,7 +369,7 @@
 .memberList { display: flex; flex-direction: column; }
 .memberRow {
   display: flex; align-items: center; gap: 12px;
-  padding: 13px 0; border-bottom: 1px solid #f0f0f0;
+  padding: 13px 0; border-bottom: 1px solid rgba(91,33,182,0.06);
   flex-wrap: wrap;
 }
 .memberRow:last-child { border-bottom: none; }
@@ -530,7 +530,7 @@
 .myTaskList { display: flex; flex-direction: column; gap: 1px; }
 .myTaskItem {
   display: flex; align-items: flex-start; gap: 14px;
-  padding: 16px 0; border-bottom: 1px solid #f0f0f0;
+  padding: 16px 0; border-bottom: 1px solid rgba(91,33,182,0.06);
 }
 .myTaskItem:last-child { border-bottom: none; }
 .myTaskBody { flex: 1; min-width: 0; }
