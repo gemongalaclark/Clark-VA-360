@@ -4,7 +4,6 @@ import SchedulerHero from './SchedulerHero';
 import SchedulerDashboard from './SchedulerDashboard';
 import UploadModal from './UploadModal';
 import SchedulePreviewModal from './SchedulePreviewModal';
-import GoogleOAuthModal from './GoogleOAuthModal';
 import { scanScheduleWithGemini, SAMPLE_SCHEDULES } from './geminiScanner';
 import { sendEventsToGoogleCalendar } from './googleCalendarApi';
 import { supabase } from '../../lib/supabase';
@@ -29,18 +28,11 @@ export default function GoogleCalendarAutoScheduler({ onBackToPortfolio }) {
     }
   });
 
-  const [googleClientId, setGoogleClientId] = useState(() => {
-    return localStorage.getItem('clark_google_client_id') || import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
-  });
-
-  const [geminiApiKey, setGeminiApiKey] = useState(() => {
-    return localStorage.getItem('clark_gemini_api_key') || import.meta.env.VITE_GEMINI_API_KEY || '';
-  });
+  const geminiApiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
 
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const [isScanning, setIsScanning] = useState(false);
   const [scanStatus, setScanStatus] = useState('');
@@ -237,22 +229,11 @@ export default function GoogleCalendarAutoScheduler({ onBackToPortfolio }) {
     setSyncResult(null);
   };
 
-  const handleSaveClientId = (newId) => {
-    setGoogleClientId(newId);
-    localStorage.setItem('clark_google_client_id', newId);
-  };
-
-  const handleSaveGeminiKey = (newKey) => {
-    setGeminiApiKey(newKey);
-    localStorage.setItem('clark_gemini_api_key', newKey);
-  };
-
   return (
     <div className={styles.appWrapper}>
       <SchedulerNav
         user={user}
         onSignOut={handleSignOut}
-        onOpenSettings={() => setIsSettingsOpen(true)}
         onBackToPortfolio={onBackToPortfolio}
       />
 
@@ -309,14 +290,6 @@ export default function GoogleCalendarAutoScheduler({ onBackToPortfolio }) {
         />
       )}
 
-      <GoogleOAuthModal
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-        clientId={googleClientId}
-        onSaveClientId={handleSaveClientId}
-        geminiKey={geminiApiKey}
-        onSaveGeminiKey={handleSaveGeminiKey}
-      />
     </div>
   );
 }

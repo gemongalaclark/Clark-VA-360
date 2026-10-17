@@ -1,11 +1,10 @@
 import { useState } from 'react';
-import { ArrowLeft, Calendar, LogOut, Settings, Sparkles, CheckCircle, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Calendar, LogOut, Sparkles, ShieldCheck } from 'lucide-react';
 import styles from './GoogleCalendarAutoScheduler.module.css';
 
 export default function SchedulerNav({
   user,
   onSignOut,
-  onOpenSettings,
   onBackToPortfolio
 }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -42,14 +41,6 @@ export default function SchedulerNav({
 
         {/* Right side controls */}
         <div className={styles.navActions}>
-          <button
-            className={styles.settingsIconBtn}
-            onClick={onOpenSettings}
-            title="Configure Google OAuth & AI Settings"
-          >
-            <Settings size={18} />
-          </button>
-
           {user ? (
             <div className={styles.userProfileWrapper}>
               <button
@@ -79,15 +70,6 @@ export default function SchedulerNav({
                     </div>
                   </div>
                   <div className={styles.dropdownDivider} />
-                  <button
-                    className={styles.dropdownItem}
-                    onClick={() => {
-                      setDropdownOpen(false);
-                      onOpenSettings();
-                    }}
-                  >
-                    <Settings size={16} /> OAuth & API Settings
-                  </button>
                   <button
                     className={`${styles.dropdownItem} ${styles.signOutItem}`}
                     onClick={() => {
