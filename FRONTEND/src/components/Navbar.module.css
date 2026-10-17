@@ -1,3 +1,22 @@
+/* ============================================================
+   NAVBAR
+   ============================================================ */
+
+@keyframes navbarDrop {
+  from { opacity: 0; transform: translateY(-100%); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes linkIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes ctaIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
 .navbar {
   position: fixed;
   top: 0;
@@ -5,17 +24,18 @@
   right: 0;
   z-index: 1000;
   height: var(--navbar-height);
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid transparent;
-  transition: all var(--transition-normal);
+  transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+  animation: navbarDrop 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .navbar.scrolled {
-  background: rgba(255, 255, 255, 0.96);
+  background: rgba(255, 255, 255, 0.97);
   border-bottom: 1px solid rgba(203, 37, 37, 0.1);
-  box-shadow: 0 4px 24px rgba(203, 37, 37, 0.08);
+  box-shadow: 0 4px 28px rgba(203, 37, 37, 0.07);
 }
 
 .inner {
@@ -25,32 +45,53 @@
   height: 100%;
 }
 
-/* Logo */
+/* ── Logo ── */
 .logo {
   background: none;
   padding: 0;
   display: flex;
   align-items: center;
   flex-shrink: 0;
+  animation: ctaIn 0.6s 0.1s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .logoImg {
   height: 48px;
   width: auto;
   object-fit: contain;
-  transition: transform var(--transition-normal);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.logoImg:hover {
-  transform: scale(1.05);
+.logo:hover .logoImg {
+  transform: scale(1.08) rotate(-2deg);
 }
 
-/* Desktop nav links */
+/* ── Desktop nav links ── */
 .navLinks {
   display: flex;
   align-items: center;
   list-style: none;
-  gap: 4px;
+  gap: 2px;
+  position: relative;
+}
+
+/* Animated entrance stagger */
+.navLinks li {
+  animation: linkIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(0.15s + var(--i, 0) * 0.07s);
+}
+
+/* Sliding bottom indicator */
+.slidingIndicator {
+  position: absolute;
+  bottom: -1px;
+  height: 3px;
+  background: var(--gradient-red, linear-gradient(90deg, #cb2525, #ea4343));
+  border-radius: 9999px;
+  transition: left 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  z-index: 0;
 }
 
 .navLink {
@@ -60,12 +101,30 @@
   font-size: 0.9rem;
   font-weight: 500;
   color: var(--text-body);
-  border-radius: var(--radius-sm);
-  transition: color var(--transition-fast);
+  border-radius: var(--radius-sm, 6px);
+  transition: color 0.2s ease;
   display: flex;
-  flex-direction: column;
   align-items: center;
   gap: 2px;
+  z-index: 1;
+}
+
+/* Hover background pill */
+.navLinkHoverBg {
+  position: absolute;
+  inset: 2px;
+  border-radius: 6px;
+  background: rgba(203, 37, 37, 0.07);
+  opacity: 0;
+  transform: scale(0.85);
+  transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  pointer-events: none;
+  z-index: -1;
+}
+
+.navLink:hover .navLinkHoverBg {
+  opacity: 1;
+  transform: scale(1);
 }
 
 .navLink:hover {
@@ -74,84 +133,161 @@
 
 .navLink.active {
   color: var(--red-primary);
-  font-weight: 600;
+  font-weight: 700;
 }
 
-.activeBar {
-  position: absolute;
-  bottom: -2px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 24px;
-  height: 3px;
-  background: var(--gradient-red);
-  border-radius: var(--radius-full);
-}
-
-/* CTA button */
+/* ── CTA button ── */
 .ctaBtn {
   font-size: 0.875rem;
   padding: 10px 24px;
+  animation: ctaIn 0.6s calc(0.15s + 5 * 0.07s) cubic-bezier(0.22, 1, 0.36, 1) both;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 0.2s ease !important;
 }
 
-/* Hamburger */
+.ctaBtn:hover {
+  transform: translateY(-2px) scale(1.03) !important;
+  box-shadow: 0 6px 20px rgba(203, 37, 37, 0.35) !important;
+}
+
+.ctaBtn:active {
+  transform: translateY(0) scale(0.97) !important;
+}
+
+/* ── Animated hamburger ── */
 .hamburger {
   display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  width: 40px;
+  height: 40px;
   background: none;
-  color: var(--text-dark);
+  border-radius: var(--radius-sm, 6px);
   padding: 8px;
-  border-radius: var(--radius-sm);
-  transition: background var(--transition-fast);
+  transition: background 0.2s ease;
+  cursor: pointer;
+  border: none;
 }
 
 .hamburger:hover {
-  background: var(--bg-light);
+  background: rgba(203, 37, 37, 0.07);
 }
 
-/* Mobile menu */
+.hamburgerBar {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: var(--text-dark);
+  border-radius: 9999px;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.3s ease,
+              width 0.3s ease;
+  transform-origin: center;
+}
+
+/* X transform */
+.hamburgerOpen .hamburgerBar:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+.hamburgerOpen .hamburgerBar:nth-child(2) {
+  opacity: 0;
+  width: 0;
+}
+.hamburgerOpen .hamburgerBar:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
+}
+
+/* ── Mobile menu ── */
+@keyframes mobileMenuIn {
+  from { opacity: 0; transform: translateY(-16px) scaleY(0.95); }
+  to   { opacity: 1; transform: translateY(0) scaleY(1); }
+}
+
+@keyframes mobileLinkIn {
+  from { opacity: 0; transform: translateX(-14px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
 .mobileMenu {
   display: none;
   background: var(--white);
   border-top: 1px solid rgba(203, 37, 37, 0.08);
-  padding: 20px 24px 28px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.08);
-  transform: translateY(-10px);
-  opacity: 0;
-  transition: all var(--transition-normal);
+  padding: 16px 24px 28px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
+  transform-origin: top;
   pointer-events: none;
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.3s ease;
+  opacity: 0;
 }
 
 .mobileMenu.open {
-  transform: translateY(0);
+  pointer-events: auto;
+  max-height: 400px;
   opacity: 1;
-  pointer-events: all;
 }
 
 .mobileLinks {
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
   margin-bottom: 20px;
+}
+
+/* Staggered mobile link entrance */
+.mobileLinks li {
+  opacity: 0;
+  transform: translateX(-14px);
+  transition: opacity 0s, transform 0s;
+}
+
+.mobileMenu.open .mobileLinks li {
+  animation: mobileLinkIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(0.08s + var(--i, 0) * 0.055s);
 }
 
 .mobileLink {
   background: none;
   width: 100%;
   text-align: left;
-  padding: 12px 16px;
+  padding: 11px 14px;
   font-size: 1rem;
   font-weight: 500;
   color: var(--text-body);
-  border-radius: var(--radius-sm);
-  transition: all var(--transition-fast);
+  border-radius: var(--radius-sm, 6px);
+  transition: background 0.2s ease, color 0.2s ease, padding-left 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mobileLinkDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--red-primary);
+  opacity: 0;
+  transform: scale(0);
+  transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  flex-shrink: 0;
 }
 
 .mobileLink:hover,
 .mobileLink.active {
-  background: var(--bg-light);
+  background: rgba(203, 37, 37, 0.06);
   color: var(--red-primary);
-  padding-left: 20px;
+  padding-left: 18px;
+}
+
+.mobileLink:hover .mobileLinkDot,
+.mobileLink.active .mobileLinkDot {
+  opacity: 1;
+  transform: scale(1);
 }
 
 .mobileCta {
@@ -159,6 +295,7 @@
   justify-content: center;
 }
 
+/* ── Responsive ── */
 @media (max-width: 768px) {
   .navLinks,
   .ctaBtn {

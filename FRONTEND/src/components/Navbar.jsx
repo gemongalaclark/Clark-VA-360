@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Menu, X } from 'lucide-react';
 import styles from './Navbar.module.css';
 
@@ -11,35 +11,43 @@ const navLinks = [
 ];
 
 export default function Navbar() {
-  const [active, setActive]     = useState('home');
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
+  const [active, setActive]         = useState('home');
+  const [menuOpen, setMenuOpen]     = useState(false);
+  const [scrolled, setScrolled]     = useState(false);
+  const [indicator, setIndicator]   = useState({ left: 0, width: 0 });
+  const [indReady, setIndReady]     = useState(false);
+  const navListRef                  = useRef(null);
 
+  /* scroll spy + scrolled state */
   useEffect(() => {
-    const handleScroll = () => {
+    const onScroll = () => {
       setScrolled(window.scrollY > 20);
-
-      // Update active section based on scroll position
-      const sections = navLinks.map(link => document.getElementById(link.id));
+      const sections = navLinks.map(l => document.getElementById(l.id));
       let current = 'home';
-      sections.forEach(section => {
-        if (section) {
-          const rect = section.getBoundingClientRect();
-          if (rect.top <= 100) current = section.id;
-        }
+      sections.forEach(s => {
+        if (s && s.getBoundingClientRect().top <= 100) current = s.id;
       });
       setActive(current);
     };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
   }, []);
+
+  /* sliding indicator */
+  useEffect(() => {
+    if (!navListRef.current) return;
+    const btn = navListRef.current.querySelector(`[data-navid="${active}"]`);
+    if (!btn) return;
+    const listRect = navListRef.current.getBoundingClientRect();
+    const btnRect  = btn.getBoundingClientRect();
+    setIndicator({ left: btnRect.left - listRect.left, width: btnRect.width });
+    setIndReady(true);
+  }, [active]);
 
   const scrollTo = (id) => {
     const el = document.getElementById(id);
     if (el) {
-      const offset = 72;
-      const top = el.getBoundingClientRect().top + window.scrollY - offset;
+      const top = el.getBoundingClientRect().top + window.scrollY - 72;
       window.scrollTo({ top, behavior: 'smooth' });
     }
     setActive(id);
@@ -49,21 +57,31 @@ export default function Navbar() {
   return (
     <nav className={`${styles.navbar} ${scrolled ? styles.scrolled : ''}`}>
       <div className={`container ${styles.inner}`}>
+
         {/* Logo */}
         <button className={styles.logo} onClick={() => scrollTo('home')} aria-label="Clark VA 360 Home">
           <img src="/images/logo.png" alt="Clark VA 360 Logo" className={styles.logoImg} />
         </button>
 
-        {/* Desktop nav links */}
-        <ul className={styles.navLinks}>
-          {navLinks.map(link => (
-            <li key={link.id}>
+        {/* Desktop links */}
+        <ul className={styles.navLinks} ref={navListRef}>
+          {/* Sliding indicator */}
+          {indReady && (
+            <div
+              className={styles.slidingIndicator}
+              style={{ left: indicator.left, width: indicator.width }}
+            />
+          )}
+
+          {navLinks.map((link, i) => (
+            <li key={link.id} style={{ '--i': i }}>
               <button
+                data-navid={link.id}
                 className={`${styles.navLink} ${active === link.id ? styles.active : ''}`}
                 onClick={() => scrollTo(link.id)}
               >
+                <span className={styles.navLinkHoverBg} />
                 {link.label}
-                {active === link.id && <span className={styles.activeBar} />}
               </button>
             </li>
           ))}
@@ -79,23 +97,26 @@ export default function Navbar() {
 
         {/* Hamburger */}
         <button
-          className={styles.hamburger}
-          onClick={() => setMenuOpen(!menuOpen)}
+          className={`${styles.hamburger} ${menuOpen ? styles.hamburgerOpen : ''}`}
+          onClick={() => setMenuOpen(o => !o)}
           aria-label="Toggle menu"
         >
-          {menuOpen ? <X size={24} /> : <Menu size={24} />}
+          <span className={styles.hamburgerBar} />
+          <span className={styles.hamburgerBar} />
+          <span className={styles.hamburgerBar} />
         </button>
       </div>
 
       {/* Mobile menu */}
       <div className={`${styles.mobileMenu} ${menuOpen ? styles.open : ''}`}>
         <ul className={styles.mobileLinks}>
-          {navLinks.map(link => (
-            <li key={link.id}>
+          {navLinks.map((link, i) => (
+            <li key={link.id} style={{ '--i': i }}>
               <button
                 className={`${styles.mobileLink} ${active === link.id ? styles.active : ''}`}
                 onClick={() => scrollTo(link.id)}
               >
+                <span className={styles.mobileLinkDot} />
                 {link.label}
               </button>
             </li>
