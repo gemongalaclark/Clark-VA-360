@@ -947,7 +947,11 @@
 }
 
 .previewModalCard {
-  max-width: 960px;
+  max-width: 1060px;
+  display: flex;
+  flex-direction: column;
+  max-height: 92vh;
+  overflow: hidden;
 }
 
 .settingsModalCard {
@@ -2057,6 +2061,7 @@
   box-shadow: 0 0 0 3px rgba(203, 37, 37, 0.1);
 }
 
+/* keep existing reminderBadge */
 .reminderBadge {
   display: inline-flex;
   align-items: center;
@@ -2071,4 +2076,563 @@
   text-transform: uppercase;
   flex-wrap: nowrap;
   white-space: nowrap;
+}
+
+/* ============================================================
+   CALENDAR PREVIEW – GOOGLE CALENDAR STYLE
+   ============================================================ */
+
+/* Header */
+.calPreviewHeader {
+  padding: 18px 24px 0;
+  border-bottom: 1px solid #f0e0e0;
+  flex-shrink: 0;
+}
+
+.calPreviewHeaderTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.calPreviewHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* View toggle */
+.viewToggleGroup {
+  display: flex;
+  background: #f1f3f4;
+  border-radius: 8px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.viewToggleBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #5f6368;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.viewToggleBtn:hover {
+  background: rgba(0,0,0,0.06);
+  color: #1a1a2e;
+}
+
+.viewToggleBtnActive {
+  background: #fff;
+  color: #1a1a2e;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+}
+
+/* ── Calendar Grid ── */
+.calViewWrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.calDayHeadersRow {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #e8eaed;
+  background: #fff;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.calTimeCorner {
+  width: 56px;
+  flex-shrink: 0;
+}
+
+.calDayHeaderCell {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 4px;
+  gap: 2px;
+  border-left: 1px solid #e8eaed;
+}
+
+.calDayWeekday {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #70757a;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.calDayNum {
+  font-size: 1.25rem;
+  font-weight: 400;
+  color: #3c4043;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.calDayNumToday {
+  background: #cb2525;
+  color: #fff;
+  font-weight: 700;
+}
+
+/* Scrollable body */
+.calGridScroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0,0,0,0.15) transparent;
+}
+
+.calGridInner {
+  display: flex;
+  position: relative;
+  min-width: 0;
+}
+
+/* Time gutter */
+.calTimeGutter {
+  width: 56px;
+  flex-shrink: 0;
+  position: sticky;
+  left: 0;
+  background: #fff;
+  z-index: 1;
+}
+
+.calHourRow {
+  display: flex;
+  align-items: flex-start;
+  padding-top: 0;
+  position: relative;
+}
+
+.calHourLabel {
+  font-size: 0.68rem;
+  color: #70757a;
+  font-weight: 500;
+  padding: 0 8px 0 0;
+  text-align: right;
+  width: 100%;
+  display: block;
+  transform: translateY(-8px);
+  white-space: nowrap;
+}
+
+/* Day columns area */
+.calDayColumnsArea {
+  flex: 1;
+  display: flex;
+  min-width: 0;
+}
+
+.calDayCol {
+  flex: 1;
+  position: relative;
+  border-left: 1px solid #e8eaed;
+  min-width: 100px;
+}
+
+.calHourLine {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: #e8eaed;
+  pointer-events: none;
+}
+
+.calHalfHourLine {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: #f1f3f4;
+  pointer-events: none;
+}
+
+/* Event blocks */
+.calEventBlock {
+  position: absolute;
+  border-left-width: 3px;
+  border-left-style: solid;
+  border-radius: 4px;
+  padding: 3px 5px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: filter 0.15s, box-shadow 0.15s;
+  z-index: 1;
+}
+
+.calEventBlock:hover {
+  filter: brightness(0.96);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  z-index: 3;
+}
+
+.calEventBlock:hover .calEventHoverActions {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.calEventTitle {
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.calEventTime {
+  font-size: 0.68rem;
+  opacity: 0.85;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.calEventLoc {
+  font-size: 0.65rem;
+  opacity: 0.75;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.calEventHoverActions {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+}
+
+.calEvtActionBtn {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: none;
+  background: rgba(255,255,255,0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #444;
+  padding: 0;
+}
+
+.calEvtActionBtn:hover {
+  background: #fff;
+  color: #cb2525;
+}
+
+/* Edit panel below calendar */
+.calEditPanel {
+  border-top: 1px solid #f0e0e0;
+  background: #fdf7f7;
+  flex-shrink: 0;
+  padding: 0 0 4px;
+}
+
+.calEditPanelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px 6px;
+  font-size: 0.85rem;
+  color: #444;
+}
+
+.calEditPanelHeader button {
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: #888;
+  display: flex;
+  align-items: center;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.calEditPanelHeader button:hover { color: #cb2525; background: #fdecea; }
+
+/* ── Inline Edit Form ── */
+.inlineEditForm {
+  padding: 8px 20px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.editFormRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.editTitleInput {
+  flex: 1;
+  min-width: 160px;
+  padding: 7px 10px;
+  border: 1px solid #ced4da;
+  border-radius: 7px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.editTitleInput:focus { outline: none; border-color: #cb2525; }
+
+.editCatSelect {
+  padding: 7px 10px;
+  border: 1px solid #ced4da;
+  border-radius: 7px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  background: #fff;
+}
+
+.editDateInput,
+.editTimeInput {
+  padding: 7px 10px;
+  border: 1px solid #ced4da;
+  border-radius: 7px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  background: #fff;
+}
+
+.editTimeSep {
+  color: #888;
+  font-size: 0.85rem;
+}
+
+.editLocInput {
+  padding: 7px 10px;
+  border: 1px solid #ced4da;
+  border-radius: 7px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  width: 100%;
+}
+
+.editLocInput:focus,
+.editDateInput:focus,
+.editTimeInput:focus,
+.editCatSelect:focus { outline: none; border-color: #cb2525; }
+
+.editDescInput {
+  padding: 7px 10px;
+  border: 1px solid #ced4da;
+  border-radius: 7px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  resize: vertical;
+  width: 100%;
+}
+
+.editDescInput:focus { outline: none; border-color: #cb2525; }
+
+.editFormActions {
+  display: flex;
+  gap: 8px;
+}
+
+.editSaveBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 18px;
+  border-radius: 7px;
+  border: none;
+  background: #cb2525;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.editSaveBtn:hover { background: #a81f1f; }
+
+.editCancelBtn {
+  padding: 7px 14px;
+  border-radius: 7px;
+  border: 1px solid #ced4da;
+  background: #fff;
+  font-size: 0.85rem;
+  color: #555;
+  cursor: pointer;
+}
+
+.editCancelBtn:hover { border-color: #cb2525; color: #cb2525; }
+
+/* ── List View ── */
+.listViewWrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.listEventCard {
+  border-left: 3px solid #cb2525;
+  border-radius: 0 10px 10px 0;
+  background: #fff;
+  margin: 0 16px 8px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  overflow: hidden;
+  transition: box-shadow 0.15s;
+}
+
+.listEventCard:hover {
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.listEventInner {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 12px 16px;
+}
+
+.listEventTimeCol {
+  min-width: 100px;
+  flex-shrink: 0;
+}
+
+.listEventDay {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 2px;
+}
+
+.listEventTime {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8rem;
+  color: #444;
+  font-weight: 500;
+}
+
+.listEventDate {
+  font-size: 0.72rem;
+  color: #888;
+  margin-top: 2px;
+}
+
+.listEventMainCol {
+  flex: 1;
+  min-width: 0;
+}
+
+.listEventTitle {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin-bottom: 3px;
+}
+
+.listEventDesc {
+  font-size: 0.78rem;
+  color: #666;
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+
+.listEventPills {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.listCatPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 9px;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  border: 1px solid;
+}
+
+.listLocPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 9px;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  background: #f1f3f4;
+  color: #5f6368;
+}
+
+.listEventActions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .calPreviewHeaderTop {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .calDayCol {
+    min-width: 80px;
+  }
+  .calTimeCorner {
+    width: 40px;
+  }
+  .calTimeGutter {
+    width: 40px;
+  }
+  .calHourLabel {
+    font-size: 0.6rem;
+  }
+  .listEventInner {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .listEventTimeCol {
+    min-width: 80px;
+  }
 }
