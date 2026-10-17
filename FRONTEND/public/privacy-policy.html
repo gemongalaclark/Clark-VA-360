@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Privacy Policy – Clark VA 360</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Inter, Arial, sans-serif;
+      background: #fdf7f7;
+      color: #1a1a2e;
+      line-height: 1.7;
+    }
+    header {
+      background: #cb2525;
+      color: #fff;
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    header a {
+      color: #fff;
+      font-size: 0.9rem;
+      text-decoration: none;
+      opacity: 0.85;
+    }
+    header a:hover { opacity: 1; text-decoration: underline; }
+    header h1 { font-size: 1.25rem; font-weight: 700; }
+    .container {
+      max-width: 760px;
+      margin: 40px auto;
+      padding: 0 24px 60px;
+    }
+    .badge {
+      display: inline-block;
+      background: #fdecea;
+      color: #cb2525;
+      border: 1px solid rgba(203,37,37,0.2);
+      border-radius: 9999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 4px 12px;
+      margin-bottom: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    h2 { font-size: 2rem; font-weight: 800; margin-bottom: 6px; }
+    .updated { color: #888; font-size: 0.85rem; margin-bottom: 36px; }
+    h3 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #cb2525;
+      margin: 32px 0 10px;
+    }
+    p { margin-bottom: 12px; color: #333; }
+    ul { padding-left: 20px; margin-bottom: 12px; }
+    ul li { margin-bottom: 6px; color: #333; }
+    a { color: #cb2525; }
+    .card {
+      background: #fff;
+      border: 1px solid rgba(203,37,37,0.15);
+      border-radius: 14px;
+      padding: 28px 32px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+    }
+    .contact-box {
+      background: #fdecea;
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-top: 36px;
+    }
+    .contact-box p { margin: 0; }
+  </style>
+</head>
+<body>
+
+<header>
+  <a href="https://clark-va-360.vercel.app">← Back to Clark VA 360</a>
+  <span style="opacity:0.4">|</span>
+  <h1>Clark VA 360 – Privacy Policy</h1>
+</header>
+
+<div class="container">
+  <div class="badge">Legal</div>
+  <h2>Privacy Policy</h2>
+  <p class="updated">Last updated: October 17, 2026</p>
+
+  <div class="card">
+
+    <h3>1. Overview</h3>
+    <p>
+      Clark VA 360 ("we", "our", "the Service") operates the Google Calendar Auto Scheduler at
+      <a href="https://clark-va-360.vercel.app">clark-va-360.vercel.app</a>.
+      This Privacy Policy explains what information we collect, how we use it, and your rights
+      regarding your personal data when you use our Service.
+    </p>
+
+    <h3>2. Information We Collect</h3>
+    <p>When you sign in with Google, we collect the following through Google OAuth:</p>
+    <ul>
+      <li>Your Google account name and email address</li>
+      <li>Your Google profile picture (avatar)</li>
+      <li>A temporary OAuth access token used solely to create calendar events on your behalf</li>
+    </ul>
+    <p>
+      We store your name, email, avatar URL, and sign-in timestamp in our secure Supabase database
+      to identify your account and display your profile within the app.
+    </p>
+    <p>
+      We do <strong>not</strong> store your Google OAuth access token in our database.
+      It is held only in your browser session and is discarded when you sign out.
+    </p>
+
+    <h3>3. How We Use Your Information</h3>
+    <ul>
+      <li>To authenticate you and display your name and profile picture inside the app</li>
+      <li>To create Google Calendar events that you explicitly review and approve</li>
+      <li>To maintain a session history of schedule scans you have performed (stored locally in your browser)</li>
+    </ul>
+    <p>We do <strong>not</strong> sell, share, or rent your personal information to any third party.</p>
+
+    <h3>4. Google Calendar Access</h3>
+    <p>
+      This app requests the <code>https://www.googleapis.com/auth/calendar.events</code> scope,
+      which allows us to <strong>create events in your Google Calendar only</strong>.
+      We do not read, modify, or delete existing events in your calendar.
+      Events are only created after you review and confirm the schedule preview.
+    </p>
+    <p>
+      You may revoke this access at any time by visiting
+      <a href="https://myaccount.google.com/permissions" target="_blank" rel="noreferrer">
+        Google Account Permissions
+      </a>
+      and removing Clark VA 360 / cdlvlgtemdlhbvhihvle.supabase.co.
+    </p>
+
+    <h3>5. Data Storage &amp; Security</h3>
+    <p>
+      User profile data (name, email, avatar) is stored in Supabase, a GDPR-compliant cloud database
+      provider, with row-level security policies that ensure only your own data is accessible to you.
+      Schedule scan history is stored in your browser's <code>localStorage</code> and never transmitted
+      to our servers.
+    </p>
+
+    <h3>6. Third-Party Services</h3>
+    <ul>
+      <li><strong>Google OAuth &amp; Calendar API</strong> – for authentication and calendar event creation</li>
+      <li><strong>Google Gemini AI</strong> – for extracting schedule data from uploaded files. File content is sent to Google's Gemini API and is subject to <a href="https://policies.google.com/privacy" target="_blank" rel="noreferrer">Google's Privacy Policy</a></li>
+      <li><strong>Supabase</strong> – for secure user data storage</li>
+      <li><strong>Vercel</strong> – for hosting the web application</li>
+    </ul>
+
+    <h3>7. Data Retention</h3>
+    <p>
+      Your profile data (name, email, avatar) is retained in our database while you have an account.
+      You may request deletion at any time by contacting us at the address below and we will remove
+      your record within 7 days.
+    </p>
+
+    <h3>8. Children's Privacy</h3>
+    <p>
+      This Service is not directed to children under 13. We do not knowingly collect personal
+      information from children under 13.
+    </p>
+
+    <h3>9. Changes to This Policy</h3>
+    <p>
+      We may update this Privacy Policy from time to time. Changes will be reflected by updating
+      the "Last updated" date at the top of this page.
+    </p>
+
+    <div class="contact-box">
+      <h3 style="margin-top:0">10. Contact Us</h3>
+      <p>
+        If you have any questions about this Privacy Policy or wish to request data deletion,
+        please contact:<br /><br />
+        <strong>Clark Gemongala – Clark VA 360</strong><br />
+        <a href="https://clark-va-360.vercel.app">clark-va-360.vercel.app</a>
+      </p>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>
