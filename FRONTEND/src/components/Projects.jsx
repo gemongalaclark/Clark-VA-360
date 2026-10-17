@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { ChevronLeft, ChevronRight, ExternalLink, Sparkles, Calendar, ArrowUpRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ExternalLink, Sparkles, Calendar, ArrowUpRight, Users, Zap } from 'lucide-react';
 import styles from './Projects.module.css';
 
 /* Projects data */
@@ -17,13 +17,15 @@ const projects = [
   },
   {
     id: 2,
-    title: 'Coming Soon',
-    description: 'More exciting projects are on the way. Check back later!',
-    tags: [],
+    title: 'TeamSync Workspace',
+    description: 'Real-time team collaboration platform with room-based workspaces, role-separated dashboards for owners and employees, task review system, and instant email notifications.',
+    tags: ['React', 'Supabase', 'Realtime', 'Role-based Auth'],
     image: null,
-    liveUrl: null,
+    liveUrl: '/teamsync-workspace',
     githubUrl: null,
-    placeholder: true,
+    placeholder: false,
+    featured: false,
+    inDevelopment: false,
   },
   {
     id: 3,
@@ -49,25 +51,34 @@ const projects = [
 
 function ProjectCard({ project }) {
   const handleCardClick = (e) => {
-    // If clicking a link or button directly, allow default
     if (e.target.closest('a') || e.target.closest('button')) return;
-    if (project.liveUrl) {
+    if (!project.liveUrl) return;
+    /* Internal routes use pushState; external links open in new tab */
+    if (project.liveUrl.startsWith('/')) {
+      window.history.pushState({}, '', project.liveUrl);
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    } else {
       window.open(project.liveUrl, '_blank', 'noopener,noreferrer');
     }
   };
 
   return (
     <div
-      className={`${styles.card} ${project.featured ? styles.featuredCard : ''}`}
+      className={`${styles.card} ${project.featured ? styles.featuredCard : ''} ${project.inDevelopment ? styles.devCard : ''}`}
       id={`project-${project.id}`}
       onClick={handleCardClick}
       style={{ cursor: project.liveUrl ? 'pointer' : 'default' }}
     >
-      {/* Featured Ribbon Badge */}
       {project.featured && (
         <div className={styles.featuredRibbon}>
           <Sparkles size={12} />
           <span>Featured AI Project</span>
+        </div>
+      )}
+      {project.inDevelopment && (
+        <div className={styles.devRibbon}>
+          <Zap size={12} />
+          <span>In Development</span>
         </div>
       )}
 
@@ -90,6 +101,20 @@ function ProjectCard({ project }) {
               </div>
             </div>
           </div>
+        ) : project.id === 2 ? (
+          <div className={styles.teamsyncGraphic}>
+            <div className={styles.teamsyncGlow} />
+            <div className={styles.teamsyncGraphicInner}>
+              <div className={styles.teamsyncIconWrap}>
+                <Users size={30} className={styles.teamsyncIcon} />
+              </div>
+              <span className={styles.teamsyncTitle}>TeamSync</span>
+              <div className={styles.graphicBadgeRow}>
+                <span className={styles.graphicAiPill}><Zap size={11} /> Real-time</span>
+                <span className={styles.teamsyncRolePill}>Role-based</span>
+              </div>
+            </div>
+          </div>
         ) : project.image ? (
           <img src={project.image} alt={project.title} />
         ) : (
@@ -104,10 +129,13 @@ function ProjectCard({ project }) {
             {project.liveUrl && (
               <a
                 href={project.liveUrl}
-                target="_blank"
-                rel="noopener noreferrer"
                 className={styles.overlayBtn}
-                onClick={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  window.history.pushState({}, '', project.liveUrl);
+                  window.dispatchEvent(new PopStateEvent('popstate'));
+                }}
               >
                 <ExternalLink size={16} /> Open Web App
               </a>

@@ -1,0 +1,212 @@
+.page {
+  min-height: 100vh;
+  background: #f0f2f5;
+  font-family: 'Inter', sans-serif;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+  height: 64px;
+  background: #fff;
+  border-bottom: 1px solid #e9ecef;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.logo { display: flex; align-items: center; gap: 10px; }
+.logoMark {
+  width: 32px; height: 32px; border-radius: 9px;
+  background: linear-gradient(135deg, #cb2525, #ea4343);
+  color: #fff; font-family: 'Poppins', sans-serif;
+  font-size: 0.75rem; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+}
+.logoName { font-family: 'Poppins', sans-serif; font-size: 0.9rem; font-weight: 700; color: #1a1a2e; }
+.logoName span { color: #cb2525; }
+
+.userRow { display: flex; align-items: center; gap: 10px; }
+.avatar {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: linear-gradient(135deg, #cb2525, #ea4343);
+  color: #fff; font-size: 0.75rem; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+.userName { font-size: 0.875rem; font-weight: 600; color: #1a1a2e; }
+.signOutBtn {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: none; border: 1px solid #dee2e6;
+  display: flex; align-items: center; justify-content: center;
+  color: #6c757d; cursor: pointer; transition: all 0.2s;
+}
+.signOutBtn:hover { background: #fef7f7; color: #cb2525; border-color: #cb2525; }
+
+.content {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 60px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Selection */
+.selectionWrap { width: 100%; text-align: center; }
+.headline {
+  font-family: 'Poppins', sans-serif;
+  font-size: clamp(1.6rem, 4vw, 2.2rem);
+  font-weight: 800;
+  color: #1a1a2e;
+  margin-bottom: 12px;
+}
+.desc { font-size: 0.95rem; color: #4a4a6a; margin-bottom: 40px; }
+
+.optionCards { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+.optionCard {
+  background: #fff;
+  border: 2px solid #e9ecef;
+  border-radius: 20px;
+  padding: 32px 24px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.25s;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.optionCard:hover {
+  border-color: #cb2525;
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(203,37,37,0.12);
+}
+.optionIcon {
+  width: 52px; height: 52px; border-radius: 14px;
+  background: linear-gradient(135deg, #cb2525, #ea4343);
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 4px;
+}
+.optionIconSecondary { background: linear-gradient(135deg, #1a1a2e, #2d2d5e); }
+.optionCard h3 { font-family: 'Poppins', sans-serif; font-size: 1rem; font-weight: 700; color: #1a1a2e; }
+.optionCard p { font-size: 0.82rem; color: #4a4a6a; line-height: 1.55; flex: 1; }
+.optionTag, .optionTagSecondary {
+  display: inline-block;
+  padding: 3px 10px; border-radius: 9999px;
+  font-size: 0.7rem; font-weight: 700;
+  background: rgba(203,37,37,0.1); color: #cb2525;
+  margin-top: 4px; align-self: flex-start;
+}
+.optionTagSecondary { background: rgba(26,26,46,0.08); color: #1a1a2e; }
+
+/* Form card */
+.formCard {
+  width: 100%;
+  background: #fff;
+  border-radius: 20px;
+  padding: 36px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+  position: relative;
+  animation: tsSlideUp 0.3s ease;
+}
+@keyframes tsSlideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.backBtn {
+  position: absolute; top: 16px; right: 16px;
+  width: 32px; height: 32px; border-radius: 8px;
+  background: #f8f9fa; border: 1px solid #dee2e6;
+  display: flex; align-items: center; justify-content: center;
+  color: #6c757d; cursor: pointer; transition: all 0.2s;
+}
+.backBtn:hover { background: #e9ecef; }
+
+.formTitle { font-family: 'Poppins', sans-serif; font-size: 1.3rem; font-weight: 800; color: #1a1a2e; margin-bottom: 8px; }
+.formDesc { font-size: 0.875rem; color: #4a4a6a; line-height: 1.6; margin-bottom: 28px; }
+
+.form { display: flex; flex-direction: column; gap: 18px; }
+.formGroup { display: flex; flex-direction: column; gap: 6px; }
+.formGroup label { font-size: 0.82rem; font-weight: 600; color: #4a4a6a; }
+
+.input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid #dee2e6;
+  border-radius: 12px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.9rem;
+  color: #1a1a2e;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.input:focus { border-color: #cb2525; box-shadow: 0 0 0 3px rgba(203,37,37,0.1); }
+.codeInput { text-align: center; font-size: 1.2rem; font-weight: 700; letter-spacing: 0.25em; font-family: 'Poppins', sans-serif; }
+
+.error {
+  font-size: 0.82rem; color: #cb2525;
+  padding: 10px 14px; background: #fef7f7;
+  border-radius: 8px; border: 1px solid rgba(203,37,37,0.2);
+}
+
+.btnPrimary {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 13px;
+  background: linear-gradient(135deg, #cb2525, #ea4343);
+  color: #fff; font-family: 'Inter', sans-serif;
+  font-size: 0.9rem; font-weight: 600;
+  border: none; border-radius: 12px; cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 16px rgba(203,37,37,0.25);
+}
+.btnPrimary:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(203,37,37,0.35); }
+.btnPrimary:disabled { opacity: 0.65; cursor: not-allowed; }
+
+.spin { animation: tsSpin 0.7s linear infinite; }
+@keyframes tsSpin { to { transform: rotate(360deg); } }
+
+/* Success card */
+.successCard {
+  width: 100%; background: #fff;
+  border-radius: 20px; padding: 48px 36px;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+  animation: tsSlideUp 0.3s ease;
+}
+.successIcon {
+  width: 64px; height: 64px; border-radius: 50%;
+  background: linear-gradient(135deg, #cb2525, #ea4343);
+  color: #fff; font-size: 1.6rem; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 20px;
+}
+.successCard h2 { font-family: 'Poppins', sans-serif; font-size: 1.4rem; font-weight: 800; color: #1a1a2e; margin-bottom: 10px; }
+.successCard p { font-size: 0.875rem; color: #4a4a6a; margin-bottom: 28px; }
+
+.roomCodeDisplay {
+  display: flex; align-items: center; gap: 12px;
+  justify-content: center; margin-bottom: 12px;
+  background: #f8f9fa; border-radius: 14px; padding: 16px 24px;
+  border: 1.5px dashed #dee2e6;
+}
+.roomCode { font-family: 'Poppins', sans-serif; font-size: 1.6rem; font-weight: 800; color: #1a1a2e; letter-spacing: 0.15em; }
+.copyBtn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 14px; background: #fff;
+  border: 1.5px solid #dee2e6; border-radius: 8px;
+  font-size: 0.8rem; font-weight: 600; color: #4a4a6a;
+  cursor: pointer; transition: all 0.2s;
+}
+.copyBtn:hover { border-color: #cb2525; color: #cb2525; }
+
+.roomNameLabel { font-size: 0.85rem; color: #6c757d; margin-bottom: 28px; }
+
+@media (max-width: 520px) {
+  .optionCards { grid-template-columns: 1fr; }
+  .content { padding: 40px 16px; }
+  .formCard, .successCard { padding: 28px 20px; }
+}

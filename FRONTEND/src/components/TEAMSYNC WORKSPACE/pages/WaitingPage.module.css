@@ -1,0 +1,136 @@
+.page {
+  min-height: 100vh;
+  background: #f0f2f5;
+  font-family: 'Inter', sans-serif;
+}
+
+.header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 32px; height: 64px;
+  background: #fff; border-bottom: 1px solid #e9ecef;
+}
+
+.logo { display: flex; align-items: center; gap: 10px; }
+.logoMark {
+  width: 32px; height: 32px; border-radius: 9px;
+  background: linear-gradient(135deg, #cb2525, #ea4343);
+  color: #fff; font-family: 'Poppins', sans-serif;
+  font-size: 0.75rem; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+}
+.logoName { font-family: 'Poppins', sans-serif; font-size: 0.9rem; font-weight: 700; color: #1a1a2e; }
+.logoName span { color: #cb2525; }
+
+.signOutBtn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 14px; background: none;
+  border: 1px solid #dee2e6; border-radius: 9999px;
+  font-size: 0.82rem; font-weight: 500; color: #6c757d;
+  cursor: pointer; transition: all 0.2s;
+}
+.signOutBtn:hover { border-color: #cb2525; color: #cb2525; }
+
+.content {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 80px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card {
+  width: 100%;
+  background: #fff;
+  border-radius: 24px;
+  padding: 48px 36px;
+  text-align: center;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.08);
+}
+
+.pulseWrap {
+  position: relative;
+  width: 80px; height: 80px;
+  margin: 0 auto 28px;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.pulseRing {
+  position: absolute; inset: 0;
+  border-radius: 50%;
+  border: 3px solid rgba(203,37,37,0.25);
+  animation: tsPulse 2s ease-in-out infinite;
+}
+
+.clockIcon {
+  width: 60px; height: 60px; border-radius: 50%;
+  background: linear-gradient(135deg, #cb2525, #ea4343);
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  position: relative; z-index: 1;
+}
+
+@keyframes tsPulse {
+  0%, 100% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(1.3); opacity: 0; }
+}
+
+.title {
+  font-family: 'Poppins', sans-serif;
+  font-size: 1.4rem; font-weight: 800; color: #1a1a2e;
+  margin-bottom: 12px;
+}
+
+.desc {
+  font-size: 0.9rem; color: #4a4a6a; line-height: 1.6; margin-bottom: 28px;
+}
+.desc strong { color: #1a1a2e; }
+
+.roomInfoCard {
+  background: #f8f9fa; border-radius: 14px;
+  padding: 20px; margin-bottom: 24px;
+  border: 1px solid #e9ecef;
+  display: flex; flex-direction: column; gap: 14px;
+  text-align: left;
+}
+
+.roomInfoRow {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+
+.roomInfoLabel { font-size: 0.78rem; font-weight: 600; color: #6c757d; }
+.roomInfoValue { font-size: 0.875rem; font-weight: 600; color: #1a1a2e; }
+.roomInfoCode {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.9rem; font-weight: 700; color: #cb2525; letter-spacing: 0.1em;
+}
+
+.userRow { display: flex; align-items: center; gap: 8px; }
+.miniAvatar {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: linear-gradient(135deg, #cb2525, #ea4343);
+  color: #fff; font-size: 0.65rem; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.hint {
+  font-size: 0.8rem; color: #6c757d; line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+.statusDot {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  font-size: 0.82rem; color: #4a4a6a; font-weight: 500;
+}
+
+.dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #ffc107;
+  animation: tsBlink 1.4s ease-in-out infinite;
+  display: inline-block;
+}
+
+@keyframes tsBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}

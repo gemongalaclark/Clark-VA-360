@@ -7,28 +7,32 @@ import Projects from './components/Projects';
 import Contact from './components/Contact';
 import Footer from './components/Footer';
 import GoogleCalendarAutoScheduler from './components/GOOGLE CALENDAR AUTO SCHEDULER/GoogleCalendarAutoScheduler';
+import TeamSyncWorkspace from './components/TEAMSYNC WORKSPACE/TeamSyncWorkspace';
 import './App.css';
 
-function checkIsSchedulerRoute() {
-  if (typeof window === 'undefined') return false;
+function checkRoute() {
+  if (typeof window === 'undefined') return 'portfolio';
   const path = window.location.pathname.toLowerCase();
   const hash = window.location.hash.toLowerCase();
-  return (
+  if (
     path.startsWith('/auto-scheduler') ||
     path.startsWith('/google-calendar-auto-scheduler') ||
     hash.includes('auto-scheduler') ||
     hash.includes('scheduler')
-  );
+  ) return 'scheduler';
+  if (
+    path.startsWith('/teamsync-workspace') ||
+    path.startsWith('/teamsync') ||
+    hash.includes('teamsync')
+  ) return 'teamsync';
+  return 'portfolio';
 }
 
 export default function App() {
-  const [isScheduler, setIsScheduler] = useState(checkIsSchedulerRoute);
+  const [route, setRoute] = useState(checkRoute);
 
   useEffect(() => {
-    const handleRouteChange = () => {
-      setIsScheduler(checkIsSchedulerRoute());
-    };
-
+    const handleRouteChange = () => setRoute(checkRoute());
     window.addEventListener('popstate', handleRouteChange);
     window.addEventListener('hashchange', handleRouteChange);
     return () => {
@@ -37,15 +41,21 @@ export default function App() {
     };
   }, []);
 
-  if (isScheduler) {
+  const goToPortfolio = () => {
+    window.history.pushState({}, '', '/');
+    setRoute('portfolio');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  if (route === 'scheduler') {
     return (
-      <GoogleCalendarAutoScheduler
-        onBackToPortfolio={() => {
-          window.history.pushState({}, '', '/');
-          setIsScheduler(false);
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }}
-      />
+      <GoogleCalendarAutoScheduler onBackToPortfolio={goToPortfolio} />
+    );
+  }
+
+  if (route === 'teamsync') {
+    return (
+      <TeamSyncWorkspace onBackToPortfolio={goToPortfolio} />
     );
   }
 

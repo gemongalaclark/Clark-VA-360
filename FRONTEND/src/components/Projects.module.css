@@ -422,6 +422,126 @@
 }
 
 
+/* ── In-Development Card ── */
+.devCard {
+  border: 1.5px solid rgba(203, 37, 37, 0.25);
+  box-shadow: 0 4px 20px rgba(203, 37, 37, 0.06);
+  position: relative;
+}
+
+.devRibbon {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 10;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: linear-gradient(135deg, #1a1a2e, #2d2d5e);
+  color: #ffffff;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.teamsyncGraphic {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  background: radial-gradient(circle at 30% 70%, #fde8e8 0%, #f0f0ff 60%, #fef7f7 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.teamsyncGlow {
+  position: absolute;
+  bottom: -20px;
+  left: -20px;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: rgba(203, 37, 37, 0.12);
+  filter: blur(25px);
+  pointer-events: none;
+}
+
+.teamsyncGraphicInner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+  z-index: 1;
+  transition: opacity var(--transition-normal);
+}
+
+.teamsyncIconWrap {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1a1a2e 0%, #2d2d5e 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(26, 26, 46, 0.25);
+}
+
+.teamsyncIcon {
+  color: #ffffff;
+}
+
+.teamsyncTitle {
+  font-family: var(--font-heading);
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: var(--text-dark);
+  letter-spacing: -0.02em;
+}
+
+.teamsyncRolePill {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  background: rgba(26, 26, 46, 0.08);
+  color: #1a1a2e;
+  border: 1px solid rgba(26, 26, 46, 0.15);
+}
+
+.devOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  background: rgba(26, 26, 46, 0.88);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity var(--transition-normal);
+  pointer-events: none;
+}
+
+.devCard:hover .devOverlay {
+  opacity: 1;
+}
+
+.devCard:hover .teamsyncGraphicInner {
+  opacity: 0;
+}
+
+.devOverlayText {
+  color: #ffffff;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
 /* ── Responsive ── */
 @media (max-width: 900px) {
   .slide {
