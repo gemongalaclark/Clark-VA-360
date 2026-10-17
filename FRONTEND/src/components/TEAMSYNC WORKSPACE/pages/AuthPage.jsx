@@ -48,7 +48,7 @@ export default function AuthPage({ mode, setMode, onSuccess, onBack }) {
   const handleVerify = async (e) => {
     e.preventDefault();
     setError('');
-    if (code.length !== 6) { setError('Please enter the 6-digit code from your email.'); return; }
+    if (code.length < 6) { setError('Please enter the verification code from your email.'); return; }
     setLoading(true);
 
     const { data, error: verifyError } = await supabase.auth.verifyOtp({
@@ -186,11 +186,11 @@ export default function AuthPage({ mode, setMode, onSuccess, onBack }) {
                 <input
                   type="text"
                   inputMode="numeric"
-                  maxLength={6}
+                  maxLength={8}
                   className={`${styles.input} ${styles.codeInput}`}
                   placeholder="• • • • • •"
                   value={code}
-                  onChange={e => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  onChange={e => setCode(e.target.value.replace(/\D/g, '').slice(0, 8))}
                   autoFocus
                 />
               </div>
