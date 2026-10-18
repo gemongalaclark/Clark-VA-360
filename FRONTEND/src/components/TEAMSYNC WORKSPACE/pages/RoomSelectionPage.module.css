@@ -337,7 +337,6 @@
   .content { padding: 40px 16px; }
   .formCard, .successCard { padding: 28px 20px; }
   .roomListItem { flex-wrap: wrap; }
-  .roleOwner, .roleEmployee, .rolePending { display: none; }
 }
 
 /* ═══ Refinement ═══ */
@@ -354,12 +353,6 @@
 
 /* Option cards */
 .optionCard { border-color: rgba(26,26,46,0.08); box-shadow: 0 1px 2px rgba(26,26,46,0.04); position: relative; overflow: hidden; }
-.optionCard::after {
-  content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 4px;
-  background: linear-gradient(90deg, #cb2525, #ea4343);
-  transform: scaleX(0); transform-origin: left; transition: transform 0.3s ease;
-}
-.optionCard:hover::after { transform: scaleX(1); }
 .optionCard:focus-visible { outline: 2px solid #cb2525; outline-offset: 3px; }
 .optionIcon { box-shadow: 0 6px 16px rgba(203,37,37,0.3); }
 .optionIconSecondary { box-shadow: 0 6px 16px rgba(26,26,46,0.3); }
@@ -369,10 +362,6 @@
   border: 1px solid rgba(203,37,37,0.07);
   box-shadow: 0 1px 2px rgba(26,26,46,0.04), 0 20px 50px rgba(26,26,46,0.09);
   overflow: hidden;
-}
-.formCard::before, .successCard::before {
-  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
-  background: linear-gradient(90deg, #cb2525, #ea4343);
 }
 .successCard { position: relative; }
 .successIcon { box-shadow: 0 0 0 8px rgba(203,37,37,0.1), 0 8px 20px rgba(203,37,37,0.3); }
@@ -390,4 +379,79 @@
 .roomListAvatar { box-shadow: 0 4px 10px rgba(26,26,46,0.22); }
 .roomListCode { color: #6c757d; }
 .enterBtn { border-radius: 10px; padding: 8px 16px; }
-@media (prefers-reduced-motion: reduce) { .optionCard, .optionCard::after, .roomListItem { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .optionCard, .roomListItem { transition: none; } }
+
+/* ═══ Your Rooms — redesign ═══ */
+.yourRooms { margin-top: 48px; }
+.yourRoomsHead { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.yourRoomsTitle { margin: 0; }
+.yourRoomsCount {
+  min-width: 22px; height: 22px; padding: 0 7px; border-radius: 9999px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: rgba(203,37,37,0.1); color: #cb2525; font-size: 0.7rem; font-weight: 700;
+}
+.roomList { list-style: none; margin: 0; padding: 0; gap: 12px; }
+
+.roomListItem {
+  position: relative; gap: 14px; padding: 16px 18px; border-radius: 18px;
+  justify-content: flex-start;
+  border: 1.5px solid rgba(26,26,46,0.07);
+  box-shadow: 0 1px 2px rgba(26,26,46,0.04), 0 6px 18px rgba(26,26,46,0.04);
+}
+.roomPending { background: linear-gradient(100deg, #fffaf0, #fff 60%); border-color: #fde3a7; }
+.roomConfirming { background: #fff5f5; border-color: rgba(203,37,37,0.35); }
+
+.roomListAvatar { width: 48px; height: 48px; border-radius: 14px; font-size: 0.85rem; }
+.avatarOwner { background: linear-gradient(135deg, #cb2525, #ea4343); box-shadow: 0 6px 14px rgba(203,37,37,0.3); }
+.avatarPending { background: linear-gradient(135deg, #d97706, #f59e0b); box-shadow: 0 6px 14px rgba(217,119,6,0.28); }
+
+.roomListInfo { flex: 1; gap: 5px; }
+.roomListName { font-size: 0.98rem; font-weight: 700; letter-spacing: -0.01em; }
+.roomMeta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+.codeChip {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 8px; border-radius: 8px; cursor: pointer;
+  background: #f4f5f7; border: 1px solid transparent; color: #6c757d;
+  font-family: 'Poppins', sans-serif; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em;
+  transition: all 0.2s;
+}
+.codeChip:hover { background: #fff1f1; color: #cb2525; border-color: rgba(203,37,37,0.2); }
+.copiedIcon { color: #059669; }
+.pendingNote { font-size: 0.74rem; font-weight: 500; color: #92400e; }
+
+.roomListRight { gap: 10px; }
+.roleBadge { display: inline-flex; align-items: center; gap: 5px; }
+.roleOwner { background: rgba(203,37,37,0.1); color: #b91c1c; }
+.roleEmployee { background: #eef2ff; color: #3730a3; }
+.rolePending { background: #fff3cd; color: #7a5200; }
+
+.enterBtn { padding: 9px 18px; font-size: 0.82rem; border-radius: 11px; box-shadow: 0 4px 12px rgba(26,26,46,0.2); }
+.enterBtn:hover { background: #cb2525; box-shadow: 0 6px 16px rgba(203,37,37,0.3); transform: translateY(-1px); }
+.enterGhost { background: #fff; color: #92400e; border: 1.5px solid #fcd34d; box-shadow: none; }
+.enterGhost:hover { background: #d97706; color: #fff; border-color: #d97706; box-shadow: none; }
+
+.roomLeaveBtn { width: 34px; height: 34px; border-radius: 10px; }
+
+/* Inline leave confirmation */
+.confirmText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.confirmText strong { font-size: 0.9rem; color: #7f1d1d; }
+.confirmText span { font-size: 0.76rem; color: #6c757d; }
+.confirmCancel, .confirmLeave {
+  padding: 8px 16px; border-radius: 10px; font-size: 0.8rem; font-weight: 600; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s;
+}
+.confirmCancel { background: #fff; border: 1.5px solid #dee2e6; color: #4a4a6a; }
+.confirmCancel:hover { background: #f1f3f5; }
+.confirmLeave { background: #cb2525; border: 1.5px solid #cb2525; color: #fff; }
+.confirmLeave:hover:not(:disabled) { background: #a81d1d; }
+.confirmLeave:disabled, .confirmCancel:disabled { opacity: 0.6; cursor: not-allowed; }
+:is(.codeChip, .confirmCancel, .confirmLeave):focus-visible { outline: 2px solid #cb2525; outline-offset: 2px; }
+
+@media (max-width: 560px) {
+  .roomListItem { flex-wrap: wrap; padding: 14px; }
+  .roomListInfo { flex-basis: calc(100% - 64px); }
+  .roomListRight { width: 100%; justify-content: flex-end; }
+  .roleBadge { margin-right: auto; }
+  .confirmText { flex-basis: calc(100% - 64px); }
+}

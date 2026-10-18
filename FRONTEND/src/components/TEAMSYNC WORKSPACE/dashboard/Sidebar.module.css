@@ -210,15 +210,6 @@
   color: #fff;
   font-weight: 600;
 }
-.navActive::before {
-  content: '';
-  position: absolute;
-  left: -12px; top: 22%; bottom: 22%;
-  width: 4px;
-  border-radius: 0 4px 4px 0;
-  background: var(--accent);
-  box-shadow: 0 0 12px var(--accent);
-}
 .navActive .navIcon { color: var(--accent-text); }
 
 .navIcon {

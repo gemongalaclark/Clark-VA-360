@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Hash, ArrowRight, Copy, Check, Loader, X, LogOut, LogIn } from 'lucide-react';
+import { Plus, Hash, ArrowRight, Copy, Check, Loader, X, LogOut, LogIn, Crown, User, Clock } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import styles from './RoomSelectionPage.module.css';
 
@@ -13,6 +13,8 @@ export default function RoomSelectionPage({ profile, session, onRoomJoined, onLe
   const [copied, setCopied] = useState(false);
   const [myRooms, setMyRooms] = useState([]);
   const [leavingId, setLeavingId] = useState(null);
+  const [confirmId, setConfirmId] = useState(null);
+  const [copiedRoomId, setCopiedRoomId] = useState(null);
 
   useEffect(() => {
     if (!profile || !supabase) return;
@@ -29,6 +31,15 @@ export default function RoomSelectionPage({ profile, session, onRoomJoined, onLe
     await onLeaveRoom(roomId);
     setMyRooms(prev => prev.filter(m => m.rooms?.id !== roomId));
     setLeavingId(null);
+    setConfirmId(null);
+  };
+
+  const copyRoomCode = async (room) => {
+    try {
+      await navigator.clipboard.writeText(room.room_code);
+      setCopiedRoomId(room.id);
+      setTimeout(() => setCopiedRoomId(null), 1500);
+    } catch { /* clipboard unavailable */ }
   };
 
   const fullName = profile ? `${profile.first_name} ${profile.last_name}` : 'there';
@@ -153,54 +164,88 @@ export default function RoomSelectionPage({ profile, session, onRoomJoined, onLe
 
             {/* Your Rooms */}
             {myRooms.length > 0 && (
-              <div className={styles.yourRooms}>
-                <h3 className={styles.yourRoomsTitle}>Your Rooms</h3>
-                <div className={styles.roomList}>
-                  {myRooms.map((m, i) => {
+              <section className={styles.yourRooms} aria-labelledby="your-rooms-title">
+                <div className={styles.yourRoomsHead}>
+                  <h3 className={styles.yourRoomsTitle} id="your-rooms-title">Your Rooms</h3>
+                  <span className={styles.yourRoomsCount}>{myRooms.length}</span>
+                </div>
+                <ul className={styles.roomList}>
+                  {myRooms.map((m) => {
                     const room = m.rooms;
                     if (!room) return null;
                     const isPending = m.role === 'pending';
+                    const isOwner = m.role === 'owner';
+                    const confirming = confirmId === room.id;
+                    const leaving = leavingId === room.id;
+                    const RoleIcon = isOwner ? Crown : isPending ? Clock : User;
+                    const roleLabel = isOwner ? 'Owner' : isPending ? 'Pending' : 'Employee';
+                    const roleCls = isOwner ? styles.roleOwner : isPending ? styles.rolePending : styles.roleEmployee;
                     return (
-                      <div key={i} className={styles.roomListItem}>
-                        <div className={styles.roomListLeft}>
-                          <div className={styles.roomListAvatar}>
-                            {room.name.slice(0, 2).toUpperCase()}
-                          </div>
-                          <div className={styles.roomListInfo}>
-                            <span className={styles.roomListName}>{room.name}</span>
-                            <span className={styles.roomListCode}>#{room.room_code}</span>
-                          </div>
+                      <li
+                        key={room.id}
+                        className={`${styles.roomListItem} ${isPending ? styles.roomPending : ''} ${confirming ? styles.roomConfirming : ''}`}
+                      >
+                        <div className={`${styles.roomListAvatar} ${isOwner ? styles.avatarOwner : isPending ? styles.avatarPending : ''}`}>
+                          {room.name.slice(0, 2).toUpperCase()}
                         </div>
-                        <div className={styles.roomListRight}>
-                          <span className={
-                            m.role === 'owner' ? styles.roleOwner
-                            : m.role === 'employee' ? styles.roleEmployee
-                            : styles.rolePending
-                          }>
-                            {m.role === 'owner' ? '⭐ Owner' : m.role === 'employee' ? '👤 Employee' : '⏳ Pending'}
-                          </span>
-                          <button
-                            className={styles.enterBtn}
-                            onClick={() => onRoomJoined(room, m.role)}
-                            title="Enter room"
-                          >
-                            <LogIn size={14} />
-                            {isPending ? 'Check Status' : 'Enter'}
-                          </button>
-                          <button
-                            className={styles.roomLeaveBtn}
-                            onClick={() => handleLeaveThisRoom(room.id)}
-                            disabled={leavingId === room.id}
-                            title="Leave room"
-                          >
-                            {leavingId === room.id ? <Loader size={13} className={styles.spin} /> : <X size={13} />}
-                          </button>
-                        </div>
-                      </div>
+
+                        {confirming ? (
+                          <>
+                            <div className={styles.confirmText}>
+                              <strong>Leave {room.name}?</strong>
+                              <span>{isOwner ? 'You are the owner — members may lose access.' : 'You will need the Room ID to rejoin.'}</span>
+                            </div>
+                            <div className={styles.roomListRight}>
+                              <button className={styles.confirmCancel} onClick={() => setConfirmId(null)} disabled={leaving}>Cancel</button>
+                              <button className={styles.confirmLeave} onClick={() => handleLeaveThisRoom(room.id)} disabled={leaving}>
+                                {leaving && <Loader size={13} className={styles.spin} />} Leave
+                              </button>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className={styles.roomListInfo}>
+                              <span className={styles.roomListName}>{room.name}</span>
+                              <div className={styles.roomMeta}>
+                                <button
+                                  className={styles.codeChip}
+                                  onClick={() => copyRoomCode(room)}
+                                  title="Copy Room ID"
+                                  aria-label={`Copy Room ID ${room.room_code}`}
+                                >
+                                  <Hash size={11} />{room.room_code}
+                                  {copiedRoomId === room.id ? <Check size={12} className={styles.copiedIcon} /> : <Copy size={12} />}
+                                </button>
+                                {isPending && <span className={styles.pendingNote}>Awaiting owner approval</span>}
+                              </div>
+                            </div>
+                            <div className={styles.roomListRight}>
+                              <span className={`${styles.roleBadge} ${roleCls}`}>
+                                <RoleIcon size={12} strokeWidth={2.4} /> {roleLabel}
+                              </span>
+                              <button
+                                className={`${styles.enterBtn} ${isPending ? styles.enterGhost : ''}`}
+                                onClick={() => onRoomJoined(room, m.role)}
+                              >
+                                {isPending ? <Clock size={14} /> : <LogIn size={14} />}
+                                {isPending ? 'Check status' : 'Enter'}
+                              </button>
+                              <button
+                                className={styles.roomLeaveBtn}
+                                onClick={() => setConfirmId(room.id)}
+                                title="Leave room"
+                                aria-label={`Leave ${room.name}`}
+                              >
+                                <X size={14} />
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </li>
                     );
                   })}
-                </div>
-              </div>
+                </ul>
+              </section>
             )}
           </div>
         ) : (

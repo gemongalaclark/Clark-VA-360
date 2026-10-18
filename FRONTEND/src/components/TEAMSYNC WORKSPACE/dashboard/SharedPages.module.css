@@ -540,8 +540,8 @@
 .myTaskDate { font-size: 0.72rem; color: #8a93a0; }
 .reviewerNoteEmp {
   font-size: 0.78rem; color: #4a4a6a;
-  background: #f8f9fa; border-left: 3px solid #cb2525;
-  padding: 8px 10px; border-radius: 0 8px 8px 0;
+  background: #fff6f6; border: 1px solid rgba(203,37,37,0.12);
+  padding: 8px 12px; border-radius: 10px;
   margin-top: 8px; line-height: 1.5;
 }
 .deleteBtn {
@@ -580,10 +580,6 @@
   background: linear-gradient(115deg, #fff 55%, #fff2f2 100%);
   box-shadow: 0 1px 2px rgba(26,26,46,0.04), 0 10px 30px rgba(203,37,37,0.07);
 }
-.pageHeader::before {
-  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 5px;
-  background: linear-gradient(180deg, #cb2525, #ea4343);
-}
 .pageTitle { font-size: 1.45rem; letter-spacing: -0.02em; }
 .pageSubtitle { font-size: 0.875rem; }
 
@@ -597,14 +593,7 @@
 .cardTitle { font-size: 1rem; letter-spacing: -0.01em; }
 
 .statCard { position: relative; overflow: hidden; }
-.statCard::after {
-  content: ''; position: absolute; left: 20px; right: 20px; bottom: 0; height: 3px;
-  border-radius: 3px 3px 0 0;
-  background: linear-gradient(90deg, #cb2525, #ea4343);
-  opacity: 0; transform: scaleX(0.4); transition: all 0.3s ease;
-}
 .statCard:hover { transform: translateY(-3px); border-color: rgba(203,37,37,0.18); box-shadow: 0 14px 34px rgba(203,37,37,0.13); }
-.statCard:hover::after { opacity: 1; transform: scaleX(1); }
 .statLabel { letter-spacing: 0.02em; }
 .statValue { font-size: 1.9rem; line-height: 1.1; letter-spacing: -0.02em; }
 
@@ -618,7 +607,7 @@
 
 .taskItem { border-radius: 14px; border-bottom-color: transparent; margin-bottom: 2px; }
 .taskItem:hover { background: #fff9f9; }
-.taskExpanded { background: #fff4f4; box-shadow: inset 3px 0 0 #cb2525; }
+.taskExpanded { background: #fff6f6; }
 .taskDesc { max-width: 360px; }
 
 /* Filter pills */
@@ -657,7 +646,6 @@
 /* Forms + modal */
 .modalOverlay { background: rgba(13,13,28,0.55); backdrop-filter: blur(6px); }
 .modal { border-radius: 24px; box-shadow: 0 30px 80px rgba(13,13,28,0.35); position: relative; overflow: hidden; }
-.modal::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, #cb2525, #ea4343); }
 .modalClose:hover { background: #fff1f1; color: #cb2525; border-color: rgba(203,37,37,0.3); }
 .input:hover, .textarea:hover { border-color: #c9ced6; }
 .formError { background: #fff4f4; border: 1px solid rgba(203,37,37,0.2); padding: 8px 12px; border-radius: 8px; }
@@ -693,7 +681,6 @@
 /* ═══ Page components: status, alerts, toolbar, cards ═══ */
 
 /* Per-card tone drives the hover underline */
-.statCard::after { background: var(--tone, #cb2525); }
 .statHint {
   display: flex; align-items: center; gap: 4px;
   font-size: 0.75rem; font-weight: 500; color: #6c757d;
@@ -707,9 +694,6 @@
 .stRejected { background: #fde8e8; color: #9b1c1c; }
 
 /* Left status stripe on task rows/cards */
-.taskItem[data-status="pending"]  { box-shadow: inset 3px 0 0 #f59e0b; }
-.taskItem[data-status="approved"] { box-shadow: inset 3px 0 0 #10b981; }
-.taskItem[data-status="rejected"] { box-shadow: inset 3px 0 0 #cb2525; }
 .taskItem.taskExpanded { background: #fff4f4; }
 
 /* Action banner */
@@ -829,7 +813,7 @@
 .summaryChipWarn { background: #fff3cd; color: #7a5200; }
 .roomCodeTitle { display: flex; align-items: center; gap: 8px; }
 .copyDone { background: #d1fae5; border-color: #10b981; color: #065f46; }
-.attentionCard { border-color: #fde3a7; box-shadow: inset 4px 0 0 #f59e0b, 0 8px 28px rgba(245,158,11,0.08); }
+.attentionCard { background: #fffbf0; border-color: #fde3a7; box-shadow: 0 1px 2px rgba(26,26,46,0.04); }
 .avatarMuted { background: linear-gradient(135deg, #6c757d, #8a93a0); }
 .youTag {
   margin-left: 6px; padding: 1px 8px; border-radius: 9999px; vertical-align: middle;
@@ -847,9 +831,6 @@
   transition: transform 0.2s, box-shadow 0.2s;
 }
 .myTaskCard:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(203,37,37,0.1); }
-.myTaskCard[data-status="pending"]  { border-left: 4px solid #f59e0b; }
-.myTaskCard[data-status="approved"] { border-left: 4px solid #10b981; }
-.myTaskCard[data-status="rejected"] { border-left: 4px solid #cb2525; }
 .myTaskHead { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .myTaskHead .myTaskTitle { margin: 0; font-size: 0.98rem; line-height: 1.4; }
 .myTaskCard .myTaskDesc { margin: 0; white-space: pre-wrap; }
@@ -877,3 +858,32 @@
 @media (prefers-reduced-motion: reduce) {
   .myTaskCard, .alertBtn, .rateFill { transition: none; }
 }
+
+/* ═══ Clean surfaces: no edge stripes, hierarchy through type, space and tone ═══ */
+.pageHeader {
+  padding: 28px 32px;
+  background: #fff;
+  border: 1px solid #ece7e7;
+  border-radius: 20px;
+  box-shadow: 0 1px 2px rgba(26,26,46,0.04);
+  gap: 24px;
+}
+.pageEyebrow {
+  font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+  color: #8a93a0; margin-bottom: 8px;
+}
+.pageTitle { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 6px; }
+.pageSubtitle { font-size: 0.9rem; color: #5f6672; }
+.pageSubtitle strong { color: #1a1a2e; font-weight: 600; }
+.pageHeaderBadge {
+  background: #fff6f6; border: 1px solid rgba(203,37,37,0.14);
+  padding: 9px 16px; border-radius: 9999px;
+}
+
+.card, .statCard, .myTaskCard { border: 1px solid #ece7e7; box-shadow: 0 1px 2px rgba(26,26,46,0.04); }
+.statCard:hover, .myTaskCard:hover { border-color: #e0d6d6; box-shadow: 0 8px 24px rgba(26,26,46,0.08); }
+.cardHeader { border-bottom-color: #f1ecec; }
+.alertBanner { background: #fffbf0; }
+.alertDanger { background: #fff6f6; }
+
+@media (max-width: 640px) { .pageHeader { padding: 20px; } .pageTitle { font-size: 1.25rem; } }

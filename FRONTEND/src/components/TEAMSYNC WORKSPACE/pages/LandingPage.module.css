@@ -465,7 +465,7 @@
 .previewCard { box-shadow: 0 40px 80px rgba(26,26,46,0.16), 0 0 0 1px rgba(26,26,46,0.05); transition: transform 0.4s ease; }
 .previewCard:hover { transform: translateY(-4px); }
 .previewSidebar { background: linear-gradient(170deg, #0d0d1c, #1a1a2e 60%, #22223e); }
-.previewNavActive { box-shadow: inset 3px 0 0 #cb2525; }
+
 
 /* Features */
 .features { background: linear-gradient(180deg, #fff 0%, #fef7f7 18%, #fef7f7 100%); }

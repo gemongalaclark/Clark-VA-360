@@ -122,7 +122,6 @@
   position: relative;
 }
 .notifItem:hover { background: #fff6f6; }
-.notifUnread { background: #fff1f1; }
 
 .notifIcon {
   width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0;
@@ -224,9 +223,10 @@
   border-radius: 18px;
   box-shadow: 0 20px 56px rgba(26,26,46,0.16);
 }
-.notifUnread { box-shadow: inset 3px 0 0 #cb2525; }
 .profileRoomCode {
   background: rgba(203,37,37,0.08);
   padding: 3px 10px; border-radius: 8px;
 }
 @media (max-width: 900px) { .searchInput, .searchInput:focus { width: 180px; } }
+
+.notifUnread { background: #fff6f6; }

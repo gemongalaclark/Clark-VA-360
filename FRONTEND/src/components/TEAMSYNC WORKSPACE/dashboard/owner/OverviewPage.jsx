@@ -93,6 +93,7 @@ export default function OverviewPage({ room, profile, onNavigate }) {
       {/* Welcome header */}
       <div className={styles.pageHeader}>
         <div>
+          <p className={styles.pageEyebrow}>{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
           <p className={styles.pageTitle}>{greeting()}, {profile?.first_name}</p>
           <p className={styles.pageSubtitle}>
             Here's what's happening in <strong>{room?.name}</strong> today.

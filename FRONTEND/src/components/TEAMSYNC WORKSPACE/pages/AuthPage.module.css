@@ -203,10 +203,6 @@
   border: 1px solid rgba(203,37,37,0.08);
   box-shadow: 0 1px 2px rgba(26,26,46,0.04), 0 24px 64px rgba(26,26,46,0.12);
 }
-.card::before {
-  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
-  background: linear-gradient(90deg, #cb2525, #ea4343);
-}
 .logoMark { width: 40px; height: 40px; border-radius: 12px; box-shadow: 0 4px 14px rgba(203,37,37,0.35); }
 .logoName { font-size: 1.05rem; letter-spacing: -0.01em; }
 .title { letter-spacing: -0.02em; }
@@ -217,7 +213,7 @@
 .btnPrimary { border-radius: 14px; padding: 14px; }
 .btnPrimary:active:not(:disabled) { transform: translateY(0); }
 .btnPrimary:focus-visible, .switchBtn:focus-visible, .backBtn:focus-visible { outline: 2px solid #cb2525; outline-offset: 2px; }
-.error { display: flex; align-items: center; gap: 8px; border-left: 3px solid #cb2525; }
+.error { display: flex; align-items: center; gap: 8px; border-radius: 10px; }
 @media (max-width: 480px) {
   .card { padding: 32px 22px; border-radius: 20px; }
   .nameRow { flex-direction: column; gap: 18px; }

@@ -71,6 +71,7 @@ export default function EmpOverviewPage({ room, profile, onNavigate }) {
       {/* Welcome header */}
       <div className={styles.pageHeader}>
         <div>
+          <p className={styles.pageEyebrow}>{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
           <p className={styles.pageTitle}>{greeting()}, {profile?.first_name}</p>
           <p className={styles.pageSubtitle}>
             Here's a summary of your work in <strong>{room?.name}</strong>.
