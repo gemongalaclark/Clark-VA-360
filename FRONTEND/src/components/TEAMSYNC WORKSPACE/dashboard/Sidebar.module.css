@@ -392,7 +392,7 @@
   .sidebar, .sidebar * { transition: none !important; }
 }
 
-/* ═══ Floating curved sidebar ═══════════════════════════════
+/* ═══ Curved sidebar seam ═══════════════════════════════
    The sidebar is a rounded panel; the content sheet beside it has
    rounded inner corners, drawn here with two "inverse corner" pieces
    so the navy flows smoothly around the curve.                       */
@@ -406,11 +406,9 @@
   z-index: 30;
   position: relative;
   border-right: none;
-  border-radius: var(--radius) 0 0 var(--radius);
   background:
     radial-gradient(120% 45% at 0% 0%, var(--accent-soft) 0%, transparent 60%),
     linear-gradient(180deg, var(--top-tone) 0%, var(--bottom-tone) 100%);
-  box-shadow: 0 24px 60px rgba(26,26,46,0.22);
 }
 .sidebar.collapsed { width: 80px; }
 

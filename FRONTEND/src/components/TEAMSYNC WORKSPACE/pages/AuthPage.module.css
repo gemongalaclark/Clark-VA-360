@@ -218,7 +218,3 @@
   .card { padding: 32px 22px; border-radius: 20px; }
   .nameRow { flex-direction: column; gap: 18px; }
 }
-
-/* Same soft grey backdrop + rounder card as the workspace shell */
-.page { background: #e9e4e4; }
-.card { border-radius: 32px; box-shadow: 0 24px 60px rgba(26,26,46,0.14); }

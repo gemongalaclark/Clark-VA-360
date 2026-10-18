@@ -5,7 +5,6 @@ export default function WaitingPage({ profile, room, onSignOut }) {
   const initials = profile ? `${profile.first_name[0]}${profile.last_name[0]}`.toUpperCase() : 'U';
 
   return (
-    <div className={styles.shell}>
     <div className={styles.page}>
       <header className={styles.header}>
         <div className={styles.logo}>
@@ -60,7 +59,6 @@ export default function WaitingPage({ profile, room, onSignOut }) {
           </div>
         </div>
       </div>
-    </div>
     </div>
   );
 }
