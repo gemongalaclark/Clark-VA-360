@@ -471,3 +471,104 @@ a.contactItem:hover { color: var(--red-primary); }
 @media (prefers-reduced-motion: reduce) {
   .ring, .floatBadge, .scrollDot, .badgeDot { animation: none; }
 }
+
+/* ═══════════════ Photo animations ═══════════════
+   JS only sets --mx/--my (pointer, -1..1) and --sp (scroll progress, 0..1).
+   Parallax uses the individual `translate` property and the reveals use `scale`/opacity,
+   so none of it fights the existing transform-based float / spin animations. */
+
+@property --hover {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+
+.photoWrapper {
+  --mx: 0; --my: 0; --sp: 0;
+  animation: none;                                   /* replaced by per-layer reveals */
+  translate: 0 calc(var(--sp) * -36px);              /* 6. scroll drift */
+  opacity: calc(1 - var(--sp) * 0.7);                /* 6. scroll fade */
+  transition: --hover 0.35s ease;
+  will-change: translate, opacity;
+}
+.photoWrapper:hover { --hover: 1; }
+
+/* 3. Breathing glow behind the photo */
+.glow {
+  position: absolute;
+  width: 560px; height: 560px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(203,37,37,0.28) 0%, rgba(234,67,67,0.12) 40%, transparent 70%);
+  filter: blur(8px);
+  pointer-events: none;
+  translate: calc(var(--mx) * 4px) calc(var(--my) * 4px);
+  animation: glowBreath 5s ease-in-out infinite;
+}
+@keyframes glowBreath {
+  0%, 100% { opacity: 0.55; scale: 1; }
+  50%      { opacity: 1;    scale: 1.08; }
+}
+
+/* 1. Rings draw in, then 4. a dot orbits on the outer ring */
+.ring {
+  translate: calc(var(--mx) * 6px) calc(var(--my) * 6px);
+  animation: spin-slow 24s linear infinite, ringIn 0.9s ease 0.35s both;
+}
+.ringInner {
+  translate: calc(var(--mx) * 8px) calc(var(--my) * 8px);
+  animation: ringIn 0.9s ease 0.25s both;
+}
+@keyframes ringIn {
+  from { opacity: 0; scale: 0.85; }
+  to   { opacity: 1; scale: 1; }
+}
+.orbitDot {
+  position: absolute;
+  top: -6px; left: calc(50% - 6px);
+  width: 12px; height: 12px; border-radius: 50%;
+  background: var(--red-primary);
+  box-shadow: 0 0 0 4px rgba(203,37,37,0.15), 0 0 16px rgba(203,37,37,0.6);
+}
+
+/* 1. Photo reveal: scale up, fade in, blur to sharp  +  2. parallax  +  5. hover lift */
+.photoCircle {
+  translate: calc(var(--mx) * 10px) calc(var(--my) * 10px);
+  scale: calc(1 + var(--hover) * 0.03);
+  animation: photoReveal 1s cubic-bezier(0.2, 0.8, 0.2, 1) 0.1s both;
+  transition: box-shadow 0.35s ease;
+}
+.photoWrapper:hover .photoCircle {
+  box-shadow: 0 40px 90px rgba(203,37,37,0.3), 0 8px 26px rgba(26,26,46,0.14);
+}
+@keyframes photoReveal {
+  from { opacity: 0; transform: scale(0.9); filter: blur(12px); }
+  to   { opacity: 1; transform: scale(1);   filter: blur(0); }
+}
+
+/* 1. Badges pop in after the photo  +  2. parallax (closest layer)  +  5. drift apart on hover */
+.floatBadge { animation: badgePop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.9s both, float 4s ease-in-out 1.5s infinite; }
+.badgeTop {
+  translate: calc(var(--mx) * 22px + var(--hover) * 12px) calc(var(--my) * 22px - var(--hover) * 8px);
+}
+.badgeBottom {
+  animation-delay: 1.15s, 3.5s;
+  translate: calc(var(--mx) * 18px - var(--hover) * 12px) calc(var(--my) * 18px + var(--hover) * 8px);
+}
+@keyframes badgePop {
+  from { opacity: 0; scale: 0.7; }
+  to   { opacity: 1; scale: 1; }
+}
+
+@media (max-width: 900px) {
+  .glow { width: 400px; height: 400px; }
+}
+@media (max-width: 480px) {
+  .glow { width: 320px; height: 320px; }
+}
+
+/* Respect reduced motion: everything static, fully visible */
+@media (prefers-reduced-motion: reduce) {
+  .photoWrapper { translate: none; opacity: 1; transition: none; will-change: auto; }
+  .glow, .ring, .ringInner, .photoCircle, .floatBadge { animation: none; }
+  .photoCircle, .glow, .ring, .ringInner, .badgeTop, .badgeBottom { translate: none; scale: none; }
+  .orbitDot { display: none; }
+}

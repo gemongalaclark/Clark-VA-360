@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { Mail, MapPin, Download, ArrowRight, BadgeCheck, GraduationCap } from 'lucide-react';
 import styles from './Hero.module.css';
 
@@ -8,6 +9,54 @@ const highlights = [
 ];
 
 export default function Hero() {
+  const photoRef = useRef(null);
+
+  /* Photo motion: pointer parallax (mouse devices) + scroll-linked drift/fade.
+     Both only write CSS variables (--mx, --my, --sp); all visuals live in the stylesheet. */
+  useEffect(() => {
+    const el = photoRef.current;
+    if (!el) return undefined;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined;
+
+    const hero = el.closest('section');
+    const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+    let tx = 0, ty = 0, cx = 0, cy = 0, raf = 0;
+
+    const loop = () => {
+      cx += (tx - cx) * 0.08;
+      cy += (ty - cy) * 0.08;
+      el.style.setProperty('--mx', cx.toFixed(3));
+      el.style.setProperty('--my', cy.toFixed(3));
+      raf = Math.abs(tx - cx) > 0.001 || Math.abs(ty - cy) > 0.001 ? requestAnimationFrame(loop) : 0;
+    };
+    const kick = () => { if (!raf) raf = requestAnimationFrame(loop); };
+
+    const onMove = (e) => {
+      tx = (e.clientX / window.innerWidth - 0.5) * 2;
+      ty = (e.clientY / window.innerHeight - 0.5) * 2;
+      kick();
+    };
+    const onLeave = () => { tx = 0; ty = 0; kick(); };
+    const onScroll = () => {
+      const p = Math.min(1, Math.max(0, window.scrollY / (hero.offsetHeight * 0.7)));
+      el.style.setProperty('--sp', p.toFixed(3));
+    };
+
+    if (finePointer) {
+      window.addEventListener('mousemove', onMove, { passive: true });
+      document.documentElement.addEventListener('mouseleave', onLeave);
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      document.documentElement.removeEventListener('mouseleave', onLeave);
+      window.removeEventListener('scroll', onScroll);
+      cancelAnimationFrame(raf);
+    };
+  }, []);
+
   const scrollTo = (id) => {
     const el = document.getElementById(id);
     if (el) {
@@ -125,8 +174,9 @@ export default function Hero() {
         </div>
 
         {/* Right – photo */}
-        <div className={styles.photoWrapper}>
-          <div className={styles.ring} aria-hidden="true" />
+        <div className={styles.photoWrapper} ref={photoRef}>
+          <div className={styles.glow} aria-hidden="true" />
+          <div className={styles.ring} aria-hidden="true"><span className={styles.orbitDot} /></div>
           <div className={styles.ringInner} aria-hidden="true" />
 
           <div className={`${styles.floatBadge} ${styles.badgeTop}`}>
