@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Users, ClipboardCheck, CheckCircle, Clock, TrendingUp, Activity, ArrowRight, BellRing } from 'lucide-react';
 import { supabase } from '../../../../lib/supabase';
 import ActivityChart from '../ActivityChart';
+import { fetchRoomTasks } from '../taskApi';
 import { getInitials, getName, greeting } from '../StatusBadge';
 import styles from '../SharedPages.module.css';
 
@@ -26,10 +27,8 @@ export default function OverviewPage({ room, profile, onNavigate }) {
       .eq('room_id', room.id)
       .eq('role', 'employee');
 
-    const { data: tasks } = await supabase
-      .from('tasks')
-      .select('*, profiles(*)')
-      .eq('room_id', room.id);
+    const { data: tasks, error: tasksErr } = await fetchRoomTasks(room.id);
+    if (tasksErr) console.error('Could not load tasks:', tasksErr.message);
 
     const approved = tasks?.filter(t => t.status === 'approved').length ?? 0;
     const pending  = tasks?.filter(t => t.status === 'submitted').length ?? 0;

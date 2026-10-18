@@ -4,6 +4,7 @@ import { supabase } from '../../../../lib/supabase';
 import StatusBadge, { UrgentBadge, getInitials, getName } from '../StatusBadge';
 import SubmissionTable from '../SubmissionTable';
 import { deadlineInfo, formatDeadline } from '../taskUtils';
+import { fetchRoomTasks } from '../taskApi';
 import styles from '../SharedPages.module.css';
 
 const FILTERS = [
@@ -23,16 +24,15 @@ export default function ReviewPage({ room }) {
   const [expandedId, setExpandedId] = useState(null);
   const [notes, setNotes] = useState('');
   const [noteError, setNoteError] = useState('');
+  const [loadError, setLoadError] = useState('');
 
   const load = useCallback(async (silent = false) => {
     if (!room || !supabase) return;
     if (!silent) setLoading(true);
-    const { data } = await supabase
-      .from('tasks')
-      .select('*, profiles(*)')
-      .eq('room_id', room.id)
-      .order('created_at', { ascending: false });
-    setTasks(data ?? []);
+    const { data, error } = await fetchRoomTasks(room.id);
+    if (error) console.error('Could not load tasks:', error.message);
+    setLoadError(error ? error.message : '');
+    if (!error) setTasks(data);
     setLoading(false);
   }, [room]);
 
@@ -99,6 +99,10 @@ export default function ReviewPage({ room }) {
         </div>
         <div className={styles.pageHeaderBadge}>{counts.approved} approved · {counts.rejected} in revision</div>
       </div>
+
+      {loadError && (
+        <p className={styles.formError} role="alert">Couldn’t load tasks: {loadError}</p>
+      )}
 
       {/* Toolbar: filters + search */}
       <div className={styles.toolbar}>

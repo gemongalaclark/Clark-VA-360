@@ -3,6 +3,7 @@ import { Send, Loader, CheckCircle2, UserPlus, CalendarClock } from 'lucide-reac
 import { supabase } from '../../../../lib/supabase';
 import StatusBadge, { getInitials, getName } from '../StatusBadge';
 import { formatDeadline } from '../taskUtils';
+import { fetchRoomTasks } from '../taskApi';
 import styles from '../SharedPages.module.css';
 
 const TITLE_MAX = 120;
@@ -31,11 +32,11 @@ export default function CreateTaskPage({ room, profile, onNavigate }) {
 
   const load = useCallback(async () => {
     if (!room || !supabase) return;
-    const [{ data: members }, { data: tasks }] = await Promise.all([
+    const [{ data: members }, { data: tasks, error: tasksErr }] = await Promise.all([
       supabase.from('room_members').select('user_id, profiles(*)').eq('room_id', room.id).eq('role', 'employee'),
-      supabase.from('tasks').select('*, profiles(*)').eq('room_id', room.id)
-        .order('created_at', { ascending: false }).limit(6),
+      fetchRoomTasks(room.id, { limit: 6 }),
     ]);
+    if (tasksErr) console.error('Could not load recent tasks:', tasksErr.message);
     setEmployees(members ?? []);
     setRecent(tasks ?? []);
     setLoading(false);
