@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Sidebar from './Sidebar';
 import TopBar from './TopBar';
 import OverviewPage from './owner/OverviewPage';
+import CreateTaskPage from './owner/CreateTaskPage';
 import ReviewPage from './owner/ReviewPage';
 import MembersPage from './owner/MembersPage';
 import EmpOverviewPage from './employee/EmpOverviewPage';
@@ -15,6 +16,7 @@ export default function Dashboard({ profile, room, role, session, onSignOut, onS
   const renderContent = () => {
     if (role === 'owner') {
       if (currentTab === 'overview') return <OverviewPage room={room} profile={profile} onNavigate={setCurrentTab} />;
+      if (currentTab === 'create')   return <CreateTaskPage room={room} profile={profile} onNavigate={setCurrentTab} />;
       if (currentTab === 'review')   return <ReviewPage room={room} profile={profile} />;
       if (currentTab === 'members')  return <MembersPage room={room} profile={profile} />;
     }

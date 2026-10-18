@@ -1,27 +1,30 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ClipboardCheck, CheckCircle, XCircle, Clock, TrendingUp, Hash, ArrowRight, MessageSquareWarning, Sparkles } from 'lucide-react';
+import { ClipboardCheck, CheckCircle, ListTodo, Clock, TrendingUp, Hash, ArrowRight, MessageSquareWarning, Sparkles, Flame } from 'lucide-react';
+import { deadlineInfo } from '../taskUtils';
 import { supabase } from '../../../../lib/supabase';
 import ActivityChart from '../ActivityChart';
 import StatusBadge, { greeting } from '../StatusBadge';
 import styles from '../SharedPages.module.css';
 
-const CHART_SERIES = [{ key: 'value', label: 'Submitted', color: '#cb2525' }];
+const CHART_SERIES = [{ key: 'value', label: 'Assigned', color: '#cb2525' }];
 
 export default function EmpOverviewPage({ room, profile, onNavigate }) {
-  const [stats, setStats] = useState({ submitted: 0, approved: 0, rejected: 0, pending: 0 });
+  const [stats, setStats] = useState({ submitted: 0, approved: 0, rejected: 0, pending: 0, todo: 0, urgent: 0 });
   const [recentTasks, setRecentTasks] = useState([]);
   const [chartData, setChartData] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const load = useCallback(async () => {
-    if (!room || !profile || !supabase) return;
-    setLoading(true);
+  const userId = profile?.id;
+
+  const load = useCallback(async (silent = false) => {
+    if (!room || !userId || !supabase) return;
+    if (!silent) setLoading(true);
 
     const { data: tasks } = await supabase
       .from('tasks')
       .select('*')
       .eq('room_id', room.id)
-      .eq('employee_id', profile.id)
+      .eq('employee_id', userId)
       .order('created_at', { ascending: false });
 
     const t = tasks ?? [];
@@ -29,7 +32,9 @@ export default function EmpOverviewPage({ room, profile, onNavigate }) {
       submitted: t.length,
       approved: t.filter(x => x.status === 'approved').length,
       rejected: t.filter(x => x.status === 'rejected').length,
-      pending:  t.filter(x => x.status === 'pending').length,
+      pending:  t.filter(x => x.status === 'submitted').length,
+      todo:     t.filter(x => x.status === 'assigned' || x.status === 'rejected').length,
+      urgent:   t.filter(x => deadlineInfo(x)?.urgent).length,
     });
     setRecentTasks(t.slice(0, 5));
 
@@ -48,18 +53,18 @@ export default function EmpOverviewPage({ room, profile, onNavigate }) {
     }
     setChartData(months);
     setLoading(false);
-  }, [room, profile]);
+  }, [room, userId]);
 
   useEffect(() => { load(); }, [load]);
 
   const approvalRate = stats.submitted > 0 ? Math.round((stats.approved / stats.submitted) * 100) : null;
 
   const statCards = [
-    { label: 'Total Submitted', value: stats.submitted, icon: <ClipboardCheck size={20} />, tone: '#1a1a2e', hint: 'All time' },
+    { label: 'Assigned to Me',  value: stats.submitted, icon: <ClipboardCheck size={20} />, tone: '#1a1a2e', hint: 'All time' },
+    { label: 'To Do',           value: stats.todo,      icon: <ListTodo size={20} />,       tone: '#cb2525', hint: stats.urgent ? `${stats.urgent} urgent` : 'Ready to start' },
     { label: 'Approved',        value: stats.approved,  icon: <CheckCircle size={20} />,    tone: '#059669',
-      hint: approvalRate !== null ? `${approvalRate}% approval rate` : 'No reviews yet', trend: approvalRate !== null },
-    { label: 'Rejected',        value: stats.rejected,  icon: <XCircle size={20} />,        tone: '#cb2525', hint: 'See owner feedback' },
-    { label: 'Pending Review',  value: stats.pending,   icon: <Clock size={20} />,          tone: '#d97706', hint: 'Awaiting review' },
+      hint: approvalRate !== null ? `${approvalRate}% completion rate` : 'No reviews yet', trend: approvalRate !== null },
+    { label: 'In Review',       value: stats.pending,   icon: <Clock size={20} />,          tone: '#d97706', hint: 'Awaiting owner' },
   ];
 
   const formatDate = (iso) => new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -80,7 +85,7 @@ export default function EmpOverviewPage({ room, profile, onNavigate }) {
         {approvalRate !== null && (
           <div className={styles.pageHeaderBadge}>
             <TrendingUp size={14} />
-            {approvalRate}% approval rate
+            {approvalRate}% completion rate
           </div>
         )}
       </div>
@@ -90,23 +95,31 @@ export default function EmpOverviewPage({ room, profile, onNavigate }) {
         <div className={`${styles.alertBanner} ${styles.alertDanger}`} role="status">
           <span className={styles.alertIcon}><MessageSquareWarning size={18} /></span>
           <div className={styles.alertText}>
-            <strong>{stats.rejected} {stats.rejected === 1 ? 'task needs' : 'tasks need'} your attention</strong>
-            <span>Read the owner's feedback and resubmit when you're ready.</span>
+            <strong>{stats.rejected} {stats.rejected === 1 ? 'task needs' : 'tasks need'} a revision</strong>
+            <span>Read the owner's feedback, fix it and resubmit.</span>
           </div>
           <button className={styles.alertBtn} onClick={() => onNavigate?.('tasks')}>
             View feedback <ArrowRight size={14} />
+          </button>
+        </div>
+      ) : stats.todo > 0 ? (
+        <div className={`${styles.alertBanner} ${stats.urgent ? styles.alertDanger : ''}`} role="status">
+          <span className={styles.alertIcon}>{stats.urgent ? <Flame size={18} /> : <ListTodo size={18} />}</span>
+          <div className={styles.alertText}>
+            <strong>{stats.todo} {stats.todo === 1 ? 'task is' : 'tasks are'} waiting for you{stats.urgent ? ` · ${stats.urgent} urgent` : ''}</strong>
+            <span>Finish the work, then submit it for the owner to review.</span>
+          </div>
+          <button className={styles.alertBtn} onClick={() => onNavigate?.('tasks')}>
+            Open My Tasks <ArrowRight size={14} />
           </button>
         </div>
       ) : stats.submitted === 0 && (
         <div className={styles.alertBanner} role="status">
           <span className={styles.alertIcon}><Sparkles size={18} /></span>
           <div className={styles.alertText}>
-            <strong>Submit your first task</strong>
-            <span>Log completed work and the room owner will review it.</span>
+            <strong>No tasks yet</strong>
+            <span>When the room owner assigns you a task, you’ll be notified here.</span>
           </div>
-          <button className={styles.alertBtn} onClick={() => onNavigate?.('tasks')}>
-            Get started <ArrowRight size={14} />
-          </button>
         </div>
       )}
 
@@ -156,7 +169,7 @@ export default function EmpOverviewPage({ room, profile, onNavigate }) {
           <div className={styles.roomStatRow}>
             <div className={styles.roomStat}><strong>{stats.approved}</strong><span>Approved</span></div>
             <div className={styles.roomStatDivider} />
-            <div className={styles.roomStat}><strong>{stats.pending}</strong><span>Pending</span></div>
+            <div className={styles.roomStat}><strong>{stats.pending}</strong><span>In review</span></div>
             <div className={styles.roomStatDivider} />
             <div className={styles.roomStat}><strong>{stats.submitted}</strong><span>Total</span></div>
           </div>
@@ -177,8 +190,7 @@ export default function EmpOverviewPage({ room, profile, onNavigate }) {
           <div className={styles.emptyState}>
             <span className={styles.emptyIcon}>📋</span>
             <span className={styles.emptyText}>No tasks yet</span>
-            <span className={styles.emptySubtext}>Submit your first task to see it here</span>
-            <button className={styles.emptyCta} onClick={() => onNavigate?.('tasks')}>Go to My Tasks</button>
+            <span className={styles.emptySubtext}>Tasks assigned to you will show up here</span>
           </div>
         ) : (
           <div className={styles.taskList}>

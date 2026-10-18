@@ -1,18 +1,27 @@
-import { Clock, CheckCircle2, XCircle } from 'lucide-react';
+import { ListTodo, Clock, CheckCircle2, RotateCcw, Flame } from 'lucide-react';
 import styles from './SharedPages.module.css';
 
 const META = {
-  pending:  { Icon: Clock,        cls: styles.stPending,  label: 'Pending' },
-  approved: { Icon: CheckCircle2, cls: styles.stApproved, label: 'Approved' },
-  rejected: { Icon: XCircle,      cls: styles.stRejected, label: 'Rejected' },
+  assigned:  { Icon: ListTodo,     cls: styles.stAssigned, label: 'To do' },
+  submitted: { Icon: Clock,        cls: styles.stPending,  label: 'In review' },
+  approved:  { Icon: CheckCircle2, cls: styles.stApproved, label: 'Approved' },
+  rejected:  { Icon: RotateCcw,    cls: styles.stRejected, label: 'Revision requested' },
 };
 
 /* Status is conveyed by icon + label + colour, never colour alone */
 export default function StatusBadge({ status }) {
-  const m = META[status] ?? META.pending;
+  const m = META[status] ?? META.submitted;
   return (
     <span className={`${styles.statusBadge} ${m.cls}`}>
       <m.Icon size={12} strokeWidth={2.4} /> {m.label}
+    </span>
+  );
+}
+
+export function UrgentBadge({ overdue }) {
+  return (
+    <span className={styles.urgentBadge}>
+      <Flame size={12} strokeWidth={2.4} /> {overdue ? 'Overdue' : 'Urgent'}
     </span>
   );
 }

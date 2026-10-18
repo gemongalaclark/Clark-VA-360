@@ -1,106 +1,76 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Plus, Loader, X, Send, Trash2, MessageSquareQuote } from 'lucide-react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { Send, MessageSquareQuote, CalendarClock, ChevronDown, CheckCircle2, PartyPopper, Inbox } from 'lucide-react';
 import { supabase } from '../../../../lib/supabase';
-import StatusBadge from '../StatusBadge';
+import StatusBadge, { UrgentBadge } from '../StatusBadge';
+import SubmissionTable from '../SubmissionTable';
+import SubmitTaskModal from './SubmitTaskModal';
+import { sortForEmployee, deadlineInfo, formatDeadline, isActionable } from '../taskUtils';
 import styles from '../SharedPages.module.css';
 
 const FILTERS = [
-  { key: 'all',      label: 'All',      activeClass: styles.filterActive },
-  { key: 'pending',  label: 'Pending',  activeClass: styles.filterPendingActive },
-  { key: 'approved', label: 'Approved', activeClass: styles.filterApprovedActive },
-  { key: 'rejected', label: 'Rejected', activeClass: styles.filterRejectedActive },
+  { key: 'all',       label: 'All',         activeClass: styles.filterActive },
+  { key: 'todo',      label: 'To do',       activeClass: styles.filterActive },
+  { key: 'submitted', label: 'In review',   activeClass: styles.filterPendingActive },
+  { key: 'approved',  label: 'Approved',    activeClass: styles.filterApprovedActive },
 ];
-
-const TITLE_MAX = 120;
-const DESC_MAX = 1000;
 
 export default function TaskPage({ room, profile }) {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [formError, setFormError] = useState('');
   const [filter, setFilter] = useState('all');
-  const [deletingId, setDeletingId] = useState(null);
+  const [submitting, setSubmitting] = useState(null);   // task being submitted
+  const [openId, setOpenId] = useState(null);           // task whose submission is expanded
+  const [now, setNow] = useState(Date.now());
+  const userId = profile?.id;
 
   const load = useCallback(async (silent = false) => {
-    if (!room || !profile || !supabase) return;
+    if (!room || !userId || !supabase) return;
     if (!silent) setLoading(true);
     const { data } = await supabase
       .from('tasks')
       .select('*')
       .eq('room_id', room.id)
-      .eq('employee_id', profile.id)
-      .order('created_at', { ascending: false });
+      .eq('employee_id', userId);
     setTasks(data ?? []);
     setLoading(false);
-  }, [room, profile]);
+  }, [room, userId]);
 
   useEffect(() => { load(); }, [load]);
 
-  /* Realtime updates for own tasks */
+  /* Realtime: new assignments and review decisions show up instantly */
   useEffect(() => {
-    if (!room || !profile || !supabase) return;
+    if (!room || !userId || !supabase) return;
     const channel = supabase
-      .channel('ts-my-tasks')
+      .channel(`ts-my-tasks-${userId}`)
       .on('postgres_changes', {
-        event: '*', schema: 'public', table: 'tasks',
-        filter: `room_id=eq.${room.id}`,
+        event: '*', schema: 'public', table: 'tasks', filter: `employee_id=eq.${userId}`,
       }, () => load(true))
       .subscribe();
     return () => supabase.removeChannel(channel);
-  }, [room, profile, load]);
+  }, [room, userId, load]);
 
-  /* Esc closes the modal */
+  /* Keep "Due in 3h" labels and urgency fresh */
   useEffect(() => {
-    if (!showModal) return;
-    const onKey = (e) => e.key === 'Escape' && setShowModal(false);
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [showModal]);
+    const t = setInterval(() => setNow(Date.now()), 60000);
+    return () => clearInterval(t);
+  }, []);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setFormError('');
-    if (!title.trim()) { setFormError('Please enter a task title.'); return; }
-    setSubmitting(true);
+  const sorted = useMemo(() => sortForEmployee(tasks, now), [tasks, now]);
 
-    const { error } = await supabase.from('tasks').insert({
-      room_id: room.id,
-      employee_id: profile.id,
-      title: title.trim(),
-      description: description.trim() || null,
-    });
-
-    if (error) { setFormError(error.message); setSubmitting(false); return; }
-
-    setTitle('');
-    setDescription('');
-    setShowModal(false);
-    setSubmitting(false);
-    load();
-  };
-
-  const handleDelete = async (taskId) => {
-    if (!window.confirm('Delete this task?')) return;
-    setDeletingId(taskId);
-    await supabase.from('tasks').delete().eq('id', taskId).eq('status', 'pending');
-    setTasks(prev => prev.filter(t => t.id !== taskId));
-    setDeletingId(null);
-  };
-
-  const filtered = filter === 'all' ? tasks : tasks.filter(t => t.status === filter);
-
-  const counts = {
+  const counts = useMemo(() => ({
     all: tasks.length,
-    pending: tasks.filter(t => t.status === 'pending').length,
+    todo: tasks.filter(isActionable).length,
+    submitted: tasks.filter(t => t.status === 'submitted').length,
     approved: tasks.filter(t => t.status === 'approved').length,
-    rejected: tasks.filter(t => t.status === 'rejected').length,
-  };
+  }), [tasks]);
 
-  const formatDate = (iso) => new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const urgentCount = useMemo(
+    () => tasks.filter(t => deadlineInfo(t, now)?.urgent).length,
+    [tasks, now],
+  );
+
+  const visible = sorted.filter(t =>
+    filter === 'all' ? true : filter === 'todo' ? isActionable(t) : t.status === filter);
 
   if (loading) return <div className={styles.loading}><div className={styles.spinner} /></div>;
 
@@ -110,141 +80,116 @@ export default function TaskPage({ room, profile }) {
         <div>
           <p className={styles.pageTitle}>My Tasks</p>
           <p className={styles.pageSubtitle}>
-            Submit completed work to <strong>{room.name}</strong> for owner review.
+            Tasks assigned to you in <strong>{room.name}</strong>. Complete the work, then submit it for review.
           </p>
         </div>
-        <button className={styles.addTaskBtn} onClick={() => setShowModal(true)}>
-          <Plus size={16} /> Submit New Task
-        </button>
+        {urgentCount > 0 && (
+          <div className={styles.urgentSummary}>
+            <UrgentBadge /> {urgentCount} {urgentCount === 1 ? 'task needs' : 'tasks need'} attention soon
+          </div>
+        )}
       </div>
 
-      <div className={styles.filterRow} role="tablist" aria-label="Filter tasks by status">
+      <div className={styles.filterRow} role="tablist" aria-label="Filter tasks">
         {FILTERS.map(({ key, label, activeClass }) => (
           <button
-            key={key}
-            role="tab"
-            aria-selected={filter === key}
+            key={key} role="tab" aria-selected={filter === key}
             className={`${styles.filterTab} ${filter === key ? activeClass : ''}`}
             onClick={() => setFilter(key)}
           >
-            {label}
-            <span className={styles.filterCount}>{counts[key]}</span>
+            {label}<span className={styles.filterCount}>{counts[key]}</span>
           </button>
         ))}
       </div>
 
-      {filtered.length === 0 ? (
+      {visible.length === 0 ? (
         <div className={styles.card}>
           <div className={styles.emptyState}>
-            {filter === 'all' ? (
+            {filter === 'all' || filter === 'todo' ? (
               <>
-                <span className={styles.emptyIcon}>✍️</span>
-                <span className={styles.emptyText}>No tasks submitted yet</span>
-                <span className={styles.emptySubtext}>Log your first piece of work for the owner to review</span>
-                <button className={styles.emptyCta} onClick={() => setShowModal(true)}>
-                  <Plus size={15} /> Submit your first task
-                </button>
-              </>
-            ) : filter === 'pending' ? (
-              <>
-                <span className={styles.emptyIcon}>🎉</span>
-                <span className={styles.emptyText}>No tasks pending review</span>
+                <span className={styles.emptyIcon}>{filter === 'all' ? <Inbox size={28} /> : <PartyPopper size={28} />}</span>
+                <span className={styles.emptyText}>{filter === 'all' ? 'No tasks assigned yet' : "You're all caught up"}</span>
+                <span className={styles.emptySubtext}>
+                  {filter === 'all' ? 'When the room owner assigns you a task, it will appear here and you’ll be notified.' : 'Nothing is waiting on you right now.'}
+                </span>
               </>
             ) : (
               <>
-                <span className={styles.emptyIcon}>{filter === 'approved' ? '✅' : '❌'}</span>
-                <span className={styles.emptyText}>No {filter} tasks yet</span>
+                <span className={styles.emptyIcon}><CheckCircle2 size={28} /></span>
+                <span className={styles.emptyText}>No {filter === 'submitted' ? 'tasks in review' : 'approved tasks'} yet</span>
               </>
             )}
           </div>
         </div>
       ) : (
         <div className={styles.myTaskCards}>
-          {filtered.map(task => (
-            <article key={task.id} className={styles.myTaskCard} data-status={task.status}>
-              <div className={styles.myTaskHead}>
-                <h4 className={styles.myTaskTitle}>{task.title}</h4>
-                <StatusBadge status={task.status} />
-              </div>
-              {task.description && <p className={styles.myTaskDesc}>{task.description}</p>}
-              <div className={styles.myTaskFoot}>
-                <span className={styles.myTaskDate}>
-                  Submitted {formatDate(task.created_at)}
-                  {task.updated_at !== task.created_at && ` · Updated ${formatDate(task.updated_at)}`}
-                </span>
-                {task.status === 'pending' && (
-                  <button
-                    className={styles.deleteBtn}
-                    onClick={() => handleDelete(task.id)}
-                    disabled={deletingId === task.id}
-                    aria-label={`Delete task ${task.title}`}
-                  >
-                    {deletingId === task.id ? <Loader size={13} className={styles.spin} /> : <Trash2 size={13} />}
-                    Delete
-                  </button>
-                )}
-              </div>
-              {task.reviewer_notes && (
-                <div className={`${styles.feedback} ${task.status === 'rejected' ? styles.feedbackRejected : styles.feedbackApproved}`}>
-                  <MessageSquareQuote size={15} />
-                  <div><strong>Owner feedback</strong>{task.reviewer_notes}</div>
+          {visible.map(task => {
+            const info = deadlineInfo(task, now);
+            const actionable = isActionable(task);
+            const expanded = openId === task.id;
+            return (
+              <article key={task.id} className={`${styles.myTaskCard} ${info?.urgent ? styles.myTaskUrgent : ''}`}>
+                <div className={styles.myTaskHead}>
+                  <h4 className={styles.myTaskTitle}>{task.title}</h4>
+                  <div className={styles.badgeRow}>
+                    {info?.urgent && <UrgentBadge overdue={info.overdue} />}
+                    <StatusBadge status={task.status} />
+                  </div>
                 </div>
-              )}
-            </article>
-          ))}
+
+                {task.description && <p className={styles.myTaskDesc}>{task.description}</p>}
+
+                <div className={styles.myTaskFoot}>
+                  <div className={styles.metaRow}>
+                    {task.deadline ? (
+                      <span className={`${styles.deadlineChip} ${info?.urgent ? styles.deadlineUrgent : ''}`}>
+                        <CalendarClock size={13} />
+                        {formatDeadline(task.deadline)}
+                        {info && !info.done && <em>· {info.label}</em>}
+                      </span>
+                    ) : (
+                      <span className={styles.deadlineChip}><CalendarClock size={13} /> No deadline</span>
+                    )}
+                  </div>
+
+                  {actionable ? (
+                    <button className={styles.submitTaskBtn} onClick={() => setSubmitting(task)}>
+                      <Send size={14} /> {task.status === 'rejected' ? 'Revise & resubmit' : 'Submit task'}
+                    </button>
+                  ) : (
+                    <button className={styles.linkBtn} onClick={() => setOpenId(expanded ? null : task.id)} aria-expanded={expanded}>
+                      {expanded ? 'Hide' : 'View'} submission
+                      <ChevronDown size={13} className={expanded ? styles.chevronUp : ''} />
+                    </button>
+                  )}
+                </div>
+
+                {task.status === 'rejected' && task.reviewer_notes && (
+                  <div className={`${styles.feedback} ${styles.feedbackRejected}`}>
+                    <MessageSquareQuote size={15} />
+                    <div><strong>Revision requested</strong>{task.reviewer_notes}</div>
+                  </div>
+                )}
+                {task.status === 'approved' && (
+                  <div className={`${styles.feedback} ${styles.feedbackApproved}`}>
+                    <CheckCircle2 size={15} />
+                    <div><strong>Approved — you're good to go</strong>{task.reviewer_notes}</div>
+                  </div>
+                )}
+
+                {expanded && <SubmissionTable rows={task.submission} />}
+              </article>
+            );
+          })}
         </div>
       )}
 
-      {/* Submit task modal */}
-      {showModal && (
-        <div className={styles.modalOverlay} onClick={(e) => e.target === e.currentTarget && setShowModal(false)}>
-          <div className={styles.modal} role="dialog" aria-modal="true" aria-labelledby="submit-task-title">
-            <div className={styles.modalHeader}>
-              <h3 className={styles.modalTitle} id="submit-task-title">Submit New Task</h3>
-              <button className={styles.modalClose} onClick={() => setShowModal(false)} aria-label="Close"><X size={16} /></button>
-            </div>
-
-            <form className={styles.form} onSubmit={handleSubmit}>
-              <div className={styles.formGroup}>
-                <div className={styles.labelRow}>
-                  <label htmlFor="task-title">Task title *</label>
-                  <span className={styles.charCount}>{title.length}/{TITLE_MAX}</span>
-                </div>
-                <input
-                  id="task-title"
-                  type="text"
-                  className={styles.input}
-                  placeholder="What did you work on?"
-                  value={title}
-                  onChange={e => setTitle(e.target.value)}
-                  maxLength={TITLE_MAX}
-                  autoFocus
-                  required
-                />
-              </div>
-              <div className={styles.formGroup}>
-                <div className={styles.labelRow}>
-                  <label htmlFor="task-desc">Description <span className={styles.optional}>(optional)</span></label>
-                  <span className={styles.charCount}>{description.length}/{DESC_MAX}</span>
-                </div>
-                <textarea
-                  id="task-desc"
-                  className={styles.textarea}
-                  rows={4}
-                  placeholder="Add details, links, or notes for the owner…"
-                  value={description}
-                  onChange={e => setDescription(e.target.value)}
-                  maxLength={DESC_MAX}
-                />
-              </div>
-              {formError && <p className={styles.formError} role="alert">{formError}</p>}
-              <button type="submit" className={styles.submitBtn} disabled={submitting}>
-                {submitting ? <Loader size={16} className={styles.spin} /> : <Send size={16} />}
-                {submitting ? 'Submitting…' : 'Submit Task'}
-              </button>
-            </form>
-          </div>
-        </div>
+      {submitting && (
+        <SubmitTaskModal
+          task={submitting}
+          onClose={() => setSubmitting(null)}
+          onSubmitted={() => { setSubmitting(null); load(true); }}
+        />
       )}
     </div>
   );

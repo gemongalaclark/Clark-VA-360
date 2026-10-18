@@ -6,7 +6,7 @@ import { getInitials, getName, greeting } from '../StatusBadge';
 import styles from '../SharedPages.module.css';
 
 const CHART_SERIES = [
-  { key: 'submitted', label: 'Submitted', color: '#e59a9a' },
+  { key: 'submitted', label: 'Assigned', color: '#e59a9a' },
   { key: 'approved',  label: 'Approved',  color: '#cb2525' },
 ];
 
@@ -32,7 +32,7 @@ export default function OverviewPage({ room, profile, onNavigate }) {
       .eq('room_id', room.id);
 
     const approved = tasks?.filter(t => t.status === 'approved').length ?? 0;
-    const pending  = tasks?.filter(t => t.status === 'pending').length ?? 0;
+    const pending  = tasks?.filter(t => t.status === 'submitted').length ?? 0;
 
     setStats({
       employees: members?.length ?? 0,
@@ -80,10 +80,10 @@ export default function OverviewPage({ room, profile, onNavigate }) {
 
   const statCards = [
     { label: 'Employees',       value: stats.employees, icon: <Users size={20} />,          tone: '#1a1a2e', hint: 'Active members' },
-    { label: 'Tasks Submitted', value: stats.submitted, icon: <ClipboardCheck size={20} />, tone: '#cb2525', hint: 'All time' },
+    { label: 'Tasks Assigned', value: stats.submitted, icon: <ClipboardCheck size={20} />, tone: '#cb2525', hint: 'All time' },
     { label: 'Approved',        value: stats.approved,  icon: <CheckCircle size={20} />,    tone: '#059669',
-      hint: approvalRate !== null ? `${approvalRate}% approval rate` : 'No reviews yet', trend: approvalRate !== null },
-    { label: 'Pending Review',  value: stats.pending,   icon: <Clock size={20} />,          tone: '#d97706', hint: 'Awaiting review' },
+      hint: approvalRate !== null ? `${approvalRate}% completion rate` : 'No reviews yet', trend: approvalRate !== null },
+    { label: 'Awaiting Review',  value: stats.pending,   icon: <Clock size={20} />,          tone: '#d97706', hint: 'Awaiting review' },
   ];
 
   if (loading) return <div className={styles.loading}><div className={styles.spinner} /></div>;
@@ -102,7 +102,7 @@ export default function OverviewPage({ room, profile, onNavigate }) {
         {approvalRate !== null && (
           <div className={styles.pageHeaderBadge}>
             <Activity size={14} />
-            {approvalRate}% approval rate
+            {approvalRate}% completion rate
           </div>
         )}
       </div>
@@ -112,8 +112,8 @@ export default function OverviewPage({ room, profile, onNavigate }) {
         <div className={styles.alertBanner} role="status">
           <span className={styles.alertIcon}><BellRing size={18} /></span>
           <div className={styles.alertText}>
-            <strong>{stats.pending} {stats.pending === 1 ? 'task is' : 'tasks are'} waiting for your review</strong>
-            <span>Employees get notified as soon as you approve or reject.</span>
+            <strong>{stats.pending} completed {stats.pending === 1 ? 'task is' : 'tasks are'} waiting for your review</strong>
+            <span>Employees are notified as soon as you approve or request a revision.</span>
           </div>
           <button className={styles.alertBtn} onClick={() => onNavigate?.('review')}>
             Review now <ArrowRight size={14} />
@@ -152,7 +152,7 @@ export default function OverviewPage({ room, profile, onNavigate }) {
             <div className={styles.emptyState}>
               <span className={styles.emptyIcon}>👥</span>
               <span className={styles.emptyText}>No employee activity yet</span>
-              <span className={styles.emptySubtext}>Employees will appear here once they submit tasks</span>
+              <span className={styles.emptySubtext}>Employees appear here once you assign them tasks</span>
             </div>
           ) : (
             <div className={styles.employeeTable}>
@@ -168,7 +168,7 @@ export default function OverviewPage({ room, profile, onNavigate }) {
                   </div>
                   <div className={styles.empStat}>
                     <span className={styles.empStatVal}>{emp.submitted}</span>
-                    <span className={styles.empStatLbl}>Submitted</span>
+                    <span className={styles.empStatLbl}>Assigned</span>
                   </div>
                   <div className={styles.empStat}>
                     <span className={styles.empStatVal}>{emp.approved}</span>
@@ -187,7 +187,7 @@ export default function OverviewPage({ room, profile, onNavigate }) {
         <div className={`${styles.card} ${styles.roomStatsCard}`}>
           <h3 className={styles.cardTitle} style={{ color: 'rgba(255,255,255,0.7)' }}>Room Progress</h3>
           <div className={styles.bigPercent}>{approvalRate ?? 0}%</div>
-          <p className={styles.bigPercentLabel}>Tasks Approved</p>
+          <p className={styles.bigPercentLabel}>Tasks Completed</p>
           <div className={styles.progressBar}>
             <div className={styles.progressFill} style={{ width: `${approvalRate ?? 0}%` }} />
           </div>

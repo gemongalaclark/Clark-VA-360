@@ -887,3 +887,130 @@
 .alertDanger { background: #fff6f6; }
 
 @media (max-width: 640px) { .pageHeader { padding: 20px; } .pageTitle { font-size: 1.25rem; } }
+
+/* ═══ Assigned tasks: deadlines, urgency, submission tables, create form ═══ */
+.stAssigned { background: #eef0f6; color: #1a1a2e; }
+.badgeRow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+
+.urgentBadge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 10px; border-radius: 9999px;
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.02em; white-space: nowrap;
+  background: #cb2525; color: #fff;
+}
+.urgentSummary {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 8px 14px 8px 8px; border-radius: 9999px;
+  background: #fff6f6; border: 1px solid rgba(203,37,37,0.18);
+  font-size: 0.8rem; font-weight: 600; color: #7f1d1d;
+}
+.myTaskUrgent { border-color: rgba(203,37,37,0.3); background: #fffafa; }
+
+.metaRow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.deadlineChip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px; border-radius: 8px;
+  background: #f4f5f7; color: #4a4a6a; font-size: 0.74rem; font-weight: 600;
+}
+.deadlineChip em { font-style: normal; font-weight: 700; }
+.deadlineUrgent { background: #fde8e8; color: #9b1c1c; }
+
+.submitTaskBtn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 9px 18px; border: none; border-radius: 11px; cursor: pointer;
+  background: linear-gradient(135deg, #cb2525, #ea4343); color: #fff;
+  font-size: 0.82rem; font-weight: 600; box-shadow: 0 3px 12px rgba(203,37,37,0.25);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.submitTaskBtn:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(203,37,37,0.32); }
+.submitTaskBtn:focus-visible { outline: 2px solid #cb2525; outline-offset: 2px; }
+
+/* ── Read-only submission table ── */
+.subWrap { overflow-x: auto; border: 1px solid #ece7e7; border-radius: 12px; background: #fff; }
+.subTable { width: 100%; border-collapse: collapse; font-size: 0.8rem; min-width: 760px; }
+.subTable th {
+  text-align: left; padding: 10px 12px; background: #faf7f7; color: #6c757d;
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap;
+}
+.subTable td { padding: 11px 12px; border-top: 1px solid #f1ecec; color: #1a1a2e; vertical-align: top; }
+.subTopic { max-width: 280px; line-height: 1.5; }
+.subEmpty { font-size: 0.82rem; color: #6c757d; padding: 8px 0; }
+.postStatus { display: inline-block; padding: 3px 10px; border-radius: 9999px; font-size: 0.7rem; font-weight: 700; white-space: nowrap; background: #eef0f6; color: #1a1a2e; }
+.postProgress  { background: #fff3cd; color: #7a5200; }
+.postScheduled { background: #e0e7ff; color: #3730a3; }
+.postPublished { background: #d1fae5; color: #065f46; }
+.visualLink { display: inline-flex; align-items: center; gap: 5px; color: #cb2525; font-weight: 600; text-decoration: none; white-space: nowrap; }
+.visualLink:hover { text-decoration: underline; }
+
+/* ── Editable submission table (modal) ── */
+.modalWide { max-width: 1120px; max-height: 92vh; overflow-y: auto; }
+.modalSub { font-size: 0.85rem; color: #6c757d; margin-top: 4px; }
+.entryWrap { overflow-x: auto; border: 1px solid #ece7e7; border-radius: 14px; }
+.entryTable { width: 100%; border-collapse: collapse; min-width: 980px; }
+.entryTable th {
+  text-align: left; padding: 10px 8px; background: #faf7f7; color: #6c757d; white-space: nowrap;
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+}
+.entryTable td { padding: 8px; border-top: 1px solid #f1ecec; vertical-align: middle; }
+.cellInput {
+  width: 100%; min-width: 0; padding: 9px 10px; border: 1.5px solid #dee2e6; border-radius: 9px;
+  font-family: 'Inter', sans-serif; font-size: 0.8rem; color: #1a1a2e; background: #fff; outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.cellInput:focus { border-color: #cb2525; box-shadow: 0 0 0 3px rgba(203,37,37,0.1); }
+.cellError { border-color: #cb2525; background: #fff6f6; }
+.entryTable td:nth-child(1) { min-width: 170px; }
+.entryTable td:nth-child(2), .entryTable td:nth-child(3) { min-width: 120px; }
+.entryTable td:nth-child(4) { min-width: 140px; }
+.entryTable td:nth-child(5) { min-width: 110px; }
+.entryTable td:nth-child(6) { min-width: 200px; }
+.entryTable td:nth-child(7) { min-width: 220px; }
+.cellAction { width: 44px; text-align: center; }
+.rowRemove {
+  width: 32px; height: 32px; border-radius: 9px; border: 1px solid #e9ecef; background: #fff; color: #8a93a0;
+  display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s;
+}
+.rowRemove:hover:not(:disabled) { color: #cb2525; border-color: #cb2525; background: #fff1f1; }
+.rowRemove:disabled { opacity: 0.4; cursor: not-allowed; }
+.addRowBtn {
+  margin-top: 12px; display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 10px;
+  border: 1.5px dashed rgba(203,37,37,0.4); background: #fff; color: #cb2525; font-size: 0.8rem; font-weight: 600; cursor: pointer;
+}
+.addRowBtn:hover { background: #fff6f6; }
+.entryHint { font-size: 0.76rem; color: #6c757d; margin: 12px 0 0; line-height: 1.5; }
+.modalFooter { display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-top: 20px; }
+.submitInline { padding: 11px 22px; }
+
+/* ── Create task page ── */
+.createGrid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(280px, 1fr); gap: 24px; align-items: start; }
+.createForm { display: flex; flex-direction: column; gap: 18px; }
+.createForm select.input { appearance: auto; }
+.deadlineBox { display: flex; flex-direction: column; gap: 12px; padding: 14px 16px; border: 1px solid #ece7e7; border-radius: 14px; background: #fdfbfb; }
+.switchRow { display: flex; align-items: flex-start; gap: 14px; cursor: pointer; }
+.switchRow strong { display: block; font-size: 0.88rem; color: #1a1a2e; }
+.switchRow em { display: block; font-style: normal; font-size: 0.76rem; color: #6c757d; margin-top: 2px; line-height: 1.5; }
+.switch { position: relative; width: 42px; height: 24px; flex-shrink: 0; margin-top: 1px; }
+.switch input { position: absolute; inset: 0; opacity: 0; cursor: pointer; margin: 0; z-index: 1; }
+.switchTrack { position: absolute; inset: 0; border-radius: 9999px; background: #cfd4da; transition: background 0.2s; }
+.switchTrack::after {
+  content: ''; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%;
+  background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.25); transition: transform 0.2s;
+}
+.switch input:checked + .switchTrack { background: #cb2525; }
+.switch input:checked + .switchTrack::after { transform: translateX(18px); }
+.switch input:focus-visible + .switchTrack { outline: 2px solid #cb2525; outline-offset: 2px; }
+.deadlineInput { max-width: 280px; }
+
+.recentList { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.recentItem { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid #f1ecec; }
+.recentItem:first-child { border-top: none; }
+.recentBody { flex: 1; min-width: 0; }
+.recentTitle { font-size: 0.85rem; font-weight: 600; color: #1a1a2e; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.recentMeta { font-size: 0.74rem; color: #6c757d; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+
+@media (max-width: 1024px) { .createGrid { grid-template-columns: 1fr; } }
+@media (max-width: 640px) {
+  .modalFooter { flex-direction: column-reverse; align-items: stretch; }
+  .urgentSummary { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) { .switchTrack, .switchTrack::after, .submitTaskBtn { transition: none; } }

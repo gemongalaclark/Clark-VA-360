@@ -15,6 +15,7 @@ export default function TeamSyncWorkspace({ onBackToPortfolio }) {
   const [currentRoom, setCurrentRoom] = useState(null);
   const [userRole, setUserRole] = useState(null);
   const pageRef = useRef('loading');
+  const userIdRef = useRef(null);
 
   /* Keep ref in sync so auth listener always sees current page */
   useEffect(() => { pageRef.current = page; }, [page]);
@@ -34,12 +35,18 @@ export default function TeamSyncWorkspace({ onBackToPortfolio }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       /* Never interrupt an in-progress OTP auth flow */
       if (pageRef.current === 'auth') return;
-      /* Token refresh just updates session silently — no reload needed */
-      if (event === 'TOKEN_REFRESHED') { setSession(session); return; }
+      /* Token refresh, or a repeat SIGNED_IN for the same user (supabase re-emits it on tab focus),
+         must not reload data or swap object identities — that restarts every page's effects */
+      const sameUser = !!session && userIdRef.current === session.user.id;
+      if (event === 'TOKEN_REFRESHED' || (event === 'SIGNED_IN' && sameUser)) {
+        setSession(prev => (prev?.access_token === session?.access_token ? prev : session));
+        return;
+      }
       setSession(session);
       if (session) {
         loadUserData(session.user);
       } else {
+        userIdRef.current = null;
         setPage('landing');
         setProfile(null);
         setCurrentRoom(null);
@@ -51,10 +58,12 @@ export default function TeamSyncWorkspace({ onBackToPortfolio }) {
   }, []);
 
   const loadUserData = async (user) => {
+    userIdRef.current = user.id;
     const { data: prof } = await supabase
       .from('profiles').select('*').eq('id', user.id).single();
 
-    if (prof) setProfile(prof);
+    /* Keep the same object when nothing changed so dependants don't re-run */
+    if (prof) setProfile(prev => (prev && JSON.stringify(prev) === JSON.stringify(prof) ? prev : prof));
 
     const { data: memberships } = await supabase
       .from('room_members')
@@ -106,6 +115,7 @@ export default function TeamSyncWorkspace({ onBackToPortfolio }) {
   }, [page, session]);
 
   const handleSignOut = async () => {
+    userIdRef.current = null;
     await supabase?.auth.signOut();
     setPage('landing');
     setProfile(null);

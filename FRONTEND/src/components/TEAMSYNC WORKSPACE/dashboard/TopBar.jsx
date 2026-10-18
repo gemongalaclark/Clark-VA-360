@@ -5,6 +5,7 @@ import styles from './TopBar.module.css';
 
 const PAGE_TITLES = {
   overview: 'Overview',
+  create: 'Create Task',
   review: 'Task Review',
   members: 'Members',
   tasks: 'My Tasks',
@@ -19,9 +20,10 @@ export default function TopBar({ currentTab, profile, session, room }) {
 
   const initials = profile ? `${profile.first_name[0]}${profile.last_name[0]}`.toUpperCase() : 'U';
   const unread = notifications.filter(n => !n.read).length;
+  const userId = session?.user?.id;
 
   useEffect(() => {
-    if (!session || !supabase) return;
+    if (!userId || !supabase) return;
     loadNotifications();
 
     const channel = supabase
@@ -30,14 +32,14 @@ export default function TopBar({ currentTab, profile, session, room }) {
         event: 'INSERT',
         schema: 'public',
         table: 'notifications',
-        filter: `user_id=eq.${session.user.id}`,
+        filter: `user_id=eq.${userId}`,
       }, (payload) => {
         setNotifications(prev => [payload.new, ...prev]);
       })
       .subscribe();
 
     return () => supabase.removeChannel(channel);
-  }, [session]);
+  }, [userId]);
 
   const loadNotifications = async () => {
     const { data } = await supabase
@@ -79,6 +81,7 @@ export default function TopBar({ currentTab, profile, session, room }) {
   };
 
   const notifIcon = (type) => {
+    if (type === 'task_assigned') return <ListTodo size={14} />;
     if (type === 'task_submitted') return <ClipboardCheck size={14} />;
     if (type === 'task_approved') return <Check size={14} style={{ color: '#28a745' }} />;
     if (type === 'task_rejected') return <ClipboardCheck size={14} style={{ color: '#cb2525' }} />;

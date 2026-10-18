@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { LayoutDashboard, ClipboardCheck, Users, ListTodo, Hash, LogOut, ChevronLeft, ChevronRight, ArrowLeftRight, Crown, User, Copy, Check } from 'lucide-react';
+import { LayoutDashboard, ClipboardCheck, ClipboardPlus, Users, ListTodo, Hash, LogOut, ChevronLeft, ChevronRight, ArrowLeftRight, Crown, User, Copy, Check } from 'lucide-react';
 import styles from './Sidebar.module.css';
 
 const ownerNav = [
   { id: 'overview',  label: 'Overview',  icon: <LayoutDashboard size={18} /> },
+  { id: 'create',    label: 'Create Task', icon: <ClipboardPlus size={18} /> },
   { id: 'review',    label: 'Review',    icon: <ClipboardCheck size={18} /> },
   { id: 'members',   label: 'Members',   icon: <Users size={18} /> },
 ];
