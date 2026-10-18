@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import About from './components/About';
@@ -41,10 +41,26 @@ export default function App() {
     };
   }, []);
 
+  /* Navigation is client-side (pushState), so the browser keeps the old scroll offset.
+     Opening a project must start at the top of that page; coming back should land on
+     the Projects section the visitor left from. */
+  const prevRoute = useRef(route);
+  useLayoutEffect(() => {
+    const prev = prevRoute.current;
+    prevRoute.current = route;
+    if (prev === route) return;
+    if (route !== 'portfolio') {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    } else {
+      const el = document.getElementById('projects');
+      const top = el ? el.getBoundingClientRect().top + window.scrollY - 72 : 0;
+      window.scrollTo({ top, left: 0, behavior: 'instant' });
+    }
+  }, [route]);
+
   const goToPortfolio = () => {
     window.history.pushState({}, '', '/');
     setRoute('portfolio');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   if (route === 'scheduler') {
