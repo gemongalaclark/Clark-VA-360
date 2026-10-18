@@ -1,11 +1,12 @@
-import { useState, useRef } from 'react';
-import { ChevronLeft, ChevronRight, ExternalLink, Sparkles, Calendar, ArrowUpRight, Users, Zap } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { ChevronLeft, ChevronRight, ExternalLink, Sparkles, Calendar, ArrowUpRight, ArrowRight, Users, Zap, Rocket } from 'lucide-react';
 import styles from './Projects.module.css';
 
 /* Projects data */
 const projects = [
   {
     id: 1,
+    category: 'AI Automation',
     title: "Google Calendar AUTO Scheduler",
     description: "Gemini AI-powered schedule scanner that automatically extracts shift rotas, PDF timetables, and spreadsheets to sync directly into Google Calendar.",
     tags: ['Gemini AI', 'Google Calendar API', 'Multimodal OCR', 'React'],
@@ -17,8 +18,9 @@ const projects = [
   },
   {
     id: 2,
+    category: 'Team Collaboration',
     title: 'TeamSync Workspace',
-    description: 'Real-time team collaboration platform with room-based workspaces, role-separated dashboards for owners and employees, task review system, and instant email notifications.',
+    description: 'Real-time team collaboration platform with room-based workspaces, role-separated dashboards for owners and employees, task assignment and review, and instant notifications.',
     tags: ['React', 'Supabase', 'Realtime', 'Role-based Auth'],
     image: null,
     liveUrl: '/teamsync-workspace',
@@ -29,6 +31,7 @@ const projects = [
   },
   {
     id: 3,
+    category: 'In the pipeline',
     title: 'Coming Soon',
     description: 'Projects from my VA training will appear here as they develop.',
     tags: [],
@@ -39,6 +42,7 @@ const projects = [
   },
   {
     id: 4,
+    category: 'In the pipeline',
     title: 'Coming Soon',
     description: 'Building out my portfolio one project at a time.',
     tags: [],
@@ -49,22 +53,37 @@ const projects = [
   },
 ];
 
+/* Cards visible at once — mirrors the CSS breakpoints (--n) */
+function usePerView() {
+  const get = () => (window.matchMedia('(max-width: 600px)').matches ? 1
+    : window.matchMedia('(max-width: 900px)').matches ? 2 : 3);
+  const [n, setN] = useState(get);
+  useEffect(() => {
+    const onChange = () => setN(get());
+    const mqs = ['(max-width: 600px)', '(max-width: 900px)'].map(q => window.matchMedia(q));
+    mqs.forEach(m => m.addEventListener('change', onChange));
+    return () => mqs.forEach(m => m.removeEventListener('change', onChange));
+  }, []);
+  return n;
+}
+
+const openProject = (url) => {
+  window.history.pushState({}, '', url);
+  window.dispatchEvent(new PopStateEvent('popstate'));
+};
+
 function ProjectCard({ project }) {
   const handleCardClick = (e) => {
     if (e.target.closest('a') || e.target.closest('button')) return;
     if (!project.liveUrl) return;
     /* Internal routes use pushState; external links open in new tab */
-    if (project.liveUrl.startsWith('/')) {
-      window.history.pushState({}, '', project.liveUrl);
-      window.dispatchEvent(new PopStateEvent('popstate'));
-    } else {
-      window.open(project.liveUrl, '_blank', 'noopener,noreferrer');
-    }
+    if (project.liveUrl.startsWith('/')) openProject(project.liveUrl);
+    else window.open(project.liveUrl, '_blank', 'noopener,noreferrer');
   };
 
   return (
-    <div
-      className={`${styles.card} ${project.featured ? styles.featuredCard : ''} ${project.inDevelopment ? styles.devCard : ''}`}
+    <article
+      className={`${styles.card} ${project.featured ? styles.featuredCard : ''} ${project.placeholder ? styles.placeholderCard : ''}`}
       id={`project-${project.id}`}
       onClick={handleCardClick}
       style={{ cursor: project.liveUrl ? 'pointer' : 'default' }}
@@ -75,14 +94,8 @@ function ProjectCard({ project }) {
           <span>Featured AI Project</span>
         </div>
       )}
-      {project.inDevelopment && (
-        <div className={styles.devRibbon}>
-          <Zap size={12} />
-          <span>In Development</span>
-        </div>
-      )}
 
-      {/* Image / Graphic preview */}
+      {/* Graphic preview */}
       <div className={styles.cardImage}>
         {project.featured ? (
           <div className={styles.featuredGraphic}>
@@ -92,7 +105,7 @@ function ProjectCard({ project }) {
                 <img src="/images/logo.png" alt="Clark VA 360 Logo" className={styles.graphicLogoImg} />
               </div>
               <div className={styles.graphicCalWrap}>
-                <Calendar size={28} className={styles.graphicCalIcon} />
+                <Calendar size={26} className={styles.graphicCalIcon} />
                 <span className={styles.graphicCalText}>Auto Scheduler</span>
               </div>
               <div className={styles.graphicBadgeRow}>
@@ -119,33 +132,27 @@ function ProjectCard({ project }) {
           <img src={project.image} alt={project.title} />
         ) : (
           <div className={styles.placeholderImg}>
-            <span className={styles.placeholderIcon}>🚀</span>
-            <span className={styles.placeholderText}>Project Preview<br />Coming Soon</span>
+            <span className={styles.placeholderIconWrap}><Rocket size={26} /></span>
+            <span className={styles.placeholderText}>Project preview</span>
           </div>
         )}
 
-        {!project.placeholder && (
+        {!project.placeholder && project.liveUrl && (
           <div className={styles.cardOverlay}>
-            {project.liveUrl && (
-              <a
-                href={project.liveUrl}
-                className={styles.overlayBtn}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-                  window.history.pushState({}, '', project.liveUrl);
-                  window.dispatchEvent(new PopStateEvent('popstate'));
-                }}
-              >
-                <ExternalLink size={16} /> Open Web App
-              </a>
-            )}
+            <a
+              href={project.liveUrl}
+              className={styles.overlayBtn}
+              onClick={(e) => { e.stopPropagation(); e.preventDefault(); openProject(project.liveUrl); }}
+            >
+              <ExternalLink size={16} /> Open Web App
+            </a>
           </div>
         )}
       </div>
 
       {/* Content */}
       <div className={styles.cardContent}>
+        <span className={styles.cardCategory}>{project.category}</span>
         <div className={styles.cardHeaderRow}>
           <h3 className={styles.cardTitle}>{project.title}</h3>
           {project.liveUrl && (
@@ -154,7 +161,8 @@ function ProjectCard({ project }) {
               target="_blank"
               rel="noopener noreferrer"
               className={styles.cardArrowLink}
-              title="Open Google Calendar Auto Scheduler in new tab"
+              title={`Open ${project.title} in a new tab`}
+              aria-label={`Open ${project.title} in a new tab`}
               onClick={(e) => e.stopPropagation()}
             >
               <ArrowUpRight size={18} />
@@ -169,39 +177,43 @@ function ProjectCard({ project }) {
             ))}
           </div>
         )}
+
+        <div className={styles.cardFooter}>
+          {project.liveUrl ? (
+            <a
+              href={project.liveUrl}
+              className={styles.viewBtn}
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); openProject(project.liveUrl); }}
+            >
+              View project <ArrowRight size={15} />
+            </a>
+          ) : (
+            <span className={styles.soonChip}><span className={styles.soonDot} /> In planning</span>
+          )}
+        </div>
       </div>
-    </div>
+    </article>
   );
 }
 
 export default function Projects() {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const trackRef = useRef(null);
-  const touchStart = useRef(null);
+  const perView = usePerView();
+  const maxIndex = Math.max(0, projects.length - perView);
+  const index = Math.min(currentIndex, maxIndex);
 
-  const visibleCount = 3; // cards visible at once on desktop
-  const maxIndex = projects.length - 1;
-
-  const goTo = (index) => {
-    const clamped = Math.max(0, Math.min(index, maxIndex));
-    setCurrentIndex(clamped);
-  };
-
-  const prev = () => goTo(currentIndex - 1);
-  const next = () => goTo(currentIndex + 1);
+  const goTo = (i) => setCurrentIndex(Math.max(0, Math.min(i, maxIndex)));
+  const prev = () => goTo(index - 1);
+  const next = () => goTo(index + 1);
 
   /* Touch/swipe support */
-  const onTouchStart = (e) => {
-    touchStart.current = e.touches[0].clientX;
-  };
-
+  const [touchStart, setTouchStart] = useState(null);
+  const onTouchStart = (e) => setTouchStart(e.touches[0].clientX);
   const onTouchEnd = (e) => {
-    if (touchStart.current === null) return;
-    const diff = touchStart.current - e.changedTouches[0].clientX;
-    if (Math.abs(diff) > 50) {
-      diff > 0 ? next() : prev();
-    }
-    touchStart.current = null;
+    if (touchStart === null) return;
+    const diff = touchStart - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 50) (diff > 0 ? next() : prev());
+    setTouchStart(null);
   };
 
   return (
@@ -209,30 +221,23 @@ export default function Projects() {
       <div className="container">
         <h2 className="section-title">My <span>Projects</span></h2>
         <div className="section-divider" />
+        <p className={styles.sectionSubtitle}>
+          Real tools I've designed and built. Click a card to try it live.
+        </p>
 
         <div className={styles.carouselWrapper}>
-          {/* Prev button */}
           <button
             id="carousel-prev"
-            className={`${styles.navBtn} ${currentIndex === 0 ? styles.disabled : ''}`}
+            className={`${styles.navBtn} ${index === 0 ? styles.disabled : ''}`}
             onClick={prev}
             aria-label="Previous project"
-            disabled={currentIndex === 0}
+            disabled={index === 0}
           >
             <ChevronLeft size={22} />
           </button>
 
-          {/* Track */}
-          <div
-            className={styles.trackOuter}
-            onTouchStart={onTouchStart}
-            onTouchEnd={onTouchEnd}
-          >
-            <div
-              ref={trackRef}
-              className={styles.track}
-              style={{ transform: `translateX(calc(-${currentIndex} * (100cqw / ${visibleCount} + ${24 / visibleCount}px)))` }}
-            >
+          <div className={styles.trackOuter} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+            <div className={styles.track} style={{ '--i': index }}>
               {projects.map(project => (
                 <div key={project.id} className={styles.slide}>
                   <ProjectCard project={project} />
@@ -241,33 +246,39 @@ export default function Projects() {
             </div>
           </div>
 
-          {/* Next button */}
           <button
             id="carousel-next"
-            className={`${styles.navBtn} ${currentIndex >= maxIndex ? styles.disabled : ''}`}
+            className={`${styles.navBtn} ${index >= maxIndex ? styles.disabled : ''}`}
             onClick={next}
             aria-label="Next project"
-            disabled={currentIndex >= maxIndex}
+            disabled={index >= maxIndex}
           >
             <ChevronRight size={22} />
           </button>
         </div>
 
-        {/* Dots */}
-        <div className={styles.dots}>
-          {projects.map((_, i) => (
-            <button
-              key={i}
-              className={`${styles.dot} ${i === currentIndex ? styles.dotActive : ''}`}
-              onClick={() => goTo(i)}
-              aria-label={`Go to project ${i + 1}`}
-            />
-          ))}
-        </div>
+        {/* Pager */}
+        {maxIndex > 0 && (
+          <div className={styles.pager}>
+            <div className={styles.dots}>
+              {Array.from({ length: maxIndex + 1 }, (_, i) => (
+                <button
+                  key={i}
+                  className={`${styles.dot} ${i === index ? styles.dotActive : ''}`}
+                  onClick={() => goTo(i)}
+                  aria-label={`Show projects from ${i + 1}`}
+                  aria-current={i === index}
+                />
+              ))}
+            </div>
+            <span className={styles.counter}>
+              {String(index + 1).padStart(2, '0')} / {String(maxIndex + 1).padStart(2, '0')}
+            </span>
+          </div>
+        )}
 
-        {/* Coming soon note */}
-        <p className={styles.comingSoonNote}>
-          🚀 Click Project #1 to test drive the live Google Calendar AUTO Scheduler powered by Gemini AI!
+        <p className={styles.hint}>
+          <Sparkles size={14} /> Tip: open the Auto Scheduler to test drive the Gemini AI schedule scanner.
         </p>
       </div>
     </section>
