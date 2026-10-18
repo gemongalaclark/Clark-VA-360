@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, ExternalLink, Sparkles, Calendar, ArrowUpRight, ArrowRight, Users, Zap, Rocket } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ExternalLink, Sparkles, Calendar, ArrowUpRight, ArrowRight, Users, Zap, Rocket, ClipboardCheck, ShieldCheck } from 'lucide-react';
 import styles from './Projects.module.css';
 
 /* Projects data */
@@ -31,14 +31,15 @@ const projects = [
   },
   {
     id: 3,
-    category: 'In the pipeline',
-    title: 'Coming Soon',
-    description: 'Projects from my VA training will appear here as they develop.',
-    tags: [],
+    category: 'Client Operations',
+    title: 'OnboardBase',
+    description: 'Secure client onboarding portal with magic-link login, a progress tracker, a save-and-resume intake form, brand-asset uploads, and an admin pipeline that flags stalled clients.',
+    tags: ['React', 'Supabase', 'Row Level Security', 'Edge Functions'],
     image: null,
-    liveUrl: null,
+    liveUrl: '/onboardbase',
     githubUrl: null,
-    placeholder: true,
+    placeholder: false,
+    featured: false,
   },
   {
     id: 4,
@@ -125,6 +126,20 @@ function ProjectCard({ project }) {
               <div className={styles.graphicBadgeRow}>
                 <span className={styles.graphicAiPill}><Zap size={11} /> Real-time</span>
                 <span className={styles.teamsyncRolePill}>Role-based</span>
+              </div>
+            </div>
+          </div>
+        ) : project.id === 3 ? (
+          <div className={styles.teamsyncGraphic}>
+            <div className={styles.teamsyncGlow} />
+            <div className={styles.teamsyncGraphicInner}>
+              <div className={styles.teamsyncIconWrap}>
+                <ClipboardCheck size={30} className={styles.teamsyncIcon} />
+              </div>
+              <span className={styles.teamsyncTitle}>OnboardBase</span>
+              <div className={styles.graphicBadgeRow}>
+                <span className={styles.graphicAiPill}><ShieldCheck size={11} /> RLS secured</span>
+                <span className={styles.teamsyncRolePill}>Client portal</span>
               </div>
             </div>
           </div>
