@@ -21,7 +21,8 @@ const IMPACT = [
 /* Live sign-in: magic link only. shouldCreateUser:false keeps strangers out; clients are provisioned by an admin. */
 function MagicLinkForm() {
   const [email, setEmail] = useState('');
-  const [state, setState] = useState('idle');   // idle | sending | sent
+  const [code, setCode] = useState('');
+  const [state, setState] = useState('idle');   // idle | sending | sent | verifying
   const [error, setError] = useState('');
 
   if (!supabase) {
@@ -46,8 +47,43 @@ function MagicLinkForm() {
     setState('sent');
   };
 
-  if (state === 'sent') {
-    return <p className={styles.callout}><Mail size={18} /> If <strong>{email}</strong> has an OnboardBase account, a sign-in link is on its way. Check your inbox.</p>;
+  /* The project's email template may include a one-time code as well as the link (it is shared with
+     other apps on this Supabase project), so accept either: click the link, or type the code here. */
+  const verify = async (e) => {
+    e.preventDefault();
+    setState('verifying');
+    setError('');
+    const { error: err } = await supabase.auth.verifyOtp({ email: email.trim(), token: code.trim(), type: 'email' });
+    if (err) { setError('That code is invalid or has expired. Check it and try again.'); setState('sent'); }
+    /* On success onAuthStateChange fires and the parent loads the portal. */
+  };
+
+  if (state === 'sent' || state === 'verifying') {
+    return (
+      <div>
+        <p className={styles.callout}>
+          <Mail size={18} />
+          <span>
+            If <strong>{email}</strong> has an account, we've emailed a sign-in link and a code.
+            Click the link, or type the code below. (The email may mention another Clark VA 360 app. It works the same.)
+          </span>
+        </p>
+        <form className={styles.loginForm} onSubmit={verify}>
+          <label htmlFor="ob-login-code" className={styles.srOnly}>Sign-in code</label>
+          <input
+            id="ob-login-code" inputMode="numeric" autoComplete="one-time-code" placeholder="Enter code from email"
+            value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+          />
+          <button className={styles.btnPrimary} disabled={state === 'verifying' || code.length < 6}>
+            {state === 'verifying' ? <Loader2 className={styles.spin} size={16} /> : <KeyRound size={16} />} Verify code
+          </button>
+          {error && <p className={styles.fieldError} role="alert">{error}</p>}
+          <button type="button" className={styles.btnText} onClick={() => { setState('idle'); setCode(''); setError(''); }}>
+            Use a different email
+          </button>
+        </form>
+      </div>
+    );
   }
 
   return (
