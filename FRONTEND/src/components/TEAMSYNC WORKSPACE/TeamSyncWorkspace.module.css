@@ -28,3 +28,5 @@
 @keyframes tsSpin {
   to { transform: rotate(360deg); }
 }
+
+.loadingScreen { background: #e9e4e4; }

@@ -391,3 +391,83 @@
 @media (prefers-reduced-motion: reduce) {
   .sidebar, .sidebar * { transition: none !important; }
 }
+
+/* ═══ Floating curved sidebar ═══════════════════════════════
+   The sidebar is a rounded panel; the content sheet beside it has
+   rounded inner corners, drawn here with two "inverse corner" pieces
+   so the navy flows smoothly around the curve.                       */
+.sidebar {
+  --radius: 32px;
+  --top-tone: #1c1c36;
+  --bottom-tone: #1a1a2e;
+
+  height: auto;
+  align-self: stretch;
+  z-index: 30;
+  position: relative;
+  border-right: none;
+  border-radius: var(--radius) 0 0 var(--radius);
+  background:
+    radial-gradient(120% 45% at 0% 0%, var(--accent-soft) 0%, transparent 60%),
+    linear-gradient(180deg, var(--top-tone) 0%, var(--bottom-tone) 100%);
+  box-shadow: 0 24px 60px rgba(26,26,46,0.22);
+}
+.sidebar.collapsed { width: 80px; }
+
+.sidebar::before,
+.sidebar::after {
+  content: '';
+  position: absolute;
+  right: calc(var(--radius) * -1);
+  width: var(--radius); height: var(--radius);
+  pointer-events: none;
+}
+.sidebar::before {
+  top: 0;
+  background: radial-gradient(circle at 100% 100%, transparent calc(var(--radius) - 0.5px), var(--top-tone) var(--radius));
+}
+.sidebar::after {
+  bottom: 0;
+  background: radial-gradient(circle at 100% 0%, transparent calc(var(--radius) - 0.5px), var(--bottom-tone) var(--radius));
+}
+
+.header { padding-top: 26px; }
+
+/* Active item: white pill, brand-coloured icon (as in the reference) */
+.navItem { border: none; padding: 12px 16px; border-radius: 14px; color: rgba(255,255,255,0.72); }
+.navItem:hover { background: rgba(255,255,255,0.09); color: #fff; }
+.navActive, .navActive:hover {
+  background: #fff;
+  color: #1a1a2e;
+  font-weight: 700;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.22);
+}
+.navActive .navIcon { color: var(--accent); }
+.collapsed .navItem { padding: 13px 0; }
+
+/* Room card becomes a light "floating card" with a solid action button */
+.roomSection { border-top: none; padding: 14px 14px 12px; }
+.roomSection .sectionLabel { padding-left: 4px; }
+.roomCard {
+  background: #fff; border: none; border-radius: 22px; padding: 16px 14px 14px;
+  box-shadow: 0 14px 30px rgba(0,0,0,0.25);
+}
+.roomCardAvatar { background: #fff1f1; border: none; color: #cb2525; border-radius: 13px; }
+.employee .roomCardAvatar { background: #eef1ff; color: #3a52d6; }
+.roomCardName { color: #1a1a2e; font-weight: 700; }
+.codeChip { color: #6c757d; }
+.codeChip:hover { background: #f4f5f7; color: #1a1a2e; }
+.switchRoomBtn {
+  padding: 10px; border: none; border-radius: 12px; font-size: 0.8rem; color: #fff;
+  background: linear-gradient(135deg, #cb2525, #ea4343);
+  box-shadow: 0 6px 16px rgba(203,37,37,0.35);
+}
+.employee .switchRoomBtn { background: linear-gradient(135deg, #3a52d6, #5f7cff); box-shadow: 0 6px 16px rgba(79,110,247,0.35); }
+.switchRoomBtn:hover { background: linear-gradient(135deg, #cb2525, #ea4343); filter: brightness(1.08); transform: translateY(-1px); color: #fff; }
+.employee .switchRoomBtn:hover { background: linear-gradient(135deg, #3a52d6, #5f7cff); }
+
+.userArea { padding: 14px 18px 22px; }
+
+@media (max-width: 768px) {
+  .sidebar { display: none; }
+}

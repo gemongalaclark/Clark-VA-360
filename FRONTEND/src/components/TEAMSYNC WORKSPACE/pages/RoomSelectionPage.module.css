@@ -455,3 +455,16 @@
   .roleBadge { margin-right: auto; }
   .confirmText { flex-basis: calc(100% - 64px); }
 }
+
+/* ═══ Floating shell — matches the dashboard (inset rounded card on soft grey) ═══ */
+.shell { min-height: 100vh; box-sizing: border-box; padding: 14px; background: #e9e4e4; }
+.shell .page {
+  min-height: calc(100vh - 28px);
+  border-radius: 32px; overflow: hidden;
+  box-shadow: 0 24px 60px rgba(26,26,46,0.12);
+}
+.shell .header { background: #fff; }
+@media (max-width: 640px) {
+  .shell { padding: 0; }
+  .shell .page { min-height: 100vh; border-radius: 0; box-shadow: none; }
+}

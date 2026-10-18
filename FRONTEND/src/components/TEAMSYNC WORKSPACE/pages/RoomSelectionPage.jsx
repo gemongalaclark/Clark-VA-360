@@ -108,6 +108,7 @@ export default function RoomSelectionPage({ profile, session, onRoomJoined, onLe
   };
 
   return (
+    <div className={styles.shell}>
     <div className={styles.page}>
       <div className={styles.header}>
         <div className={styles.logo}>
@@ -302,6 +303,7 @@ export default function RoomSelectionPage({ profile, session, onRoomJoined, onLe
           </div>
         )}
       </div>
+    </div>
     </div>
   );
 }
