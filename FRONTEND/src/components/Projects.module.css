@@ -705,3 +705,43 @@
   .track { transition: none; }
   .card, .card:hover { transition: none; transform: none; }
 }
+
+/* ── Project guide popup ─────────────────────────────────── */
+.cardFooter { justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.docsBtn {
+  display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 9999px;
+  border: 1.5px solid #ecd9d9; background: #fff; color: var(--text-dark);
+  font-family: inherit; font-size: 0.8rem; font-weight: 600; cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+.docsBtn:hover { border-color: var(--red-primary); color: var(--red-primary); }
+.docsBtn:focus-visible, .docsClose:focus-visible, .docsOpen:focus-visible { outline: 2px solid var(--red-primary); outline-offset: 3px; }
+
+.docsBackdrop {
+  position: fixed; inset: 0; z-index: 1000; background: rgba(26, 26, 46, 0.55);
+  display: flex; align-items: center; justify-content: center; padding: 16px;
+}
+.docsModal {
+  position: relative; width: min(640px, 100%); max-height: 88vh; overflow-y: auto;
+  background: #fff; border-radius: 18px; padding: 28px clamp(20px, 4vw, 36px) 30px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.3); text-align: left;
+}
+.docsTitle { font-family: var(--font-heading); font-size: 1.5rem; margin: 6px 0 4px; color: var(--text-dark); }
+.docsModal h4 {
+  font-family: var(--font-heading); font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--red-primary); margin: 22px 0 8px;
+}
+.docsModal p, .docsModal li { font-size: 0.97rem; line-height: 1.65; color: var(--text-body); }
+.docsModal ol, .docsModal ul { padding-left: 22px; display: flex; flex-direction: column; gap: 6px; }
+.docsModal li::marker { color: var(--red-primary); font-weight: 700; }
+.docsClose {
+  position: absolute; top: 14px; right: 14px; width: 34px; height: 34px; display: grid; place-items: center;
+  border-radius: 50%; border: 1px solid #e6dede; background: #fff; color: var(--text-muted); cursor: pointer;
+}
+.docsClose:hover { color: var(--red-primary); border-color: var(--red-primary); }
+.docsActions { margin-top: 26px; padding-top: 18px; border-top: 1px solid #f1ecec; }
+.docsOpen {
+  display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 9999px;
+  background: var(--red-primary); color: #fff; font-weight: 700; font-size: 0.9rem; text-decoration: none;
+}
+.docsOpen:hover { background: #a81d1d; }

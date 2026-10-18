@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, ExternalLink, Sparkles, Calendar, ArrowUpRight, ArrowRight, Users, Zap, Rocket, ClipboardCheck, ShieldCheck } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { ChevronLeft, ChevronRight, ExternalLink, Sparkles, Calendar, ArrowUpRight, ArrowRight, Users, Zap, Rocket, ClipboardCheck, ShieldCheck, BookOpen, X } from 'lucide-react';
 import styles from './Projects.module.css';
 
 /* Projects data */
@@ -54,6 +54,112 @@ const projects = [
   },
 ];
 
+/* Plain-language guides for the "How it works" popup, written so anyone (even a 12-year-old) can follow. */
+const docs = {
+  1: {
+    what: 'The Auto Scheduler is a helper that reads your work schedule and puts it on your Google Calendar for you. Your schedule might be a photo, a PDF, or a spreadsheet. Instead of typing every shift in by hand, the app reads it and does the typing.',
+    use: [
+      'Open the app and sign in with your Google account.',
+      'Upload your schedule: a photo, a PDF, or a spreadsheet.',
+      'The AI (Google Gemini) reads it and finds your shifts, dates and times.',
+      'Look at the preview. If something looks wrong, fix it before saving.',
+      'Press the button to send everything to Google Calendar. Done!',
+    ],
+    purpose: 'Work rotas (the lists that say who works when) are often messy. People copy them into their calendar one line at a time, and mistakes happen. This app makes that boring job fast and accurate.',
+    help: [
+      'Saves time: dozens of shifts added in seconds, not an afternoon.',
+      'Fewer mistakes: you check a preview before anything is saved.',
+      'Never miss a shift: it all shows up on your phone calendar.',
+      'Works with the files you already have, so there is nothing new to learn.',
+    ],
+  },
+  2: {
+    what: 'TeamSync is a shared online office for a small team. The boss (the “owner”) creates a room. The team members (the “employees”) join it. Inside, the owner hands out tasks, and employees send their finished work back to be checked.',
+    use: [
+      'Sign up and log in. A code is sent to your email to prove it is really you.',
+      'The owner creates a room and shares its room code with the team.',
+      'Employees enter the code and wait for the owner to let them in.',
+      'The owner assigns a task and can set a deadline.',
+      'The employee finishes the work and submits it.',
+      'The owner reviews it and either approves it or asks for changes. Everyone is notified right away.',
+    ],
+    purpose: 'Teams often lose track of who is doing what, because tasks get buried in chats and emails. TeamSync keeps every task, deadline and answer in one tidy place and updates live, without refreshing the page.',
+    help: [
+      'Everyone knows what to do next, and by when.',
+      'Owners can see what is waiting for review at a glance.',
+      'Owners and employees each see only the screens they need.',
+      'Less chasing people with “did you finish that yet?” messages.',
+    ],
+  },
+  3: {
+    what: 'OnboardBase is a private website where a new customer gets set up with a business. “Onboarding” just means the getting-started stage: signing the agreement, sharing files and answering questions. OnboardBase puts all of it in one place with a progress bar, like a checklist in a video game.',
+    use: [
+      'The business owner clicks “New Client” and types the customer’s email and company name.',
+      'The customer gets an email with a magic link. One click and they are in, with no password.',
+      'They follow 5 steps: sign the contract, upload logos, fill in the form, book a kickoff call, then wait for the final review.',
+      'The form saves as they go, so they can stop and come back later.',
+      'When every step is done, the page turns into a “your project is live” page with contacts, a meeting link and finished work.',
+    ],
+    purpose: 'Starting with a new customer usually means weeks of emails, lost links and forgotten files. OnboardBase replaces that mess with one organized page, and shows the owner who is stuck and on which step.',
+    help: [
+      'Customers can finish setup in about 20 minutes instead of weeks.',
+      'No more “where is that link?”, because everything lives on one page.',
+      'Private and safe: each customer can only ever see their own stuff.',
+      'The owner sees a board of all customers and spots anyone who has gone quiet.',
+      'You can try it with the demo buttons. No account needed.',
+    ],
+  },
+};
+
+function DocsModal({ project, onClose }) {
+  const doc = docs[project.id];
+  const closeRef = useRef(null);
+
+  useEffect(() => {
+    const onKey = (e) => e.key === 'Escape' && onClose();
+    window.addEventListener('keydown', onKey);
+    closeRef.current?.focus();
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [onClose]);
+
+  return (
+    <div className={styles.docsBackdrop} onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+      <div className={styles.docsModal} role="dialog" aria-modal="true" aria-labelledby="docs-title">
+        <button ref={closeRef} className={styles.docsClose} onClick={onClose} aria-label="Close guide"><X size={18} /></button>
+        <span className={styles.cardCategory}>{project.category} · Project guide</span>
+        <h3 id="docs-title" className={styles.docsTitle}>{project.title}</h3>
+
+        <h4>What is it?</h4>
+        <p>{doc.what}</p>
+
+        <h4>How do I use it?</h4>
+        <ol>{doc.use.map(t => <li key={t}>{t}</li>)}</ol>
+
+        <h4>What is it for?</h4>
+        <p>{doc.purpose}</p>
+
+        <h4>How can it help?</h4>
+        <ul>{doc.help.map(t => <li key={t}>{t}</li>)}</ul>
+
+        <div className={styles.docsActions}>
+          <a
+            href={project.liveUrl}
+            className={styles.docsOpen}
+            onClick={(e) => { e.preventDefault(); onClose(); openProject(project.liveUrl); }}
+          >
+            Open {project.title} <ArrowRight size={15} />
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* Cards visible at once — mirrors the CSS breakpoints (--n) */
 function usePerView() {
   const get = () => (window.matchMedia('(max-width: 600px)').matches ? 1
@@ -73,7 +179,7 @@ const openProject = (url) => {
   window.dispatchEvent(new PopStateEvent('popstate'));
 };
 
-function ProjectCard({ project }) {
+function ProjectCard({ project, onDocs }) {
   const handleCardClick = (e) => {
     if (e.target.closest('a') || e.target.closest('button')) return;
     if (!project.liveUrl) return;
@@ -194,6 +300,15 @@ function ProjectCard({ project }) {
         )}
 
         <div className={styles.cardFooter}>
+          {docs[project.id] && (
+            <button
+              type="button"
+              className={styles.docsBtn}
+              onClick={(e) => { e.stopPropagation(); onDocs(project); }}
+            >
+              <BookOpen size={15} /> How it works
+            </button>
+          )}
           {project.liveUrl ? (
             <a
               href={project.liveUrl}
@@ -213,6 +328,7 @@ function ProjectCard({ project }) {
 
 export default function Projects() {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [docsProject, setDocsProject] = useState(null);
   const perView = usePerView();
   const maxIndex = Math.max(0, projects.length - perView);
   const index = Math.min(currentIndex, maxIndex);
@@ -255,7 +371,7 @@ export default function Projects() {
             <div className={styles.track} style={{ '--i': index }}>
               {projects.map(project => (
                 <div key={project.id} className={styles.slide}>
-                  <ProjectCard project={project} />
+                  <ProjectCard project={project} onDocs={setDocsProject} />
                 </div>
               ))}
             </div>
@@ -291,6 +407,8 @@ export default function Projects() {
             </span>
           </div>
         )}
+
+        {docsProject && <DocsModal project={docsProject} onClose={() => setDocsProject(null)} />}
 
         <p className={styles.hint}>
           <Sparkles size={14} /> Tip: open the Auto Scheduler to test drive the Gemini AI schedule scanner.
