@@ -1,4 +1,5 @@
-import { LayoutDashboard, ClipboardCheck, Users, ListTodo, Hash, LogOut, ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react';
+import { useState } from 'react';
+import { LayoutDashboard, ClipboardCheck, Users, ListTodo, Hash, LogOut, ChevronLeft, ChevronRight, ArrowLeftRight, Crown, User, Copy, Check } from 'lucide-react';
 import styles from './Sidebar.module.css';
 
 const ownerNav = [
@@ -12,15 +13,33 @@ const employeeNav = [
   { id: 'tasks',     label: 'My Tasks',  icon: <ListTodo size={18} /> },
 ];
 
-export default function Sidebar({ role, currentTab, setTab, room, profile, onSignOut, onSwitchRoom, onLeaveRoom, collapsed, setCollapsed }) {
-  const nav = role === 'owner' ? ownerNav : employeeNav;
+export default function Sidebar({ role, currentTab, setTab, room, profile, onSignOut, onSwitchRoom, collapsed, setCollapsed }) {
+  const [copied, setCopied] = useState(false);
+  const isOwner = role === 'owner';
+  const nav = isOwner ? ownerNav : employeeNav;
   const initials = profile ? `${profile.first_name[0]}${profile.last_name[0]}`.toUpperCase() : 'U';
   const fullName = profile ? `${profile.first_name} ${profile.last_name}` : 'User';
+  const roleLabel = isOwner ? 'Owner' : 'Employee';
+  const RoleIcon = isOwner ? Crown : User;
+  const roomInitials = room ? room.name.slice(0, 2).toUpperCase() : '';
+
+  const copyCode = async () => {
+    try {
+      await navigator.clipboard.writeText(room.room_code);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      /* clipboard unavailable — ignore */
+    }
+  };
 
   return (
-    <aside className={`${styles.sidebar} ${collapsed ? styles.collapsed : ''}`}>
+    <aside
+      className={`${styles.sidebar} ${collapsed ? styles.collapsed : ''} ${isOwner ? styles.owner : styles.employee}`}
+      aria-label="Workspace navigation"
+    >
 
-      {/* ── Header: logo + role tag ────────────────────────── */}
+      {/* ── Header: logo + collapse toggle ─────────────────── */}
       <div className={styles.header}>
         <div className={styles.logoArea}>
           <div className={styles.logoMark}>TS</div>
@@ -34,52 +53,49 @@ export default function Sidebar({ role, currentTab, setTab, room, profile, onSig
         <button
           className={styles.collapseBtn}
           onClick={() => setCollapsed(c => !c)}
-          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          aria-expanded={!collapsed}
+          data-tip={collapsed ? 'Expand' : undefined}
         >
           {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
         </button>
       </div>
 
-      {/* Role tag strip */}
-      {!collapsed && (
-        <div className={styles.roleStrip}>
-          <span className={role === 'owner' ? styles.ownerTag : styles.employeeTag}>
-            {role === 'owner' ? '⭐ Owner' : '👤 Employee'}
-          </span>
-        </div>
-      )}
+      {/* ── Role badge ─────────────────────────────────────── */}
+      <div className={styles.roleStrip}>
+        <span
+          className={`${styles.roleTag} ${isOwner ? styles.ownerTag : styles.employeeTag}`}
+          data-tip={collapsed ? roleLabel : undefined}
+        >
+          <RoleIcon size={12} strokeWidth={2.4} />
+          {!collapsed && roleLabel}
+        </span>
+      </div>
 
       {/* ── Navigation ────────────────────────────────────── */}
       <div className={styles.navSection}>
         {!collapsed && <p className={styles.sectionLabel}>Navigation</p>}
         <nav className={styles.nav}>
-          {nav.map(item => (
-            <button
-              key={item.id}
-              className={`${styles.navItem} ${currentTab === item.id ? styles.navActive : ''}`}
-              onClick={() => setTab(item.id)}
-              title={collapsed ? item.label : undefined}
-            >
-              <span className={styles.navIcon}>{item.icon}</span>
-              {!collapsed && <span className={styles.navLabel}>{item.label}</span>}
-            </button>
-          ))}
+          {nav.map(item => {
+            const active = currentTab === item.id;
+            return (
+              <button
+                key={item.id}
+                className={`${styles.navItem} ${active ? styles.navActive : ''}`}
+                onClick={() => setTab(item.id)}
+                aria-current={active ? 'page' : undefined}
+                aria-label={item.label}
+                data-tip={collapsed ? item.label : undefined}
+              >
+                <span className={styles.navIcon}>{item.icon}</span>
+                {!collapsed && <span className={styles.navLabel}>{item.label}</span>}
+              </button>
+            );
+          })}
         </nav>
       </div>
 
       <div className={styles.spacer} />
-
-      {/* ── Collapsed: switch room ─────────────────────────── */}
-      {collapsed && (
-        <div className={styles.collapsedActions}>
-          <button className={styles.collapsedActionBtn} onClick={onSwitchRoom} title="Switch Room">
-            <ArrowLeft size={16} />
-          </button>
-          <button className={styles.collapsedActionBtn} onClick={onSignOut} title="Sign out">
-            <LogOut size={15} />
-          </button>
-        </div>
-      )}
 
       {/* ── Room card (expanded) ───────────────────────────── */}
       {!collapsed && room && (
@@ -87,37 +103,58 @@ export default function Sidebar({ role, currentTab, setTab, room, profile, onSig
           <p className={styles.sectionLabel}>Current Room</p>
           <div className={styles.roomCard}>
             <div className={styles.roomCardRow}>
-              <div className={styles.roomCardAvatar}>
-                {room.name.slice(0, 2).toUpperCase()}
-              </div>
+              <div className={styles.roomCardAvatar}>{roomInitials}</div>
               <div className={styles.roomCardInfo}>
-                <p className={styles.roomCardName}>{room.name}</p>
-                <div className={styles.roomCardCodeRow}>
-                  <Hash size={11} />
+                <p className={styles.roomCardName} title={room.name}>{room.name}</p>
+                <button className={styles.codeChip} onClick={copyCode} title="Copy room code">
+                  <Hash size={10} />
                   <span className={styles.roomCardCode}>{room.room_code}</span>
-                </div>
+                  {copied ? <Check size={11} className={styles.copiedIcon} /> : <Copy size={11} />}
+                </button>
               </div>
             </div>
             <button className={styles.switchRoomBtn} onClick={onSwitchRoom}>
-              <ArrowLeft size={13} /> Switch Room
+              <ArrowLeftRight size={13} /> Switch Room
             </button>
           </div>
         </div>
       )}
 
+      {/* ── Collapsed: room + actions ──────────────────────── */}
+      {collapsed && (
+        <div className={styles.collapsedActions}>
+          {room && (
+            <div className={styles.collapsedRoom} data-tip={`${room.name} · #${room.room_code}`}>
+              {roomInitials}
+            </div>
+          )}
+          <button className={styles.collapsedActionBtn} onClick={onSwitchRoom} aria-label="Switch room" data-tip="Switch Room">
+            <ArrowLeftRight size={16} />
+          </button>
+        </div>
+      )}
+
       {/* ── User + sign out ────────────────────────────────── */}
-      {!collapsed && (
-        <div className={styles.userArea}>
-          <div className={styles.avatar}>{initials}</div>
+      <div className={styles.userArea}>
+        <div className={styles.avatar} data-tip={collapsed ? `${fullName} · ${roleLabel}` : undefined}>
+          {initials}
+        </div>
+        {!collapsed && (
           <div className={styles.userInfo}>
             <span className={styles.userName}>{fullName}</span>
             <span className={styles.userEmail}>{profile?.email ?? ''}</span>
           </div>
-          <button className={styles.signOutBtn} onClick={onSignOut} title="Sign out">
-            <LogOut size={15} />
-          </button>
-        </div>
-      )}
+        )}
+        <button
+          className={styles.signOutBtn}
+          onClick={onSignOut}
+          aria-label="Sign out"
+          data-tip={collapsed ? 'Sign out' : undefined}
+          title={collapsed ? undefined : 'Sign out'}
+        >
+          <LogOut size={15} />
+        </button>
+      </div>
     </aside>
   );
 }
