@@ -1,4 +1,18 @@
+import { GraduationCap, Briefcase, Wrench, Target, BookOpen, ArrowRight } from 'lucide-react';
 import styles from './About.module.css';
+
+const stats = [
+  { value: '4',    label: 'Years of IT Study',  Icon: GraduationCap },
+  { value: '1+',   label: 'Year Internship',    Icon: Briefcase },
+  { value: '15+',  label: 'VA Tools Mastered',  Icon: Wrench },
+  { value: '100%', label: 'Dedication',         Icon: Target },
+];
+
+const journey = [
+  { Icon: GraduationCap, title: 'IT Graduate', meta: 'Bachelor of Science in Information Technology' },
+  { Icon: Briefcase,     title: 'Web Developer Intern', meta: 'Knowles Training Institute' },
+  { Icon: BookOpen,      title: 'VA Training', meta: 'The VA Bar · ongoing' },
+];
 
 export default function About() {
   return (
@@ -7,9 +21,10 @@ export default function About() {
         <h2 className="section-title">About <span>Me</span></h2>
         <div className="section-divider" />
 
-        <div className={styles.content}>
+        <div className={styles.layout}>
+          {/* Story */}
           <div className={styles.textBlock}>
-            <p className={styles.intro}>
+            <p className={styles.lead}>
               Hi everyone, I&apos;m Clark! As a recent Information Technology graduate and a former
               Web Developer intern at <strong>Knowles Training Institute</strong>, I am excitingly
               pivoting into the remote world to start my journey as a Virtual Assistant.
@@ -25,23 +40,44 @@ export default function About() {
               If you are a business owner looking for a dedicated, tech-savvy assistant to save you
               time and organize your workflows — let&apos;s connect!
             </p>
+
+            <div className={styles.actions}>
+              <a href="#contact" className={styles.primaryBtn}>
+                Let&apos;s connect <ArrowRight size={16} />
+              </a>
+              <a href="#skills" className={styles.secondaryBtn}>See my tools</a>
+            </div>
           </div>
 
-          {/* Stats row */}
-          <div className={styles.statsRow}>
-            {[
-              { value: '4', label: 'Years of IT Study', icon: '🎓' },
-              { value: '1+', label: 'Year Internship', icon: '💼' },
-              { value: '15+', label: 'VA Tools Mastered', icon: '🛠️' },
-              { value: '100%', label: 'Dedication', icon: '🎯' },
-            ].map((stat) => (
-              <div key={stat.label} className={styles.statCard}>
-                <span className={styles.statIcon}>{stat.icon}</span>
-                <span className={styles.statValue}>{stat.value}</span>
-                <span className={styles.statLabel}>{stat.label}</span>
-              </div>
-            ))}
-          </div>
+          {/* At a glance */}
+          <aside className={styles.glance} aria-label="Background at a glance">
+            <span className={styles.status}>
+              <span className={styles.statusDot} /> Open to my first client
+            </span>
+            <h3 className={styles.glanceTitle}>My journey</h3>
+            <ol className={styles.timeline}>
+              {journey.map(({ Icon, title, meta }) => (
+                <li key={title} className={styles.timelineItem}>
+                  <span className={styles.timelineIcon}><Icon size={18} /></span>
+                  <div>
+                    <p className={styles.timelineTitle}>{title}</p>
+                    <p className={styles.timelineMeta}>{meta}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </aside>
+        </div>
+
+        {/* Stats */}
+        <div className={styles.statsRow}>
+          {stats.map(({ value, label, Icon }) => (
+            <div key={label} className={styles.statCard}>
+              <span className={styles.statIcon}><Icon size={20} /></span>
+              <span className={styles.statValue}>{value}</span>
+              <span className={styles.statLabel}>{label}</span>
+            </div>
+          ))}
         </div>
       </div>
     </section>

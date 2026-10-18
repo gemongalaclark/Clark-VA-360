@@ -368,3 +368,106 @@
   .badgeTop { right: 10px; }
   .badgeBottom { left: 10px; }
 }
+
+/* ═══════════════ Refinement ═══════════════ */
+.hero {
+  background:
+    radial-gradient(700px 420px at 88% 18%, rgba(203,37,37,0.10), transparent 65%),
+    radial-gradient(600px 380px at 4% 92%, rgba(26,26,46,0.05), transparent 65%),
+    linear-gradient(180deg, #fff7f7 0%, #ffffff 100%);
+}
+.inner { gap: 72px; padding-bottom: 110px; }
+.content { gap: 22px; }
+
+.badge { background: #fff; border-color: rgba(203,37,37,0.18); box-shadow: 0 2px 10px rgba(203,37,37,0.08); }
+.heading { letter-spacing: -0.03em; line-height: 1.05; }
+.roles { gap: 10px; }
+.role { font-size: clamp(1.05rem, 2.4vw, 1.35rem); }
+.description { max-width: 520px; font-size: 1.05rem; line-height: 1.75; }
+
+.ctaRow { gap: 14px; margin-top: 4px; }
+.ctaArrow { transition: transform 0.2s ease; }
+.ctaRow button:hover .ctaArrow { transform: translateX(3px); }
+
+/* Quick proof strip */
+.highlights {
+  list-style: none; margin: 4px 0 0; padding: 0;
+  display: flex; flex-wrap: wrap; gap: 0;
+}
+.highlightItem {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 0 24px; border-left: 1px solid #efd9d9;
+}
+.highlightItem:first-child { padding-left: 0; border-left: none; }
+.highlightItem strong { font-family: var(--font-heading); font-size: 1.35rem; font-weight: 800; color: var(--text-dark); letter-spacing: -0.02em; }
+.highlightItem span { font-size: 0.78rem; color: var(--text-muted); font-weight: 500; }
+
+/* Connect row */
+.connect { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; }
+.connectLabel { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); }
+.socialRow { gap: 10px; }
+.divider { width: 1px; height: 26px; background: #efd9d9; margin: 0 4px; }
+.cvBtn {
+  display: inline-flex; align-items: center; gap: 7px;
+  height: 44px; padding: 0 16px; border-radius: var(--radius-full);
+  background: #fff; border: 1.5px dashed #e3c2c2; color: var(--text-body);
+  font-size: 0.82rem; font-weight: 700; cursor: not-allowed;
+}
+.cvBtn em { font-style: normal; font-size: 0.68rem; font-weight: 700; padding: 2px 8px; border-radius: 9999px; background: #fff3cd; color: #7a5200; }
+
+.contactInfo { flex-direction: row; flex-wrap: wrap; gap: 8px 22px; margin-top: 2px; }
+.contactItem { color: var(--text-muted); transition: color 0.2s ease; }
+a.contactItem:hover { color: var(--red-primary); }
+
+/* Photo */
+.ring { width: 470px; height: 470px; }
+.ringInner { width: 410px; height: 410px; background: rgba(255,255,255,0.55); border-color: rgba(203,37,37,0.1); }
+.photoCircle { width: 360px; height: 360px; border-width: 5px; box-shadow: 0 30px 70px rgba(203,37,37,0.22), 0 6px 22px rgba(26,26,46,0.1); }
+
+.floatBadge { border-radius: 18px; padding: 12px 18px 12px 12px; box-shadow: 0 14px 36px rgba(26,26,46,0.14); }
+.badgeIcon {
+  width: 38px; height: 38px; border-radius: 12px; font-size: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: #fff1f1; color: var(--red-primary);
+}
+.badgeIconNavy { background: #eef0f6; color: #1a1a2e; }
+.badgeLabel { font-size: 0.85rem; }
+.badgeTop { top: 36px; right: -24px; }
+.badgeBottom { bottom: 44px; left: -34px; }
+
+/* Scroll indicator is now a real button */
+.scrollIndicator { background: none; border: none; padding: 8px; font: inherit; }
+.scrollText { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+.scrollIndicator:focus-visible, .cvBtn:focus-visible, .contactItem:focus-visible { outline: 2px solid var(--red-primary); outline-offset: 3px; border-radius: 8px; }
+.scrollIndicator span.scrollMouse { display: flex; }
+
+@media (max-width: 1100px) {
+  .inner { gap: 40px; }
+  .ring { width: 400px; height: 400px; }
+  .ringInner { width: 350px; height: 350px; }
+  .photoCircle { width: 310px; height: 310px; }
+}
+@media (max-width: 900px) {
+  .inner { padding-bottom: 90px; }
+  .highlights { justify-content: center; }
+  .connect { align-items: center; }
+  .contactInfo { justify-content: center; }
+  .ring { width: 330px; height: 330px; }
+  .ringInner { width: 290px; height: 290px; }
+  .photoCircle { width: 250px; height: 250px; }
+  .badgeTop { right: -4px; }
+  .badgeBottom { left: -4px; }
+}
+@media (max-width: 480px) {
+  .highlightItem { padding: 0 14px; }
+  .highlightItem strong { font-size: 1.15rem; }
+  .ring { width: 270px; height: 270px; }
+  .ringInner { width: 235px; height: 235px; }
+  .photoCircle { width: 205px; height: 205px; }
+  .badgeTop { right: 0; }
+  .badgeBottom { left: 0; }
+  .scrollIndicator { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ring, .floatBadge, .scrollDot, .badgeDot { animation: none; }
+}
