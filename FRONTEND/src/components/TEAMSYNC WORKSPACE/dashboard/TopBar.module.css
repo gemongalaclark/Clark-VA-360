@@ -36,7 +36,7 @@
 }
 .searchIcon {
   position: absolute; left: 12px;
-  color: #adb5bd; pointer-events: none;
+  color: #8a93a0; pointer-events: none;
 }
 .searchInput {
   padding: 9px 16px 9px 38px;
@@ -55,7 +55,7 @@
   background: #fff;
   box-shadow: 0 0 0 3px rgba(203,37,37,0.08);
 }
-.searchInput::placeholder { color: #f09090; }
+.searchInput::placeholder { color: #c98a8a; }
 
 /* Bell */
 .bellWrap { position: relative; }
@@ -111,7 +111,7 @@
 .notifList { max-height: 360px; overflow-y: auto; }
 .emptyNotifs {
   padding: 32px 16px; text-align: center;
-  font-size: 0.85rem; color: #adb5bd;
+  font-size: 0.85rem; color: #8a93a0;
 }
 
 .notifItem {
@@ -121,8 +121,8 @@
   transition: background 0.15s;
   position: relative;
 }
-.notifItem:hover { background: #F5F3FF; }
-.notifUnread { background: #FAF8FF; }
+.notifItem:hover { background: #fff6f6; }
+.notifUnread { background: #fff1f1; }
 
 .notifIcon {
   width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0;
@@ -133,7 +133,7 @@
 
 .notifBody { flex: 1; min-width: 0; }
 .notifMsg { font-size: 0.8rem; color: #1a1a2e; line-height: 1.5; margin-bottom: 3px; }
-.notifTime { font-size: 0.7rem; color: #adb5bd; }
+.notifTime { font-size: 0.7rem; color: #8a93a0; }
 
 .unreadDot {
   width: 7px; height: 7px; border-radius: 50%;
@@ -204,3 +204,29 @@
   .profileName { display: none; }
   .topbar { padding: 0 16px; }
 }
+
+/* ── Refinement ─────────────────────────────────────────── */
+.topbar {
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 1px 0 rgba(203,37,37,0.06), 0 6px 20px rgba(26,26,46,0.03);
+}
+.pageTitle { font-size: 1.2rem; letter-spacing: -0.02em; }
+.searchInput { width: 240px; }
+.searchInput:focus { width: 280px; }
+.searchInput, .bellBtn, .profileBtn { background: #fff7f7; }
+.bellBtn:focus-visible, .profileBtn:focus-visible, .searchInput:focus-visible {
+  outline: 2px solid #cb2525; outline-offset: 2px;
+}
+.badge { animation: tsBadgePop 0.3s ease; }
+@keyframes tsBadgePop { from { transform: scale(0); } to { transform: scale(1); } }
+.dropdown, .profileDropdown {
+  border-radius: 18px;
+  box-shadow: 0 20px 56px rgba(26,26,46,0.16);
+}
+.notifUnread { box-shadow: inset 3px 0 0 #cb2525; }
+.profileRoomCode {
+  background: rgba(203,37,37,0.08);
+  padding: 3px 10px; border-radius: 8px;
+}
+@media (max-width: 900px) { .searchInput, .searchInput:focus { width: 180px; } }

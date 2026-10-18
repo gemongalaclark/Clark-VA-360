@@ -1,17 +1,20 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Check, X, ChevronDown, Filter, Loader } from 'lucide-react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { Check, X, ChevronDown, Loader, Search } from 'lucide-react';
 import { supabase } from '../../../../lib/supabase';
+import StatusBadge, { getInitials, getName } from '../StatusBadge';
 import styles from '../SharedPages.module.css';
 
-const STATUS_COLORS = {
-  pending: { bg: '#fff3cd', color: '#856404' },
-  approved: { bg: '#d4edda', color: '#155724' },
-  rejected: { bg: '#f8d7da', color: '#721c24' },
-};
+const FILTERS = [
+  { key: 'all',      label: 'All',      activeClass: styles.filterActive },
+  { key: 'pending',  label: 'Pending',  activeClass: styles.filterPendingActive },
+  { key: 'approved', label: 'Approved', activeClass: styles.filterApprovedActive },
+  { key: 'rejected', label: 'Rejected', activeClass: styles.filterRejectedActive },
+];
 
-export default function ReviewPage({ room, profile }) {
+export default function ReviewPage({ room }) {
   const [tasks, setTasks] = useState([]);
   const [filter, setFilter] = useState('all');
+  const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [reviewingId, setReviewingId] = useState(null);
   const [expandedId, setExpandedId] = useState(null);
@@ -51,47 +54,79 @@ export default function ReviewPage({ room, profile }) {
     setReviewingId(null);
   };
 
-  const filtered = filter === 'all' ? tasks : tasks.filter(t => t.status === filter);
-
-  const getInitials = (p) => p ? `${p.first_name[0]}${p.last_name[0]}`.toUpperCase() : '?';
-  const getName = (p) => p ? `${p.first_name} ${p.last_name}` : 'Unknown';
   const formatDate = (iso) => new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
-  const counts = {
+  const counts = useMemo(() => ({
     all: tasks.length,
     pending: tasks.filter(t => t.status === 'pending').length,
     approved: tasks.filter(t => t.status === 'approved').length,
     rejected: tasks.filter(t => t.status === 'rejected').length,
-  };
+  }), [tasks]);
+
+  /* Pending work floats to the top of "All"; search matches employee or title */
+  const visible = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return tasks
+      .filter(t => filter === 'all' || t.status === filter)
+      .filter(t => !q || t.title.toLowerCase().includes(q) || getName(t.profiles).toLowerCase().includes(q))
+      .sort((a, b) => (filter === 'all' ? (b.status === 'pending') - (a.status === 'pending') : 0));
+  }, [tasks, filter, query]);
 
   if (loading) return <div className={styles.loading}><div className={styles.spinner} /></div>;
 
   return (
     <div className={styles.page}>
-      {/* Filter tabs */}
-      <div className={styles.filterRow}>
-        {[
-          { key: 'all',      label: 'All',      activeClass: styles.filterActive },
-          { key: 'pending',  label: 'Pending',  activeClass: styles.filterPendingActive },
-          { key: 'approved', label: 'Approved', activeClass: styles.filterApprovedActive },
-          { key: 'rejected', label: 'Rejected', activeClass: styles.filterRejectedActive },
-        ].map(({ key, label, activeClass }) => (
-          <button
-            key={key}
-            className={`${styles.filterTab} ${filter === key ? activeClass : ''}`}
-            onClick={() => setFilter(key)}
-          >
-            {label}
-            <span className={styles.filterCount}>{counts[key]}</span>
-          </button>
-        ))}
+      <div className={styles.pageHeader}>
+        <div>
+          <p className={styles.pageTitle}>Review Tasks</p>
+          <p className={styles.pageSubtitle}>
+            {counts.pending > 0
+              ? <><strong>{counts.pending}</strong> {counts.pending === 1 ? 'task is' : 'tasks are'} waiting for your decision.</>
+              : 'Nothing is waiting — new submissions will appear here in real time.'}
+          </p>
+        </div>
+        <div className={styles.pageHeaderBadge}>{counts.approved} approved · {counts.rejected} rejected</div>
+      </div>
+
+      {/* Toolbar: filters + search */}
+      <div className={styles.toolbar}>
+        <div className={styles.filterRow} role="tablist" aria-label="Filter tasks by status">
+          {FILTERS.map(({ key, label, activeClass }) => (
+            <button
+              key={key}
+              role="tab"
+              aria-selected={filter === key}
+              className={`${styles.filterTab} ${filter === key ? activeClass : ''}`}
+              onClick={() => setFilter(key)}
+            >
+              {label}
+              <span className={styles.filterCount}>{counts[key]}</span>
+            </button>
+          ))}
+        </div>
+        <label className={styles.searchBox}>
+          <Search size={15} />
+          <input
+            type="search"
+            placeholder="Search employee or task…"
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            aria-label="Search tasks"
+          />
+        </label>
       </div>
 
       {/* Task list */}
       <div className={styles.card}>
-        {filtered.length === 0 ? (
+        {visible.length === 0 ? (
           <div className={styles.emptyState}>
-            {filter === 'pending' ? (
+            {query ? (
+              <>
+                <span className={styles.emptyIcon}>🔍</span>
+                <span className={styles.emptyText}>No matches for “{query}”</span>
+                <span className={styles.emptySubtext}>Try a different name or task title</span>
+              </>
+            ) : filter === 'pending' ? (
               <>
                 <span className={styles.emptyIcon}>🎉</span>
                 <span className={styles.emptyText}>All caught up!</span>
@@ -112,83 +147,76 @@ export default function ReviewPage({ room, profile }) {
           </div>
         ) : (
           <div className={styles.taskList}>
-            {filtered.map(task => {
-              const sc = STATUS_COLORS[task.status];
+            {visible.map(task => {
               const isExpanded = expandedId === task.id;
+              const busy = reviewingId === task.id;
               return (
-                <div key={task.id} className={`${styles.taskItem} ${isExpanded ? styles.taskExpanded : ''}`}>
+                <div
+                  key={task.id}
+                  data-status={task.status}
+                  className={`${styles.taskItem} ${isExpanded ? styles.taskExpanded : ''}`}
+                >
                   <div className={styles.taskRow}>
-                    {/* Employee */}
                     <div className={styles.taskEmployee}>
                       <div className={styles.miniAvatar}>{getInitials(task.profiles)}</div>
                       <span className={styles.empNameSm}>{getName(task.profiles)}</span>
                     </div>
 
-                    {/* Title + desc */}
                     <div className={styles.taskInfo}>
                       <p className={styles.taskTitle}>{task.title}</p>
-                      {task.description && (
-                        <p className={styles.taskDesc}>{task.description}</p>
-                      )}
+                      {task.description && <p className={styles.taskDesc}>{task.description}</p>}
                     </div>
 
-                    {/* Date */}
                     <span className={styles.taskDate}>{formatDate(task.created_at)}</span>
+                    <StatusBadge status={task.status} />
 
-                    {/* Status badge */}
-                    <span className={styles.statusBadge} style={{ background: sc.bg, color: sc.color }}>
-                      {task.status}
-                    </span>
-
-                    {/* Actions */}
                     {task.status === 'pending' && (
-                      <div className={styles.taskActions}>
-                        <button
-                          className={styles.approveBtn}
-                          onClick={() => { setExpandedId(isExpanded ? null : task.id); setNotes(''); }}
-                        >
-                          Review <ChevronDown size={14} style={{ transform: isExpanded ? 'rotate(180deg)' : 'none', transition: '0.2s' }} />
-                        </button>
-                      </div>
+                      <button
+                        className={styles.reviewToggle}
+                        aria-expanded={isExpanded}
+                        onClick={() => { setExpandedId(isExpanded ? null : task.id); setNotes(''); }}
+                      >
+                        Review
+                        <ChevronDown size={14} className={isExpanded ? styles.chevronUp : ''} />
+                      </button>
                     )}
                   </div>
 
-                  {/* Expand: review panel */}
                   {isExpanded && (
                     <div className={styles.reviewPanel}>
-                      <label className={styles.reviewLabel}>Notes for employee (optional)</label>
+                      {task.description && (
+                        <div className={styles.fullDesc}>
+                          <span className={styles.fullDescLabel}>Submitted details</span>
+                          {task.description}
+                        </div>
+                      )}
+                      <label className={styles.reviewLabel} htmlFor={`notes-${task.id}`}>
+                        Feedback for {task.profiles?.first_name ?? 'employee'} <span className={styles.optional}>(optional)</span>
+                      </label>
                       <textarea
+                        id={`notes-${task.id}`}
                         className={styles.reviewTextarea}
                         rows={3}
-                        placeholder="Add feedback or notes…"
+                        placeholder="Say what went well or what to change…"
                         value={notes}
                         onChange={e => setNotes(e.target.value)}
+                        autoFocus
                       />
                       <div className={styles.reviewBtnRow}>
-                        <button
-                          className={styles.rejectBtn}
-                          onClick={() => handleReview(task.id, 'rejected')}
-                          disabled={reviewingId === task.id}
-                        >
-                          {reviewingId === task.id ? <Loader size={14} className={styles.spin} /> : <X size={14} />}
-                          Reject
+                        <button className={styles.cancelBtn} onClick={() => setExpandedId(null)} disabled={busy}>Cancel</button>
+                        <button className={styles.rejectBtn} onClick={() => handleReview(task.id, 'rejected')} disabled={busy}>
+                          {busy ? <Loader size={14} className={styles.spin} /> : <X size={14} />} Reject
                         </button>
-                        <button
-                          className={styles.acceptBtn}
-                          onClick={() => handleReview(task.id, 'approved')}
-                          disabled={reviewingId === task.id}
-                        >
-                          {reviewingId === task.id ? <Loader size={14} className={styles.spin} /> : <Check size={14} />}
-                          Approve
+                        <button className={styles.acceptBtn} onClick={() => handleReview(task.id, 'approved')} disabled={busy}>
+                          {busy ? <Loader size={14} className={styles.spin} /> : <Check size={14} />} Approve
                         </button>
                       </div>
                     </div>
                   )}
 
-                  {/* Show reviewer notes if reviewed */}
                   {task.reviewer_notes && task.status !== 'pending' && (
                     <div className={styles.reviewerNote}>
-                      <strong>Owner note:</strong> {task.reviewer_notes}
+                      <strong>Your note:</strong> {task.reviewer_notes}
                     </div>
                   )}
                 </div>

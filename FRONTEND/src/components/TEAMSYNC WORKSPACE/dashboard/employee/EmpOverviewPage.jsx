@@ -1,52 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ClipboardCheck, CheckCircle, XCircle, Clock, TrendingUp, Hash } from 'lucide-react';
+import { ClipboardCheck, CheckCircle, XCircle, Clock, TrendingUp, Hash, ArrowRight, MessageSquareWarning, Sparkles } from 'lucide-react';
 import { supabase } from '../../../../lib/supabase';
+import ActivityChart from '../ActivityChart';
+import StatusBadge, { greeting } from '../StatusBadge';
 import styles from '../SharedPages.module.css';
 
-function MiniChart({ data, color }) {
-  if (!data || data.length < 2) return <div className={styles.chartEmpty}>No data yet</div>;
-  const W = 500, H = 140, PL = 32, PR = 12, PT = 10, PB = 24;
-  const cw = W - PL - PR, ch = H - PT - PB;
-  const maxVal = Math.max(...data.map(d => d.value), 1);
-  const px = (i) => PL + (i / (data.length - 1)) * cw;
-  const py = (v) => PT + (1 - v / maxVal) * ch;
+const CHART_SERIES = [{ key: 'value', label: 'Submitted', color: '#cb2525' }];
 
-  const smooth = () => {
-    const pts = data.map((d, i) => ({ x: px(i), y: py(d.value) }));
-    let d = `M ${pts[0].x} ${pts[0].y}`;
-    for (let i = 1; i < pts.length; i++) {
-      const cx1 = (pts[i-1].x + pts[i].x) / 2;
-      d += ` C ${cx1} ${pts[i-1].y} ${cx1} ${pts[i].y} ${pts[i].x} ${pts[i].y}`;
-    }
-    return d;
-  };
-
-  const areaPath = () => {
-    const pts = data.map((d, i) => ({ x: px(i), y: py(d.value) }));
-    let d = `M ${pts[0].x} ${pts[0].y}`;
-    for (let i = 1; i < pts.length; i++) {
-      const cx1 = (pts[i-1].x + pts[i].x) / 2;
-      d += ` C ${cx1} ${pts[i-1].y} ${cx1} ${pts[i].y} ${pts[i].x} ${pts[i].y}`;
-    }
-    d += ` L ${px(data.length - 1)} ${PT + ch} L ${px(0)} ${PT + ch} Z`;
-    return d;
-  };
-
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ overflow: 'visible' }}>
-      {data.map((d, i) => (
-        <text key={i} x={px(i)} y={H - 4} textAnchor="middle" fontSize="9" fill="#adb5bd">{d.label}</text>
-      ))}
-      <path d={areaPath()} fill={color + '18'} />
-      <path d={smooth()} fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" />
-      {data.map((d, i) => (
-        <circle key={i} cx={px(i)} cy={py(d.value)} r="4" fill="#fff" stroke={color} strokeWidth="2" />
-      ))}
-    </svg>
-  );
-}
-
-export default function EmpOverviewPage({ room, profile }) {
+export default function EmpOverviewPage({ room, profile, onNavigate }) {
   const [stats, setStats] = useState({ submitted: 0, approved: 0, rejected: 0, pending: 0 });
   const [recentTasks, setRecentTasks] = useState([]);
   const [chartData, setChartData] = useState([]);
@@ -91,31 +52,26 @@ export default function EmpOverviewPage({ room, profile }) {
 
   useEffect(() => { load(); }, [load]);
 
-  const statCards = [
-    { label: 'Total Submitted',  value: stats.submitted, icon: <ClipboardCheck size={20} />, color: '#8b5cf6' },
-    { label: 'Approved',         value: stats.approved,  icon: <CheckCircle size={20} />,    color: '#10b981' },
-    { label: 'Rejected',         value: stats.rejected,  icon: <XCircle size={20} />,        color: '#ef4444' },
-    { label: 'Pending Review',   value: stats.pending,   icon: <Clock size={20} />,          color: '#f59e0b' },
-  ];
+  const approvalRate = stats.submitted > 0 ? Math.round((stats.approved / stats.submitted) * 100) : null;
 
-  const STATUS_COLORS = {
-    pending:  { bg: '#fff3cd', color: '#856404' },
-    approved: { bg: '#d4edda', color: '#155724' },
-    rejected: { bg: '#f8d7da', color: '#721c24' },
-  };
+  const statCards = [
+    { label: 'Total Submitted', value: stats.submitted, icon: <ClipboardCheck size={20} />, tone: '#1a1a2e', hint: 'All time' },
+    { label: 'Approved',        value: stats.approved,  icon: <CheckCircle size={20} />,    tone: '#059669',
+      hint: approvalRate !== null ? `${approvalRate}% approval rate` : 'No reviews yet', trend: approvalRate !== null },
+    { label: 'Rejected',        value: stats.rejected,  icon: <XCircle size={20} />,        tone: '#cb2525', hint: 'See owner feedback' },
+    { label: 'Pending Review',  value: stats.pending,   icon: <Clock size={20} />,          tone: '#d97706', hint: 'Awaiting review' },
+  ];
 
   const formatDate = (iso) => new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
   if (loading) return <div className={styles.loading}><div className={styles.spinner} /></div>;
-
-  const approvalRate = stats.submitted > 0 ? Math.round((stats.approved / stats.submitted) * 100) : null;
 
   return (
     <div className={styles.page}>
       {/* Welcome header */}
       <div className={styles.pageHeader}>
         <div>
-          <p className={styles.pageTitle}>Welcome back, {profile?.first_name} 👋</p>
+          <p className={styles.pageTitle}>{greeting()}, {profile?.first_name}</p>
           <p className={styles.pageSubtitle}>
             Here's a summary of your work in <strong>{room?.name}</strong>.
           </p>
@@ -128,32 +84,47 @@ export default function EmpOverviewPage({ room, profile }) {
         )}
       </div>
 
+      {/* Next-step prompt */}
+      {stats.rejected > 0 ? (
+        <div className={`${styles.alertBanner} ${styles.alertDanger}`} role="status">
+          <span className={styles.alertIcon}><MessageSquareWarning size={18} /></span>
+          <div className={styles.alertText}>
+            <strong>{stats.rejected} {stats.rejected === 1 ? 'task needs' : 'tasks need'} your attention</strong>
+            <span>Read the owner's feedback and resubmit when you're ready.</span>
+          </div>
+          <button className={styles.alertBtn} onClick={() => onNavigate?.('tasks')}>
+            View feedback <ArrowRight size={14} />
+          </button>
+        </div>
+      ) : stats.submitted === 0 && (
+        <div className={styles.alertBanner} role="status">
+          <span className={styles.alertIcon}><Sparkles size={18} /></span>
+          <div className={styles.alertText}>
+            <strong>Submit your first task</strong>
+            <span>Log completed work and the room owner will review it.</span>
+          </div>
+          <button className={styles.alertBtn} onClick={() => onNavigate?.('tasks')}>
+            Get started <ArrowRight size={14} />
+          </button>
+        </div>
+      )}
+
       {/* Stat cards */}
       <div className={styles.statGrid}>
-        {statCards.map((s, i) => (
-          <div key={i} className={styles.statCard} style={{ borderTop: `3px solid ${s.color}` }}>
+        {statCards.map(s => (
+          <div key={s.label} className={styles.statCard} style={{ '--tone': s.tone }}>
             <div className={styles.statCardTop}>
               <div>
                 <p className={styles.statLabel}>{s.label}</p>
                 <p className={styles.statValue}>{s.value}</p>
               </div>
-              <div className={styles.statIcon} style={{ background: s.color + '18', color: s.color }}>
+              <div className={styles.statIcon} style={{ background: s.tone + '14', color: s.tone }}>
                 {s.icon}
               </div>
             </div>
-            {s.label === 'Approved' && stats.submitted > 0 && (
-              <div className={styles.statChange}>
-                <TrendingUp size={12} />
-                <span className={styles.positive}>{approvalRate}% approval rate</span>
-              </div>
-            )}
-            {s.label !== 'Approved' && (
-              <div className={styles.statBottom}>
-                <span style={{ fontSize: '0.72rem', color: '#ced4da' }}>
-                  {s.label === 'Total Submitted' ? 'All time' : s.label === 'Pending Review' ? 'Awaiting review' : 'Reviewed'}
-                </span>
-              </div>
-            )}
+            <p className={`${styles.statHint} ${s.trend ? styles.positive : ''}`}>
+              {s.trend && <TrendingUp size={12} />} {s.hint}
+            </p>
           </div>
         ))}
       </div>
@@ -162,52 +133,31 @@ export default function EmpOverviewPage({ room, profile }) {
         {/* Activity chart */}
         <div className={styles.card}>
           <div className={styles.cardHeader}>
-            <h3 className={styles.cardTitle}>My Task Activity (Last 6 Months)</h3>
+            <h3 className={styles.cardTitle}>My Task Activity</h3>
+            <span className={styles.legendMuted}>Last 6 months</span>
           </div>
-          <MiniChart data={chartData} color="#cb2525" />
+          <ActivityChart data={chartData} series={CHART_SERIES} height={160} />
         </div>
 
-        {/* Room info panel */}
-        <div className={`${styles.card} ${styles.roomStatsCard}`}>
-          <p className={styles.cardTitle} style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Your Room</p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '14px 0 6px' }}>
-            <div style={{
-              width: 42, height: 42, borderRadius: 12, flexShrink: 0,
-              background: 'rgba(203,37,37,0.25)', border: '1px solid rgba(203,37,37,0.3)',
-              color: '#f08080', fontFamily: 'Poppins', fontSize: '0.8rem', fontWeight: 800,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              {room.name.slice(0, 2).toUpperCase()}
-            </div>
-            <div>
-              <p style={{ fontFamily: 'Poppins', fontWeight: 800, color: '#fff', fontSize: '1rem', marginBottom: 2 }}>{room.name}</p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'rgba(255,255,255,0.35)' }}>
-                <Hash size={11} />
-                <span style={{ fontFamily: 'Poppins', fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em' }}>{room.room_code}</span>
-              </div>
+        {/* Room panel */}
+        <div className={`${styles.card} ${styles.roomStatsCard} ${styles.roomPanel}`}>
+          <p className={styles.panelEyebrow}>Your Room</p>
+          <div className={styles.panelRoom}>
+            <div className={styles.panelRoomAvatar}>{room.name.slice(0, 2).toUpperCase()}</div>
+            <div className={styles.panelRoomInfo}>
+              <p className={styles.panelRoomName}>{room.name}</p>
+              <span className={styles.panelRoomCode}><Hash size={11} />{room.room_code}</span>
             </div>
           </div>
-          <div className={styles.progressBar} style={{ margin: '16px 0' }}>
-            <div
-              className={styles.progressFill}
-              style={{ width: `${stats.submitted > 0 ? (stats.approved / stats.submitted) * 100 : 0}%` }}
-            />
+          <div className={styles.progressBar} style={{ margin: '4px 0 20px' }}>
+            <div className={styles.progressFill} style={{ width: `${approvalRate ?? 0}%` }} />
           </div>
           <div className={styles.roomStatRow}>
-            <div className={styles.roomStat}>
-              <strong>{stats.approved}</strong>
-              <span>Approved</span>
-            </div>
+            <div className={styles.roomStat}><strong>{stats.approved}</strong><span>Approved</span></div>
             <div className={styles.roomStatDivider} />
-            <div className={styles.roomStat}>
-              <strong>{stats.pending}</strong>
-              <span>Pending</span>
-            </div>
+            <div className={styles.roomStat}><strong>{stats.pending}</strong><span>Pending</span></div>
             <div className={styles.roomStatDivider} />
-            <div className={styles.roomStat}>
-              <strong>{stats.submitted}</strong>
-              <span>Total</span>
-            </div>
+            <div className={styles.roomStat}><strong>{stats.submitted}</strong><span>Total</span></div>
           </div>
         </div>
       </div>
@@ -216,32 +166,33 @@ export default function EmpOverviewPage({ room, profile }) {
       <div className={styles.card}>
         <div className={styles.cardHeader}>
           <h3 className={styles.cardTitle}>Recent Tasks</h3>
+          {recentTasks.length > 0 && (
+            <button className={styles.linkBtn} onClick={() => onNavigate?.('tasks')}>
+              View all <ArrowRight size={13} />
+            </button>
+          )}
         </div>
         {recentTasks.length === 0 ? (
           <div className={styles.emptyState}>
             <span className={styles.emptyIcon}>📋</span>
             <span className={styles.emptyText}>No tasks yet</span>
-            <span className={styles.emptySubtext}>Go to "My Tasks" to submit your first task</span>
+            <span className={styles.emptySubtext}>Submit your first task to see it here</span>
+            <button className={styles.emptyCta} onClick={() => onNavigate?.('tasks')}>Go to My Tasks</button>
           </div>
         ) : (
           <div className={styles.taskList}>
-            {recentTasks.map(task => {
-              const sc = STATUS_COLORS[task.status];
-              return (
-                <div key={task.id} className={styles.taskItem}>
-                  <div className={styles.taskRow}>
-                    <div className={styles.taskInfo}>
-                      <p className={styles.taskTitle}>{task.title}</p>
-                      {task.description && <p className={styles.taskDesc}>{task.description}</p>}
-                    </div>
-                    <span className={styles.taskDate}>{formatDate(task.created_at)}</span>
-                    <span className={styles.statusBadge} style={{ background: sc.bg, color: sc.color }}>
-                      {task.status}
-                    </span>
+            {recentTasks.map(task => (
+              <div key={task.id} className={styles.taskItem} data-status={task.status}>
+                <div className={styles.taskRow}>
+                  <div className={styles.taskInfo}>
+                    <p className={styles.taskTitle}>{task.title}</p>
+                    {task.description && <p className={styles.taskDesc}>{task.description}</p>}
                   </div>
+                  <span className={styles.taskDate}>{formatDate(task.created_at)}</span>
+                  <StatusBadge status={task.status} />
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
         )}
       </div>

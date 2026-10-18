@@ -91,7 +91,7 @@
   position: absolute;
   left: 14px; top: 50%;
   transform: translateY(-50%);
-  color: #adb5bd;
+  color: #8a93a0;
   pointer-events: none;
 }
 
@@ -111,7 +111,7 @@
   border-color: #cb2525;
   box-shadow: 0 0 0 3px rgba(203,37,37,0.1);
 }
-.input::placeholder { color: #ced4da; }
+.input::placeholder { color: #9aa3ae; }
 
 .inputWithIcon { padding-left: 40px; }
 
@@ -171,7 +171,7 @@
   margin-left: 4px;
 }
 .switchBtn:hover { text-decoration: underline; }
-.switchBtn.disabled { color: #adb5bd; cursor: not-allowed; }
+.switchBtn.disabled { color: #8a93a0; cursor: not-allowed; }
 
 .backBtn {
   display: flex;
@@ -190,3 +190,35 @@
   transition: background 0.2s, color 0.2s;
 }
 .backBtn:hover { background: #f8f9fa; color: #1a1a2e; }
+
+/* ═══ Refinement ═══ */
+.page {
+  background:
+    radial-gradient(600px 400px at 15% 10%, rgba(203,37,37,0.12), transparent 60%),
+    radial-gradient(700px 500px at 90% 95%, rgba(45,45,94,0.14), transparent 60%),
+    linear-gradient(135deg, #fef7f7 0%, #f0f0ff 100%);
+}
+.card {
+  position: relative; overflow: hidden;
+  border: 1px solid rgba(203,37,37,0.08);
+  box-shadow: 0 1px 2px rgba(26,26,46,0.04), 0 24px 64px rgba(26,26,46,0.12);
+}
+.card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+  background: linear-gradient(90deg, #cb2525, #ea4343);
+}
+.logoMark { width: 40px; height: 40px; border-radius: 12px; box-shadow: 0 4px 14px rgba(203,37,37,0.35); }
+.logoName { font-size: 1.05rem; letter-spacing: -0.01em; }
+.title { letter-spacing: -0.02em; }
+.checkIcon { box-shadow: 0 0 0 6px rgba(203,37,37,0.06); }
+.input:hover { border-color: #c9ced6; }
+.input:focus { border-color: #cb2525; }
+.inputWithIcon:focus ~ .inputIcon { color: #cb2525; }
+.btnPrimary { border-radius: 14px; padding: 14px; }
+.btnPrimary:active:not(:disabled) { transform: translateY(0); }
+.btnPrimary:focus-visible, .switchBtn:focus-visible, .backBtn:focus-visible { outline: 2px solid #cb2525; outline-offset: 2px; }
+.error { display: flex; align-items: center; gap: 8px; border-left: 3px solid #cb2525; }
+@media (max-width: 480px) {
+  .card { padding: 32px 22px; border-radius: 20px; }
+  .nameRow { flex-direction: column; gap: 18px; }
+}

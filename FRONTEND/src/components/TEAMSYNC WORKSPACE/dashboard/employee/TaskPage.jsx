@@ -1,13 +1,18 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Loader, X, Send, Trash2 } from 'lucide-react';
+import { Plus, Loader, X, Send, Trash2, MessageSquareQuote } from 'lucide-react';
 import { supabase } from '../../../../lib/supabase';
+import StatusBadge from '../StatusBadge';
 import styles from '../SharedPages.module.css';
 
-const STATUS_COLORS = {
-  pending:  { bg: '#fff3cd', color: '#856404' },
-  approved: { bg: '#d4edda', color: '#155724' },
-  rejected: { bg: '#f8d7da', color: '#721c24' },
-};
+const FILTERS = [
+  { key: 'all',      label: 'All',      activeClass: styles.filterActive },
+  { key: 'pending',  label: 'Pending',  activeClass: styles.filterPendingActive },
+  { key: 'approved', label: 'Approved', activeClass: styles.filterApprovedActive },
+  { key: 'rejected', label: 'Rejected', activeClass: styles.filterRejectedActive },
+];
+
+const TITLE_MAX = 120;
+const DESC_MAX = 1000;
 
 export default function TaskPage({ room, profile }) {
   const [tasks, setTasks] = useState([]);
@@ -47,6 +52,14 @@ export default function TaskPage({ room, profile }) {
       .subscribe();
     return () => supabase.removeChannel(channel);
   }, [room, profile, load]);
+
+  /* Esc closes the modal */
+  useEffect(() => {
+    if (!showModal) return;
+    const onKey = (e) => e.key === 'Escape' && setShowModal(false);
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [showModal]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -93,7 +106,6 @@ export default function TaskPage({ room, profile }) {
 
   return (
     <div className={styles.page}>
-      {/* Header */}
       <div className={styles.pageHeader}>
         <div>
           <p className={styles.pageTitle}>My Tasks</p>
@@ -106,16 +118,12 @@ export default function TaskPage({ room, profile }) {
         </button>
       </div>
 
-      {/* Filter tabs */}
-      <div className={styles.filterRow}>
-        {[
-          { key: 'all',      label: 'All',      activeClass: styles.filterActive },
-          { key: 'pending',  label: 'Pending',  activeClass: styles.filterPendingActive },
-          { key: 'approved', label: 'Approved', activeClass: styles.filterApprovedActive },
-          { key: 'rejected', label: 'Rejected', activeClass: styles.filterRejectedActive },
-        ].map(({ key, label, activeClass }) => (
+      <div className={styles.filterRow} role="tablist" aria-label="Filter tasks by status">
+        {FILTERS.map(({ key, label, activeClass }) => (
           <button
             key={key}
+            role="tab"
+            aria-selected={filter === key}
             className={`${styles.filterTab} ${filter === key ? activeClass : ''}`}
             onClick={() => setFilter(key)}
           >
@@ -125,15 +133,17 @@ export default function TaskPage({ room, profile }) {
         ))}
       </div>
 
-      {/* Task list */}
-      <div className={styles.card}>
-        {filtered.length === 0 ? (
+      {filtered.length === 0 ? (
+        <div className={styles.card}>
           <div className={styles.emptyState}>
             {filter === 'all' ? (
               <>
                 <span className={styles.emptyIcon}>✍️</span>
                 <span className={styles.emptyText}>No tasks submitted yet</span>
-                <span className={styles.emptySubtext}>Click "Submit New Task" above to log your first task</span>
+                <span className={styles.emptySubtext}>Log your first piece of work for the owner to review</span>
+                <button className={styles.emptyCta} onClick={() => setShowModal(true)}>
+                  <Plus size={15} /> Submit your first task
+                </button>
               </>
             ) : filter === 'pending' ? (
               <>
@@ -147,83 +157,87 @@ export default function TaskPage({ room, profile }) {
               </>
             )}
           </div>
-        ) : (
-          <div className={styles.myTaskList}>
-            {filtered.map(task => {
-              const sc = STATUS_COLORS[task.status];
-              return (
-                <div key={task.id} className={styles.myTaskItem}>
-                  <div className={styles.myTaskBody}>
-                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-                      <p className={styles.myTaskTitle}>{task.title}</p>
-                      <span className={styles.statusBadge} style={{ background: sc.bg, color: sc.color, flexShrink: 0 }}>
-                        {task.status}
-                      </span>
-                    </div>
-                    {task.description && <p className={styles.myTaskDesc}>{task.description}</p>}
-                    <div className={styles.myTaskMeta}>
-                      <span className={styles.myTaskDate}>Submitted {formatDate(task.created_at)}</span>
-                      {task.updated_at !== task.created_at && (
-                        <span className={styles.myTaskDate}>· Updated {formatDate(task.updated_at)}</span>
-                      )}
-                    </div>
-                    {task.reviewer_notes && (
-                      <div className={styles.reviewerNoteEmp}>
-                        <strong>Owner feedback:</strong> {task.reviewer_notes}
-                      </div>
-                    )}
-                  </div>
-                  {task.status === 'pending' && (
-                    <button
-                      className={styles.deleteBtn}
-                      onClick={() => handleDelete(task.id)}
-                      disabled={deletingId === task.id}
-                      title="Delete task"
-                    >
-                      {deletingId === task.id ? <Loader size={13} className={styles.spin} /> : <Trash2 size={13} />}
-                    </button>
-                  )}
+        </div>
+      ) : (
+        <div className={styles.myTaskCards}>
+          {filtered.map(task => (
+            <article key={task.id} className={styles.myTaskCard} data-status={task.status}>
+              <div className={styles.myTaskHead}>
+                <h4 className={styles.myTaskTitle}>{task.title}</h4>
+                <StatusBadge status={task.status} />
+              </div>
+              {task.description && <p className={styles.myTaskDesc}>{task.description}</p>}
+              <div className={styles.myTaskFoot}>
+                <span className={styles.myTaskDate}>
+                  Submitted {formatDate(task.created_at)}
+                  {task.updated_at !== task.created_at && ` · Updated ${formatDate(task.updated_at)}`}
+                </span>
+                {task.status === 'pending' && (
+                  <button
+                    className={styles.deleteBtn}
+                    onClick={() => handleDelete(task.id)}
+                    disabled={deletingId === task.id}
+                    aria-label={`Delete task ${task.title}`}
+                  >
+                    {deletingId === task.id ? <Loader size={13} className={styles.spin} /> : <Trash2 size={13} />}
+                    Delete
+                  </button>
+                )}
+              </div>
+              {task.reviewer_notes && (
+                <div className={`${styles.feedback} ${task.status === 'rejected' ? styles.feedbackRejected : styles.feedbackApproved}`}>
+                  <MessageSquareQuote size={15} />
+                  <div><strong>Owner feedback</strong>{task.reviewer_notes}</div>
                 </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
+              )}
+            </article>
+          ))}
+        </div>
+      )}
 
       {/* Submit task modal */}
       {showModal && (
         <div className={styles.modalOverlay} onClick={(e) => e.target === e.currentTarget && setShowModal(false)}>
-          <div className={styles.modal}>
+          <div className={styles.modal} role="dialog" aria-modal="true" aria-labelledby="submit-task-title">
             <div className={styles.modalHeader}>
-              <h3 className={styles.modalTitle}>Submit New Task</h3>
-              <button className={styles.modalClose} onClick={() => setShowModal(false)}><X size={16} /></button>
+              <h3 className={styles.modalTitle} id="submit-task-title">Submit New Task</h3>
+              <button className={styles.modalClose} onClick={() => setShowModal(false)} aria-label="Close"><X size={16} /></button>
             </div>
 
             <form className={styles.form} onSubmit={handleSubmit}>
               <div className={styles.formGroup}>
-                <label>Task Title *</label>
+                <div className={styles.labelRow}>
+                  <label htmlFor="task-title">Task title *</label>
+                  <span className={styles.charCount}>{title.length}/{TITLE_MAX}</span>
+                </div>
                 <input
+                  id="task-title"
                   type="text"
                   className={styles.input}
                   placeholder="What did you work on?"
                   value={title}
                   onChange={e => setTitle(e.target.value)}
-                  maxLength={120}
+                  maxLength={TITLE_MAX}
+                  autoFocus
                   required
                 />
               </div>
               <div className={styles.formGroup}>
-                <label>Description (optional)</label>
+                <div className={styles.labelRow}>
+                  <label htmlFor="task-desc">Description <span className={styles.optional}>(optional)</span></label>
+                  <span className={styles.charCount}>{description.length}/{DESC_MAX}</span>
+                </div>
                 <textarea
+                  id="task-desc"
                   className={styles.textarea}
                   rows={4}
                   placeholder="Add details, links, or notes for the owner…"
                   value={description}
                   onChange={e => setDescription(e.target.value)}
-                  maxLength={1000}
+                  maxLength={DESC_MAX}
                 />
               </div>
-              {formError && <p className={styles.formError}>{formError}</p>}
+              {formError && <p className={styles.formError} role="alert">{formError}</p>}
               <button type="submit" className={styles.submitBtn} disabled={submitting}>
                 {submitting ? <Loader size={16} className={styles.spin} /> : <Send size={16} />}
                 {submitting ? 'Submitting…' : 'Submit Task'}

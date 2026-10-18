@@ -1,55 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Users, ClipboardCheck, CheckCircle, Clock, TrendingUp, Activity } from 'lucide-react';
+import { Users, ClipboardCheck, CheckCircle, Clock, TrendingUp, Activity, ArrowRight, BellRing } from 'lucide-react';
 import { supabase } from '../../../../lib/supabase';
+import ActivityChart from '../ActivityChart';
+import { getInitials, getName, greeting } from '../StatusBadge';
 import styles from '../SharedPages.module.css';
 
-/* ── Simple SVG Line Chart ────────────────────────────────── */
-function LineChart({ data }) {
-  if (!data || data.length < 2) return <div className={styles.chartEmpty}>No data yet</div>;
-  const W = 500, H = 160, PL = 36, PR = 16, PT = 12, PB = 28;
-  const cw = W - PL - PR, ch = H - PT - PB;
-  const maxVal = Math.max(...data.map(d => Math.max(d.submitted, d.approved)), 1);
+const CHART_SERIES = [
+  { key: 'submitted', label: 'Submitted', color: '#e59a9a' },
+  { key: 'approved',  label: 'Approved',  color: '#cb2525' },
+];
 
-  const px = (i) => PL + (i / (data.length - 1)) * cw;
-  const py = (v) => PT + (1 - v / maxVal) * ch;
-
-  const smooth = (key) => {
-    const pts = data.map((d, i) => ({ x: px(i), y: py(d[key]) }));
-    let d = `M ${pts[0].x} ${pts[0].y}`;
-    for (let i = 1; i < pts.length; i++) {
-      const cx1 = (pts[i - 1].x + pts[i].x) / 2, cy1 = pts[i - 1].y;
-      const cx2 = cx1, cy2 = pts[i].y;
-      d += ` C ${cx1} ${cy1} ${cx2} ${cy2} ${pts[i].x} ${pts[i].y}`;
-    }
-    return d;
-  };
-
-  const yLabels = [0, Math.round(maxVal / 2), maxVal];
-
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ overflow: 'visible' }}>
-      {yLabels.map(v => (
-        <g key={v}>
-          <line x1={PL} x2={W - PR} y1={py(v)} y2={py(v)} stroke="#e9ecef" strokeWidth="1" />
-          <text x={PL - 6} y={py(v) + 4} textAnchor="end" fontSize="9" fill="#adb5bd">{v}</text>
-        </g>
-      ))}
-      {data.map((d, i) => (
-        <text key={i} x={px(i)} y={H - 4} textAnchor="middle" fontSize="9" fill="#adb5bd">{d.label}</text>
-      ))}
-      <path d={smooth('submitted')} fill="none" stroke="#da7979" strokeWidth="2.5" strokeLinecap="round" />
-      <path d={smooth('approved')} fill="none" stroke="#cb2525" strokeWidth="2.5" strokeLinecap="round" />
-      {data.map((d, i) => (
-        <g key={i}>
-          <circle cx={px(i)} cy={py(d.submitted)} r="4" fill="#fff" stroke="#da7979" strokeWidth="2" />
-          <circle cx={px(i)} cy={py(d.approved)} r="4" fill="#fff" stroke="#cb2525" strokeWidth="2" />
-        </g>
-      ))}
-    </svg>
-  );
-}
-
-export default function OverviewPage({ room, profile }) {
+export default function OverviewPage({ room, profile, onNavigate }) {
   const [stats, setStats] = useState({ employees: 0, submitted: 0, approved: 0, pending: 0 });
   const [employees, setEmployees] = useState([]);
   const [chartData, setChartData] = useState([]);
@@ -59,14 +20,12 @@ export default function OverviewPage({ room, profile }) {
     if (!room || !supabase) return;
     setLoading(true);
 
-    /* Members */
     const { data: members } = await supabase
       .from('room_members')
       .select('*, profiles(*)')
       .eq('room_id', room.id)
       .eq('role', 'employee');
 
-    /* Tasks */
     const { data: tasks } = await supabase
       .from('tasks')
       .select('*, profiles(*)')
@@ -91,11 +50,7 @@ export default function OverviewPage({ room, profile }) {
       rankMap[t.employee_id].submitted++;
       if (t.status === 'approved') rankMap[t.employee_id].approved++;
     });
-
-    const ranked = Object.values(rankMap)
-      .sort((a, b) => b.approved - a.approved)
-      .slice(0, 5);
-    setEmployees(ranked);
+    setEmployees(Object.values(rankMap).sort((a, b) => b.approved - a.approved).slice(0, 5));
 
     /* Chart data — last 6 months */
     const months = [];
@@ -120,29 +75,25 @@ export default function OverviewPage({ room, profile }) {
 
   useEffect(() => { load(); }, [load]);
 
+  const rate = (emp) => emp.submitted > 0 ? Math.round((emp.approved / emp.submitted) * 100) : 0;
+  const approvalRate = stats.submitted > 0 ? Math.round((stats.approved / stats.submitted) * 100) : null;
+
   const statCards = [
-    { label: 'Employees', value: stats.employees, icon: <Users size={20} />, change: null, color: '#3b82f6' },
-    { label: 'Tasks Submitted', value: stats.submitted, icon: <ClipboardCheck size={20} />, change: null, color: '#8b5cf6' },
-    { label: 'Approved', value: stats.approved, icon: <CheckCircle size={20} />, change: stats.submitted ? `${Math.round((stats.approved/stats.submitted)*100)}%` : '—', positive: true, color: '#10b981' },
-    { label: 'Pending Review', value: stats.pending, icon: <Clock size={20} />, change: null, color: '#f59e0b' },
+    { label: 'Employees',       value: stats.employees, icon: <Users size={20} />,          tone: '#1a1a2e', hint: 'Active members' },
+    { label: 'Tasks Submitted', value: stats.submitted, icon: <ClipboardCheck size={20} />, tone: '#cb2525', hint: 'All time' },
+    { label: 'Approved',        value: stats.approved,  icon: <CheckCircle size={20} />,    tone: '#059669',
+      hint: approvalRate !== null ? `${approvalRate}% approval rate` : 'No reviews yet', trend: approvalRate !== null },
+    { label: 'Pending Review',  value: stats.pending,   icon: <Clock size={20} />,          tone: '#d97706', hint: 'Awaiting review' },
   ];
 
-  const getInitials = (p) => p ? `${p.first_name[0]}${p.last_name[0]}`.toUpperCase() : '?';
-  const getName = (p) => p ? `${p.first_name} ${p.last_name}` : 'Unknown';
-  const rate = (emp) => emp.submitted > 0 ? Math.round((emp.approved / emp.submitted) * 100) : 0;
-
   if (loading) return <div className={styles.loading}><div className={styles.spinner} /></div>;
-
-  const approvalRate = stats.submitted > 0 ? Math.round((stats.approved / stats.submitted) * 100) : null;
 
   return (
     <div className={styles.page}>
       {/* Welcome header */}
       <div className={styles.pageHeader}>
         <div>
-          <p className={styles.pageTitle}>
-            Welcome back, {profile?.first_name} 👋
-          </p>
+          <p className={styles.pageTitle}>{greeting()}, {profile?.first_name}</p>
           <p className={styles.pageSubtitle}>
             Here's what's happening in <strong>{room?.name}</strong> today.
           </p>
@@ -155,40 +106,46 @@ export default function OverviewPage({ room, profile }) {
         )}
       </div>
 
-      {/* Stat Cards */}
+      {/* Action prompt: the one thing an owner needs to do */}
+      {stats.pending > 0 && (
+        <div className={styles.alertBanner} role="status">
+          <span className={styles.alertIcon}><BellRing size={18} /></span>
+          <div className={styles.alertText}>
+            <strong>{stats.pending} {stats.pending === 1 ? 'task is' : 'tasks are'} waiting for your review</strong>
+            <span>Employees get notified as soon as you approve or reject.</span>
+          </div>
+          <button className={styles.alertBtn} onClick={() => onNavigate?.('review')}>
+            Review now <ArrowRight size={14} />
+          </button>
+        </div>
+      )}
+
+      {/* Stat cards */}
       <div className={styles.statGrid}>
-        {statCards.map((s, i) => (
-          <div key={i} className={styles.statCard} style={{ borderTop: `3px solid ${s.color}` }}>
+        {statCards.map(s => (
+          <div key={s.label} className={styles.statCard} style={{ '--tone': s.tone }}>
             <div className={styles.statCardTop}>
               <div>
                 <p className={styles.statLabel}>{s.label}</p>
                 <p className={styles.statValue}>{s.value.toLocaleString()}</p>
               </div>
-              <div className={styles.statIcon} style={{ background: s.color + '18', color: s.color }}>
+              <div className={styles.statIcon} style={{ background: s.tone + '14', color: s.tone }}>
                 {s.icon}
               </div>
             </div>
-            {s.change && (
-              <div className={`${styles.statChange} ${s.positive ? styles.positive : styles.negative}`}>
-                <TrendingUp size={12} /> {s.change} approval rate
-              </div>
-            )}
-            {!s.change && (
-              <div className={styles.statBottom}>
-                <span style={{ fontSize: '0.72rem', color: '#ced4da' }}>
-                  {s.label === 'Employees' ? 'Active members' : s.label === 'Tasks Submitted' ? 'All time' : 'Awaiting review'}
-                </span>
-              </div>
-            )}
+            <p className={`${styles.statHint} ${s.trend ? styles.positive : ''}`}>
+              {s.trend && <TrendingUp size={12} />} {s.hint}
+            </p>
           </div>
         ))}
       </div>
 
       <div className={styles.twoCol}>
-        {/* Top Employees */}
+        {/* Top employees */}
         <div className={styles.card}>
           <div className={styles.cardHeader}>
             <h3 className={styles.cardTitle}>Top Employees</h3>
+            <span className={styles.memberCount}>By approved tasks</span>
           </div>
           {employees.length === 0 ? (
             <div className={styles.emptyState}>
@@ -200,10 +157,13 @@ export default function OverviewPage({ room, profile }) {
             <div className={styles.employeeTable}>
               {employees.map((emp, i) => (
                 <div key={i} className={styles.empRow}>
-                  <div className={styles.empRank}>{i + 1}</div>
-                  <div className={styles.empAvatar}>{getInitials(emp.profile)}</div>
+                  <div className={`${styles.empRank} ${i < 3 ? styles[`rank${i + 1}`] : ''}`}>{i + 1}</div>
+                  <div className={styles.miniAvatar}>{getInitials(emp.profile)}</div>
                   <div className={styles.empInfo}>
                     <span className={styles.empName}>{getName(emp.profile)}</span>
+                    <div className={styles.rateTrack} aria-hidden="true">
+                      <div className={styles.rateFill} style={{ width: `${rate(emp)}%` }} />
+                    </div>
                   </div>
                   <div className={styles.empStat}>
                     <span className={styles.empStatVal}>{emp.submitted}</span>
@@ -222,48 +182,38 @@ export default function OverviewPage({ room, profile }) {
           )}
         </div>
 
-        {/* Room Stats Card */}
+        {/* Room progress */}
         <div className={`${styles.card} ${styles.roomStatsCard}`}>
-          <h3 className={styles.cardTitle} style={{ color: '#fff' }}>Room Progress</h3>
-          <div className={styles.bigPercent}>
-            {stats.submitted > 0 ? Math.round((stats.approved / stats.submitted) * 100) : 0}%
-          </div>
+          <h3 className={styles.cardTitle} style={{ color: 'rgba(255,255,255,0.7)' }}>Room Progress</h3>
+          <div className={styles.bigPercent}>{approvalRate ?? 0}%</div>
           <p className={styles.bigPercentLabel}>Tasks Approved</p>
           <div className={styles.progressBar}>
-            <div
-              className={styles.progressFill}
-              style={{ width: `${stats.submitted > 0 ? (stats.approved / stats.submitted) * 100 : 0}%` }}
-            />
+            <div className={styles.progressFill} style={{ width: `${approvalRate ?? 0}%` }} />
           </div>
           <div className={styles.roomStatRow}>
-            <div className={styles.roomStat}>
-              <strong>{stats.pending}</strong>
-              <span>Pending</span>
-            </div>
+            <div className={styles.roomStat}><strong>{stats.pending}</strong><span>Pending</span></div>
             <div className={styles.roomStatDivider} />
-            <div className={styles.roomStat}>
-              <strong>{stats.employees}</strong>
-              <span>Members</span>
-            </div>
+            <div className={styles.roomStat}><strong>{stats.employees}</strong><span>Members</span></div>
             <div className={styles.roomStatDivider} />
-            <div className={styles.roomStat}>
-              <strong>{stats.approved}</strong>
-              <span>Done</span>
-            </div>
+            <div className={styles.roomStat}><strong>{stats.approved}</strong><span>Done</span></div>
           </div>
         </div>
       </div>
 
-      {/* Chart */}
-      <div className={styles.card} style={{ marginTop: 0 }}>
+      {/* Activity chart */}
+      <div className={styles.card}>
         <div className={styles.cardHeader}>
-          <h3 className={styles.cardTitle}>Task Activity (Last 6 Months)</h3>
+          <h3 className={styles.cardTitle}>Task Activity</h3>
           <div className={styles.chartLegend}>
-            <span className={styles.legendDot} style={{ background: '#da7979' }} /> Submitted
-            <span className={styles.legendDot} style={{ background: '#cb2525', marginLeft: 12 }} /> Approved
+            {CHART_SERIES.map(s => (
+              <span key={s.key} className={styles.legendItem}>
+                <span className={styles.legendDot} style={{ background: s.color }} /> {s.label}
+              </span>
+            ))}
+            <span className={styles.legendMuted}>Last 6 months</span>
           </div>
         </div>
-        <LineChart data={chartData} />
+        <ActivityChart data={chartData} series={CHART_SERIES} />
       </div>
     </div>
   );

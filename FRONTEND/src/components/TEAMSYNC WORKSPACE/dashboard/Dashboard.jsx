@@ -14,12 +14,12 @@ export default function Dashboard({ profile, room, role, session, onSignOut, onS
 
   const renderContent = () => {
     if (role === 'owner') {
-      if (currentTab === 'overview') return <OverviewPage room={room} profile={profile} />;
+      if (currentTab === 'overview') return <OverviewPage room={room} profile={profile} onNavigate={setCurrentTab} />;
       if (currentTab === 'review')   return <ReviewPage room={room} profile={profile} />;
       if (currentTab === 'members')  return <MembersPage room={room} profile={profile} />;
     }
     if (role === 'employee') {
-      if (currentTab === 'overview') return <EmpOverviewPage room={room} profile={profile} />;
+      if (currentTab === 'overview') return <EmpOverviewPage room={room} profile={profile} onNavigate={setCurrentTab} />;
       if (currentTab === 'tasks')    return <TaskPage room={room} profile={profile} />;
     }
     return null;
