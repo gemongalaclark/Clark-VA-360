@@ -218,3 +218,37 @@
   .card { padding: 32px 22px; border-radius: 20px; }
   .nameRow { flex-direction: column; gap: 18px; }
 }
+
+/* ═══ Password + remember me ═══ */
+.inputWithToggle { padding-right: 42px; }
+.eyeBtn {
+  position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; padding: 6px; border-radius: 8px;
+  color: #8a93a0; cursor: pointer; display: flex;
+}
+.eyeBtn:hover { color: #1a1a2e; background: #f3f4f6; }
+
+.pwMeter { margin-top: -6px; }
+.pwBars { display: flex; gap: 4px; }
+.pwBar { flex: 1; height: 4px; border-radius: 4px; background: #e5e7eb; transition: background 0.2s; }
+.pwLvl1, .pwLvl2 { background: #dc2626; }
+.pwLvl3 { background: #f59e0b; }
+.pwLvl4 { background: #84cc16; }
+.pwLvl5 { background: #16a34a; }
+.pwLabel { font-size: 0.75rem; font-weight: 600; color: #6c757d; margin: 6px 0; }
+.pwRules { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 4px 10px; }
+.pwRules li { display: flex; align-items: center; gap: 6px; font-size: 0.74rem; color: #8a93a0; }
+.pwOk { color: #15803d !important; }
+.pwTick {
+  width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0;
+  border: 1.5px solid #d1d5db; display: inline-flex; align-items: center; justify-content: center;
+}
+.pwOk .pwTick { background: #16a34a; border-color: #16a34a; color: #fff; }
+.fieldHint { font-size: 0.76rem; color: #cb2525; margin-top: -10px; }
+
+.optionsRow { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: -4px; }
+.checkLabel { display: inline-flex; align-items: center; gap: 8px; font-size: 0.83rem; color: #4a4a6a; cursor: pointer; }
+.checkLabel input { width: 16px; height: 16px; accent-color: #cb2525; cursor: pointer; }
+.linkBtn { background: none; border: none; padding: 0; font-size: 0.83rem; font-weight: 600; color: #cb2525; cursor: pointer; }
+.linkBtn:hover { text-decoration: underline; }
+@media (max-width: 480px) { .pwRules { grid-template-columns: 1fr; } }
