@@ -11,6 +11,8 @@ import styles from '../SharedPages.module.css';
 const FILTERS = [
   { key: 'all',       label: 'All',         activeClass: styles.filterActive },
   { key: 'todo',      label: 'To do',       activeClass: styles.filterActive },
+  { key: 'deadline',  label: 'With deadline', activeClass: styles.filterActive },
+  { key: 'nodeadline', label: 'No deadline', activeClass: styles.filterActive },
   { key: 'submitted', label: 'In review',   activeClass: styles.filterPendingActive },
   { key: 'approved',  label: 'Approved',    activeClass: styles.filterApprovedActive },
 ];
@@ -61,6 +63,8 @@ export default function TaskPage({ room, profile }) {
   const counts = useMemo(() => ({
     all: tasks.length,
     todo: tasks.filter(isActionable).length,
+    deadline: tasks.filter(t => t.deadline).length,
+    nodeadline: tasks.filter(t => !t.deadline).length,
     submitted: tasks.filter(t => t.status === 'submitted').length,
     approved: tasks.filter(t => t.status === 'approved').length,
   }), [tasks]);
@@ -70,8 +74,13 @@ export default function TaskPage({ room, profile }) {
     [tasks, now],
   );
 
-  const visible = sorted.filter(t =>
-    filter === 'all' ? true : filter === 'todo' ? isActionable(t) : t.status === filter);
+  const visible = sorted.filter(t => {
+    if (filter === 'all') return true;
+    if (filter === 'todo') return isActionable(t);
+    if (filter === 'deadline') return !!t.deadline;
+    if (filter === 'nodeadline') return !t.deadline;
+    return t.status === filter;
+  });
 
   if (loading) return <div className={styles.loading}><div className={styles.spinner} /></div>;
 
@@ -106,7 +115,12 @@ export default function TaskPage({ room, profile }) {
       {visible.length === 0 ? (
         <div className={styles.card}>
           <div className={styles.emptyState}>
-            {filter === 'all' || filter === 'todo' ? (
+            {filter === 'deadline' || filter === 'nodeadline' ? (
+              <>
+                <span className={styles.emptyIcon}><CalendarClock size={28} /></span>
+                <span className={styles.emptyText}>{filter === 'deadline' ? 'No tasks with a deadline' : 'No tasks without a deadline'}</span>
+              </>
+            ) : filter === 'all' || filter === 'todo' ? (
               <>
                 <span className={styles.emptyIcon}>{filter === 'all' ? <Inbox size={28} /> : <PartyPopper size={28} />}</span>
                 <span className={styles.emptyText}>{filter === 'all' ? 'No tasks assigned yet' : "You're all caught up"}</span>

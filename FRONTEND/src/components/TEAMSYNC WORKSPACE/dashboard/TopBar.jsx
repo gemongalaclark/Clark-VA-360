@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Bell, Search, ChevronDown, LayoutDashboard, ClipboardCheck, Users, ListTodo, Check, Pencil } from 'lucide-react';
+import { Bell, Search, ChevronDown, LayoutDashboard, ClipboardCheck, Users, ListTodo, Check, Pencil, Clock } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import styles from './TopBar.module.css';
 
@@ -92,6 +92,7 @@ export default function TopBar({ currentTab, profile, session, room }) {
     if (type === 'task_submitted') return <ClipboardCheck size={14} />;
     if (type === 'task_approved') return <Check size={14} style={{ color: '#28a745' }} />;
     if (type === 'task_rejected') return <ClipboardCheck size={14} style={{ color: '#cb2525' }} />;
+    if (type === 'task_deadline') return <Clock size={14} style={{ color: '#d97706' }} />;
     if (type === 'task_updated') return <Pencil size={14} />;
     if (type === 'member_request') return <Users size={14} />;
     if (type === 'member_accepted') return <Check size={14} style={{ color: '#28a745' }} />;
