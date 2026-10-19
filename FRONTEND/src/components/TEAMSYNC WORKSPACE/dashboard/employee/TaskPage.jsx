@@ -41,7 +41,11 @@ export default function TaskPage({ room, profile }) {
     /* Who gave each task: look the assigners' profiles up separately (tasks has two FKs to profiles) */
     const ids = [...new Set((data ?? []).map(t => t.assigned_by).filter(Boolean))];
     if (ids.length) {
-      const { data: profs } = await supabase.from('profiles').select('*').in('id', ids);
+      /* RPC first (not blocked by profile visibility rules); plain query as a fallback */
+      let profs = null;
+      const rpc = await supabase.rpc('get_my_task_givers', { p_room: room.id });
+      if (!rpc.error && rpc.data?.length) profs = rpc.data;
+      else profs = (await supabase.from('profiles').select('*').in('id', ids)).data;
       setGivers(Object.fromEntries((profs ?? []).map(p => [p.id, p])));
     }
     setLoading(false);
