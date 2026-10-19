@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Plus, Trash2, Send, Loader, Info } from 'lucide-react';
+import { X, Plus, Trash2, Send, Loader, Info, AlertCircle, Link2 } from 'lucide-react';
 import { supabase } from '../../../../lib/supabase';
 import { CHANNELS, DAYS, POST_STATUSES, emptyRow, dayFromDate, isValidUrl } from '../taskUtils';
 import styles from '../SharedPages.module.css';
@@ -73,72 +73,92 @@ export default function SubmitTaskModal({ task, onClose, onSubmitted }) {
           </div>
         )}
 
-        <form onSubmit={handleSubmit}>
-          <div className={styles.entryWrap}>
-            <table className={styles.entryTable}>
-              <thead>
-                <tr>
-                  <th>Channel</th><th>Day</th><th>Status</th><th>Date</th><th>Time</th><th>Post topic</th><th>Visual (Google Drive link)</th><th aria-label="Remove" />
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((r, i) => (
-                  <tr key={i}>
-                    <td data-label="Channel">
-                      <select className={`${styles.cellInput} ${cell(i, 'channel')}`} value={r.channel} onChange={e => update(i, { channel: e.target.value })}>
-                        <option value="">Select…</option>
-                        {CHANNELS.map(c => <option key={c}>{c}</option>)}
-                      </select>
-                    </td>
-                    <td data-label="Day">
-                      <select className={`${styles.cellInput} ${cell(i, 'day')}`} value={r.day} onChange={e => update(i, { day: e.target.value })}>
-                        <option value="">Select…</option>
-                        {DAYS.map(d => <option key={d}>{d}</option>)}
-                      </select>
-                    </td>
-                    <td data-label="Status">
-                      <select className={styles.cellInput} value={r.status} onChange={e => update(i, { status: e.target.value })}>
-                        {POST_STATUSES.map(s => <option key={s}>{s}</option>)}
-                      </select>
-                    </td>
-                    <td data-label="Date">
-                      <input
-                        type="date" className={`${styles.cellInput} ${cell(i, 'date')}`} value={r.date}
-                        onChange={e => update(i, { date: e.target.value, day: dayFromDate(e.target.value) || r.day })}
-                      />
-                    </td>
-                    <td data-label="Time">
-                      <input type="time" className={`${styles.cellInput} ${cell(i, 'time')}`} value={r.time} onChange={e => update(i, { time: e.target.value })} />
-                    </td>
-                    <td data-label="Post topic">
-                      <input
-                        type="text" className={`${styles.cellInput} ${cell(i, 'topic')}`} placeholder="What is the post about?"
-                        value={r.topic} maxLength={200} onChange={e => update(i, { topic: e.target.value })}
-                      />
-                    </td>
-                    <td data-label="Visual">
+        <form onSubmit={handleSubmit} noValidate>
+          <div className={styles.postList}>
+            {rows.map((r, i) => (
+              <fieldset key={i} className={`${styles.postCard} ${errors[i] ? styles.postCardError : ''}`}>
+                <div className={styles.postCardHead}>
+                  <span className={styles.postNum}>{i + 1}</span>
+                  <span className={styles.postCardTitle}>Post {i + 1}</span>
+                  {errors[i] && <span className={styles.postCardFlag}><AlertCircle size={13} /> Needs attention</span>}
+                  <button type="button" className={styles.rowRemove} onClick={() => removeRow(i)} disabled={rows.length === 1} aria-label={`Remove post ${i + 1}`} title="Remove post">
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+
+                <div className={styles.postGrid}>
+                  <label className={styles.field}>
+                    <span className={styles.fieldLabel}>Channel</span>
+                    <select className={`${styles.cellInput} ${cell(i, 'channel')}`} value={r.channel} onChange={e => update(i, { channel: e.target.value })}>
+                      <option value="">Select channel…</option>
+                      {CHANNELS.map(c => <option key={c}>{c}</option>)}
+                    </select>
+                    {errors[i]?.channel && <span className={styles.fieldError}>Choose a channel</span>}
+                  </label>
+
+                  <label className={styles.field}>
+                    <span className={styles.fieldLabel}>Status</span>
+                    <select className={styles.cellInput} value={r.status} onChange={e => update(i, { status: e.target.value })}>
+                      {POST_STATUSES.map(s => <option key={s}>{s}</option>)}
+                    </select>
+                  </label>
+
+                  <label className={styles.field}>
+                    <span className={styles.fieldLabel}>Date</span>
+                    <input
+                      type="date" className={`${styles.cellInput} ${cell(i, 'date')}`} value={r.date}
+                      onChange={e => update(i, { date: e.target.value, day: dayFromDate(e.target.value) || r.day })}
+                    />
+                    {errors[i]?.date && <span className={styles.fieldError}>Pick a date</span>}
+                  </label>
+
+                  <label className={styles.field}>
+                    <span className={styles.fieldLabel}>Day</span>
+                    <select className={`${styles.cellInput} ${cell(i, 'day')}`} value={r.day} onChange={e => update(i, { day: e.target.value })}>
+                      <option value="">Auto from date</option>
+                      {DAYS.map(d => <option key={d}>{d}</option>)}
+                    </select>
+                    {errors[i]?.day && <span className={styles.fieldError}>Choose a day</span>}
+                  </label>
+
+                  <label className={styles.field}>
+                    <span className={styles.fieldLabel}>Time</span>
+                    <input type="time" className={`${styles.cellInput} ${cell(i, 'time')}`} value={r.time} onChange={e => update(i, { time: e.target.value })} />
+                    {errors[i]?.time && <span className={styles.fieldError}>Set a time</span>}
+                  </label>
+
+                  <label className={`${styles.field} ${styles.fieldWide}`}>
+                    <span className={styles.fieldLabel}>Post topic</span>
+                    <input
+                      type="text" className={`${styles.cellInput} ${cell(i, 'topic')}`} placeholder="What is the post about?"
+                      value={r.topic} maxLength={200} onChange={e => update(i, { topic: e.target.value })}
+                    />
+                    {errors[i]?.topic && <span className={styles.fieldError}>Describe the post</span>}
+                  </label>
+
+                  <label className={`${styles.field} ${styles.fieldWide}`}>
+                    <span className={styles.fieldLabel}>Visual (Google Drive link)</span>
+                    <span className={styles.inputIcon}>
+                      <Link2 size={14} />
                       <input
                         type="url" className={`${styles.cellInput} ${cell(i, 'visual')}`} placeholder="https://drive.google.com/…"
                         value={r.visual} onChange={e => update(i, { visual: e.target.value })}
                       />
-                    </td>
-                    <td className={styles.cellAction}>
-                      <button type="button" className={styles.rowRemove} onClick={() => removeRow(i)} disabled={rows.length === 1} aria-label={`Remove row ${i + 1}`}>
-                        <Trash2 size={14} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </span>
+                    {errors[i]?.visual && <span className={styles.fieldError}>Enter a valid link (https://…)</span>}
+                  </label>
+                </div>
+              </fieldset>
+            ))}
           </div>
 
           <button type="button" className={styles.addRowBtn} onClick={addRow}><Plus size={14} /> Add another post</button>
-          <p className={styles.entryHint}>Tip: picking a date fills in the day for you. Set the Drive link to "Anyone with the link can view" so the owner can open your files.</p>
+          <p className={styles.entryHint}><Info size={13} /> Picking a date fills in the day for you. Set the Drive link to "Anyone with the link can view" so the owner can open your files.</p>
 
           {formError && <p className={styles.formError} role="alert">{formError}</p>}
 
           <div className={styles.modalFooter}>
+            <span className={styles.footerCount}>{rows.length} {rows.length === 1 ? 'post' : 'posts'} in this submission</span>
             <button type="button" className={styles.cancelBtn} onClick={onClose} disabled={saving}>Cancel</button>
             <button type="submit" className={`${styles.submitBtn} ${styles.submitInline}`} disabled={saving}>
               {saving ? <Loader size={16} className={styles.spin} /> : <Send size={16} />}
