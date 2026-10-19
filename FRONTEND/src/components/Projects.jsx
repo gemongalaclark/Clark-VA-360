@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight, ExternalLink, Sparkles, Calendar, ArrowUpRight, ArrowRight, Users, Zap, Rocket, ClipboardCheck, ShieldCheck, BookOpen, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ExternalLink, Sparkles, Calendar, ArrowUpRight, ArrowRight, Users, Zap, Rocket, ClipboardCheck, ShieldCheck, BookOpen, X, Gauge } from 'lucide-react';
 import styles from './Projects.module.css';
 
 /* Projects data */
@@ -44,6 +44,18 @@ const projects = [
   },
   {
     id: 4,
+    category: 'Sales Automation',
+    title: 'QuoteVelo AI',
+    description: 'Smart inquiry triage and auto-proposal portal: a public quote form, Gemini lead scoring and proposal drafting, and a live admin pipeline with one-click human approval before anything is sent.',
+    tags: ['React', 'Supabase', 'Activepieces', 'Gemini AI'],
+    image: null,
+    liveUrl: '/quotevelo-ai',
+    githubUrl: null,
+    placeholder: false,
+    featured: false,
+  },
+  {
+    id: 5,
     category: 'In the pipeline',
     title: 'Coming Soon',
     description: 'Building out my portfolio one project at a time.',
@@ -108,6 +120,24 @@ const docs = {
       'Private and safe: each customer can only ever see their own stuff.',
       'The owner sees a board of all customers and spots anyone who has gone quiet.',
       'You can try it with the demo buttons. No account needed.',
+    ],
+  },
+  4: {
+    what: 'QuoteVelo AI is a “quote machine” for a business. When a possible customer fills in a form asking for a price, the app reads their answers, gives the request a score from 1 to 100, and writes a ready-to-send proposal and email. The owner just checks it and presses one button.',
+    use: [
+      'Open the app and press “Request a project quote”.',
+      'Fill in 3 short steps: about you, your project, and your budget and timing.',
+      'Send it. Then press “Watch it in the owner dashboard”.',
+      'Watch your request appear as a card and get scored and drafted a few seconds later.',
+      'Click the card to read the AI summary, edit the proposal or email, then press “Approve & Send Proposal”.',
+    ],
+    purpose: 'Business owners often take a day or two to answer a price request, and by then the customer has hired someone else. QuoteVelo replies fast, and it sorts the big, serious requests from the tiny, vague ones so time is spent where it pays.',
+    help: [
+      'Answers new leads in minutes, not days.',
+      'Tags every lead as High Priority, Standard or Low Budget.',
+      'No more copying and pasting proposals by hand.',
+      'The owner approves everything. Nothing is emailed without a click.',
+      'The demo runs in your browser, so you can try it with no account.',
     ],
   },
 };
@@ -253,6 +283,20 @@ function ProjectCard({ project, onDocs }) {
               <div className={styles.graphicBadgeRow}>
                 <span className={styles.graphicAiPill}><ShieldCheck size={11} /> RLS secured</span>
                 <span className={styles.teamsyncRolePill}>Client portal</span>
+              </div>
+            </div>
+          </div>
+        ) : project.id === 4 ? (
+          <div className={styles.teamsyncGraphic}>
+            <div className={styles.teamsyncGlow} />
+            <div className={styles.teamsyncGraphicInner}>
+              <div className={styles.teamsyncIconWrap}>
+                <Gauge size={30} className={styles.teamsyncIcon} />
+              </div>
+              <span className={styles.teamsyncTitle}>QuoteVelo AI</span>
+              <div className={styles.graphicBadgeRow}>
+                <span className={styles.graphicAiPill}><Sparkles size={11} /> Gemini scoring</span>
+                <span className={styles.teamsyncRolePill}>1-click approval</span>
               </div>
             </div>
           </div>
