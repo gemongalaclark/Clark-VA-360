@@ -1,0 +1,89 @@
+.overlay {
+  position: fixed; inset: 0; z-index: 100;
+  background: rgba(26, 26, 46, 0.5);
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px; overflow-y: auto;
+  font-family: 'Inter', sans-serif;
+}
+.modal {
+  position: relative; width: 100%; max-width: 480px;
+  background: #fff; border-radius: 20px; padding: 28px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.25);
+  animation: pmUp 0.25s ease;
+  margin: auto;
+}
+@keyframes pmUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+.close {
+  position: absolute; top: 14px; right: 14px;
+  width: 32px; height: 32px; border-radius: 8px;
+  background: #f8f9fa; border: 1px solid #dee2e6; color: #6c757d;
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.close:hover:not(:disabled) { background: #e9ecef; }
+.title { font-family: 'Poppins', sans-serif; font-size: 1.25rem; font-weight: 800; color: #1a1a2e; margin: 0 0 4px; }
+.sub { font-size: 0.85rem; color: #6c757d; margin: 0 0 22px; }
+
+.form { display: flex; flex-direction: column; gap: 16px; }
+
+.photoRow { display: flex; align-items: center; gap: 16px; }
+.photo {
+  width: 84px; height: 84px; border-radius: 50%; flex-shrink: 0; overflow: hidden;
+  background: linear-gradient(135deg, #cb2525, #ea4343); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 1.4rem;
+  box-shadow: 0 0 0 3px #fff, 0 0 0 4px #e9ecef;
+}
+.photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.photoActions { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.photoBtns { display: flex; gap: 8px; flex-wrap: wrap; }
+.ghostBtn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 12px; border-radius: 10px; font-size: 0.8rem; font-weight: 600;
+  background: #fff; border: 1.5px solid #dee2e6; color: #1a1a2e; cursor: pointer; transition: all 0.2s;
+}
+.ghostBtn:hover:not(:disabled) { border-color: #cb2525; color: #cb2525; }
+.ghostBtn.danger:hover:not(:disabled) { background: #fef7f7; }
+.hint { font-size: 0.74rem; color: #6c757d; }
+
+.twoCol { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.field > span { font-size: 0.82rem; font-weight: 600; color: #4a4a6a; }
+.field em { font-style: normal; font-weight: 500; color: #8a8fa3; }
+.inputWrap {
+  display: flex; align-items: center; gap: 8px;
+  padding: 0 12px; border: 1.5px solid #dee2e6; border-radius: 12px; background: #fff;
+  color: #8a8fa3; transition: border-color 0.2s, box-shadow 0.2s;
+}
+.inputWrap:focus-within { border-color: #cb2525; box-shadow: 0 0 0 3px rgba(203, 37, 37, 0.1); }
+.inputWrap input {
+  flex: 1; min-width: 0; border: none; outline: none; background: transparent;
+  padding: 11px 0; font-size: 0.9rem; font-family: inherit; color: #1a1a2e;
+}
+.readonly { background: #f8f9fa; }
+.readonly input { color: #6c757d; }
+
+.error {
+  margin: 0; padding: 10px 12px; border-radius: 10px;
+  background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; font-size: 0.82rem;
+}
+
+.actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px; }
+.cancel, .save {
+  padding: 11px 18px; border-radius: 12px; font-size: 0.875rem; font-weight: 700;
+  font-family: inherit; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
+}
+.cancel { background: #fff; border: 1.5px solid #dee2e6; color: #4a4a6a; }
+.cancel:hover:not(:disabled) { background: #f8f9fa; }
+.save { background: linear-gradient(135deg, #cb2525, #ea4343); border: none; color: #fff; }
+.save:hover:not(:disabled) { box-shadow: 0 6px 20px rgba(203, 37, 37, 0.35); }
+.save:disabled, .cancel:disabled, .ghostBtn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.spin { animation: pmSpin 0.7s linear infinite; }
+@keyframes pmSpin { to { transform: rotate(360deg); } }
+
+@media (max-width: 480px) {
+  .modal { padding: 22px 18px; }
+  .twoCol { grid-template-columns: 1fr; }
+  .photoRow { flex-direction: column; align-items: flex-start; }
+}

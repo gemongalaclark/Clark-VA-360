@@ -199,6 +199,7 @@ export default function TeamSyncWorkspace({ onBackToPortfolio }) {
         onRoomJoined={handleRoomJoined}
         onLeaveRoom={handleLeaveRoom}
         onSignOut={handleSignOut}
+        onProfileUpdated={setProfile}
       />
     );
   }

@@ -1091,3 +1091,20 @@
 .attachName:hover { text-decoration: underline; }
 .attachNote { margin: 2px 0 0; font-size: 0.78rem; color: #6c757d; line-height: 1.45; }
 @media (max-width: 520px) { .linkAddRow { flex-direction: column; } }
+
+/* Member contact line + room settings */
+.memberContact { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 2px 0 0; font-size: 0.72rem; }
+.memberContact a { display: inline-flex; align-items: center; gap: 4px; color: #6c757d; text-decoration: none; }
+.memberContact a:hover { color: #cb2525; text-decoration: underline; }
+.reqIntro { font-size: 0.82rem; color: #6c757d; margin: 0 0 12px; line-height: 1.5; }
+.reqList { display: flex; flex-direction: column; gap: 8px; }
+.reqRow {
+  display: flex; align-items: center; gap: 10px; padding: 11px 14px;
+  border: 1.5px solid #dee2e6; border-radius: 12px; font-size: 0.86rem; color: #1a1a2e;
+  cursor: pointer; transition: all 0.2s;
+}
+.reqRow:hover { border-color: #c9ced6; }
+.reqRow input { accent-color: #cb2525; width: 16px; height: 16px; flex-shrink: 0; }
+.reqRow svg { color: #8a8fa3; flex-shrink: 0; }
+.reqRowOn { border-color: #cb2525; background: #fef7f7; }
+.reqRowOn svg { color: #cb2525; }

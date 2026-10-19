@@ -36,6 +36,34 @@
   display: flex; align-items: center; justify-content: center;
 }
 .userName { font-size: 0.875rem; font-weight: 600; color: #1a1a2e; }
+.avatar { flex-shrink: 0; }
+.profileBtn {
+  display: flex; align-items: center; gap: 10px;
+  padding: 4px 10px 4px 4px; border-radius: 9999px;
+  background: none; border: 1px solid transparent; cursor: pointer; font-family: inherit;
+  transition: all 0.2s;
+}
+.profileBtn:hover { background: #f8f9fa; border-color: #dee2e6; }
+.profileBtn:focus-visible { outline: 2px solid #cb2525; outline-offset: 2px; }
+.profileEdit { color: #8a8fa3; }
+.profileBtn:hover .profileEdit { color: #cb2525; }
+@media (max-width: 560px) { .userName { display: none; } .header { padding: 0 16px; } }
+
+/* Create-room requirements */
+.reqBox { border: 1.5px solid #e9ecef; border-radius: 14px; padding: 12px 14px 14px; margin: 0; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.reqLegend { font-size: 0.82rem; font-weight: 600; color: #4a4a6a; padding: 0 6px; }
+.reqLegend span { font-weight: 500; color: #8a8fa3; }
+.reqOption {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border: 1.5px solid #dee2e6; border-radius: 12px;
+  font-size: 0.85rem; color: #1a1a2e; cursor: pointer; transition: all 0.2s;
+}
+.reqOption:hover { border-color: #c9ced6; }
+.reqOption input { accent-color: #cb2525; width: 16px; height: 16px; flex-shrink: 0; }
+.reqOption svg { color: #8a8fa3; flex-shrink: 0; }
+.reqOn { border-color: #cb2525; background: #fef7f7; }
+.reqOn svg { color: #cb2525; }
+.reqHint { font-size: 0.75rem; color: #6c757d; margin: 0; }
 .signOutBtn {
   width: 32px; height: 32px; border-radius: 8px;
   background: none; border: 1px solid #dee2e6;

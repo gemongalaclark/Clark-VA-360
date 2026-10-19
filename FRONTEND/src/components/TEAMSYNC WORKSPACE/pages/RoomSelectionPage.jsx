@@ -1,10 +1,16 @@
 import { useState, useEffect } from 'react';
-import { Plus, Hash, ArrowRight, Copy, Check, Loader, X, LogOut, LogIn, Crown, User, Clock } from 'lucide-react';
+import { Plus, Hash, ArrowRight, Copy, Check, Loader, X, LogOut, LogIn, Crown, User, Clock, Pencil, ImageIcon, Phone } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
+import Avatar from '../profile/Avatar';
+import ProfileModal from '../profile/ProfileModal';
+import { fetchMyContact } from '../profile/profileApi';
 import styles from './RoomSelectionPage.module.css';
 
-export default function RoomSelectionPage({ profile, session, onRoomJoined, onLeaveRoom, onSignOut }) {
+export default function RoomSelectionPage({ profile, session, onRoomJoined, onLeaveRoom, onSignOut, onProfileUpdated }) {
   const [mode, setMode] = useState(null); // null | 'create' | 'join'
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [requireAvatar, setRequireAvatar] = useState(false);
+  const [requireMobile, setRequireMobile] = useState(false);
   const [roomName, setRoomName] = useState('');
   const [roomCode, setRoomCode] = useState('');
   const [loading, setLoading] = useState(false);
@@ -43,7 +49,6 @@ export default function RoomSelectionPage({ profile, session, onRoomJoined, onLe
   };
 
   const fullName = profile ? `${profile.first_name} ${profile.last_name}` : 'there';
-  const initials = profile ? `${profile.first_name[0]}${profile.last_name[0]}`.toUpperCase() : 'U';
 
   const handleCreateRoom = async (e) => {
     e.preventDefault();
@@ -58,7 +63,10 @@ export default function RoomSelectionPage({ profile, session, onRoomJoined, onLe
     /* Create room */
     const { data: room, error: roomErr } = await supabase
       .from('rooms')
-      .insert({ name: roomName.trim(), room_code: code, owner_id: profile.id })
+      .insert({
+        name: roomName.trim(), room_code: code, owner_id: profile.id,
+        require_avatar: requireAvatar, require_mobile: requireMobile,
+      })
       .select()
       .single();
 
@@ -92,6 +100,19 @@ export default function RoomSelectionPage({ profile, session, onRoomJoined, onLe
       return;
     }
 
+    /* Friendly pre-check — the database enforces the same rules on insert */
+    const missing = [];
+    if (room.require_avatar && !profile.avatar_url) missing.push('a profile picture');
+    if (room.require_mobile) {
+      const c = await fetchMyContact(profile.id);
+      if (!c.mobile_number?.trim()) missing.push('a mobile number');
+    }
+    if (missing.length) {
+      setError(`This room only accepts users with ${missing.join(' and ')}. Add ${missing.length > 1 ? 'them' : 'it'} from Edit profile (top right), then try again.`);
+      setLoading(false);
+      return;
+    }
+
     const { error: joinErr } = await supabase
       .from('room_members').insert({ room_id: room.id, user_id: profile.id, role: 'pending' });
 
@@ -115,8 +136,11 @@ export default function RoomSelectionPage({ profile, session, onRoomJoined, onLe
           <span className={styles.logoName}>TeamSync <span>Workspace</span></span>
         </div>
         <div className={styles.userRow}>
-          <div className={styles.avatar}>{initials}</div>
-          <span className={styles.userName}>{fullName}</span>
+          <button className={styles.profileBtn} onClick={() => setProfileOpen(true)} title="Edit profile" aria-label="Edit profile">
+            <Avatar profile={profile} className={styles.avatar} />
+            <span className={styles.userName}>{fullName}</span>
+            <Pencil size={13} className={styles.profileEdit} />
+          </button>
           <button className={styles.signOutBtn} onClick={onSignOut} title="Sign out">
             <LogOut size={16} />
           </button>
@@ -263,18 +287,35 @@ export default function RoomSelectionPage({ profile, session, onRoomJoined, onLe
 
             <form className={styles.form} onSubmit={mode === 'create' ? handleCreateRoom : handleJoinRoom}>
               {mode === 'create' ? (
-                <div className={styles.formGroup}>
-                  <label>Room Name</label>
-                  <input
-                    type="text"
-                    className={styles.input}
-                    placeholder="e.g. Marketing Team, Project Alpha…"
-                    value={roomName}
-                    onChange={e => setRoomName(e.target.value)}
-                    maxLength={60}
-                    required
-                  />
-                </div>
+                <>
+                  <div className={styles.formGroup}>
+                    <label>Room Name</label>
+                    <input
+                      type="text"
+                      className={styles.input}
+                      placeholder="e.g. Marketing Team, Project Alpha…"
+                      value={roomName}
+                      onChange={e => setRoomName(e.target.value)}
+                      maxLength={60}
+                      required
+                    />
+                  </div>
+
+                  <fieldset className={styles.reqBox}>
+                    <legend className={styles.reqLegend}>Who can join? <span>(optional)</span></legend>
+                    <label className={`${styles.reqOption} ${requireAvatar ? styles.reqOn : ''}`}>
+                      <input type="checkbox" checked={requireAvatar} onChange={e => setRequireAvatar(e.target.checked)} />
+                      <ImageIcon size={16} />
+                      <span>Only accept users with a profile picture</span>
+                    </label>
+                    <label className={`${styles.reqOption} ${requireMobile ? styles.reqOn : ''}`}>
+                      <input type="checkbox" checked={requireMobile} onChange={e => setRequireMobile(e.target.checked)} />
+                      <Phone size={16} />
+                      <span>Only accept users with a mobile number</span>
+                    </label>
+                    <p className={styles.reqHint}>Tick both to require both. You can change this anytime in Members → Room settings.</p>
+                  </fieldset>
+                </>
               ) : (
                 <div className={styles.formGroup}>
                   <label>Room ID</label>
@@ -302,6 +343,10 @@ export default function RoomSelectionPage({ profile, session, onRoomJoined, onLe
           </div>
         )}
       </div>
+
+      {profileOpen && profile && (
+        <ProfileModal profile={profile} onClose={() => setProfileOpen(false)} onSaved={onProfileUpdated} />
+      )}
     </div>
   );
 }
