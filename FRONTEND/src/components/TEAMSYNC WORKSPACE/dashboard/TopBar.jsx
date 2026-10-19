@@ -11,15 +11,22 @@ const PAGE_TITLES = {
   tasks: 'My Tasks',
 };
 
+const NOTIF_VISIBLE = 5;   // newest notifications shown in the dropdown; older ones are archived
+const NOTIF_FETCH = 50;    // how many we load in total
+
 export default function TopBar({ currentTab, profile, session, room }) {
   const [notifications, setNotifications] = useState([]);
   const [showNotifs, setShowNotifs] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const [showArchive, setShowArchive] = useState(false);
   const notifsRef = useRef(null);
   const profileRef = useRef(null);
 
   const initials = profile ? `${profile.first_name[0]}${profile.last_name[0]}`.toUpperCase() : 'U';
   const unread = notifications.filter(n => !n.read).length;
+  const recent = notifications.slice(0, NOTIF_VISIBLE);
+  const archived = notifications.slice(NOTIF_VISIBLE);
+  const visible = showArchive ? archived : recent;
   const userId = session?.user?.id;
 
   useEffect(() => {
@@ -47,7 +54,7 @@ export default function TopBar({ currentTab, profile, session, room }) {
       .select('*')
       .eq('user_id', session.user.id)
       .order('created_at', { ascending: false })
-      .limit(20);
+      .limit(NOTIF_FETCH);
     if (data) setNotifications(data);
   };
 
@@ -107,6 +114,7 @@ export default function TopBar({ currentTab, profile, session, room }) {
           <button className={styles.bellBtn} onClick={() => {
             const opening = !showNotifs;
             setShowNotifs(opening);
+            if (opening) setShowArchive(false);
             if (opening && unread > 0) markAllRead();
           }}>
             <Bell size={18} />
@@ -116,12 +124,15 @@ export default function TopBar({ currentTab, profile, session, room }) {
           {showNotifs && (
             <div className={styles.dropdown}>
               <div className={styles.dropdownHeader}>
-                <span>Notifications</span>
+                <span>{showArchive ? 'Archived' : 'Notifications'}</span>
+                {showArchive && (
+                  <button className={styles.markReadBtn} onClick={() => setShowArchive(false)}>Back</button>
+                )}
               </div>
               <div className={styles.notifList}>
-                {notifications.length === 0 ? (
-                  <div className={styles.emptyNotifs}>No notifications yet</div>
-                ) : notifications.slice(0, 10).map(n => (
+                {visible.length === 0 ? (
+                  <div className={styles.emptyNotifs}>{showArchive ? 'No archived notifications' : 'No notifications yet'}</div>
+                ) : visible.map(n => (
                   <div key={n.id} className={`${styles.notifItem} ${!n.read ? styles.notifUnread : ''}`}>
                     <div className={styles.notifIcon}>{notifIcon(n.type)}</div>
                     <div className={styles.notifBody}>
@@ -132,6 +143,11 @@ export default function TopBar({ currentTab, profile, session, room }) {
                   </div>
                 ))}
               </div>
+              {!showArchive && archived.length > 0 && (
+                <button className={styles.archiveBtn} onClick={() => setShowArchive(true)}>
+                  View archived ({archived.length})
+                </button>
+              )}
             </div>
           )}
         </div>

@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Check, RotateCcw, ChevronDown, Loader, Search, CalendarClock, Pencil, Save } from 'lucide-react';
+import { Check, RotateCcw, ChevronDown, Loader, Search, CalendarClock, Pencil, Save, ChevronLeft, ChevronRight } from 'lucide-react';
 import { supabase } from '../../../../lib/supabase';
 import StatusBadge, { UrgentBadge, getInitials, getName } from '../StatusBadge';
 import SubmissionTable from '../SubmissionTable';
 import { deadlineInfo, formatDeadline, isActionable } from '../taskUtils';
 import { fetchRoomTasks } from '../taskApi';
 import styles from '../SharedPages.module.css';
+
+const PAGE_SIZE = 5;
 
 const FILTERS = [
   { key: 'all',      label: 'All',      activeClass: styles.filterActive },
@@ -30,6 +32,7 @@ export default function ReviewPage({ room }) {
   const [tasks, setTasks] = useState([]);
   const [filter, setFilter] = useState('all');
   const [query, setQuery] = useState('');
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [reviewingId, setReviewingId] = useState(null);
   const [expandedId, setExpandedId] = useState(null);
@@ -130,6 +133,12 @@ export default function ReviewPage({ room }) {
       .sort((a, b) => (filter === 'all' ? (b.status === 'submitted') - (a.status === 'submitted') : 0));
   }, [tasks, filter, query]);
 
+  /* 5 tasks per page; page resets when the filter/search changes and is clamped if the list shrinks */
+  const totalPages = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const pageTasks = visible.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+  useEffect(() => { setPage(1); }, [filter, query]);
+
   if (loading) return <div className={styles.loading}><div className={styles.spinner} /></div>;
 
   return (
@@ -209,7 +218,7 @@ export default function ReviewPage({ room }) {
           </div>
         ) : (
           <div className={styles.taskList}>
-            {visible.map(task => {
+            {pageTasks.map(task => {
               const isExpanded = expandedId === task.id;
               const busy = reviewingId === task.id;
               const info = deadlineInfo(task);
@@ -357,6 +366,30 @@ export default function ReviewPage({ room }) {
               );
             })}
           </div>
+        )}
+
+        {totalPages > 1 && (
+          <nav className={styles.pager} aria-label="Task pages">
+            <span className={styles.pagerInfo}>
+              {(safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, visible.length)} of {visible.length}
+            </span>
+            <div className={styles.pagerBtns}>
+              <button className={styles.pagerBtn} onClick={() => setPage(safePage - 1)} disabled={safePage === 1} aria-label="Previous page">
+                <ChevronLeft size={15} />
+              </button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(n => (
+                <button
+                  key={n}
+                  className={`${styles.pagerBtn} ${n === safePage ? styles.pagerActive : ''}`}
+                  onClick={() => setPage(n)}
+                  aria-current={n === safePage ? 'page' : undefined}
+                >{n}</button>
+              ))}
+              <button className={styles.pagerBtn} onClick={() => setPage(safePage + 1)} disabled={safePage === totalPages} aria-label="Next page">
+                <ChevronRight size={15} />
+              </button>
+            </div>
+          </nav>
         )}
       </div>
     </div>

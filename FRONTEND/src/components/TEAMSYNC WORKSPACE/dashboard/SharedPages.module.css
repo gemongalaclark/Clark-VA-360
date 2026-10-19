@@ -993,6 +993,19 @@
 .footerCount { margin-right: auto; font-size: 0.78rem; color: #6c757d; }
 .submitInline { padding: 11px 22px; }
 
+/* ── Pagination ── */
+.pager { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 16px 4px 4px; margin-top: 8px; border-top: 1px solid #f1ecec; }
+.pagerInfo { font-size: 0.78rem; color: #6c757d; }
+.pagerBtns { display: flex; align-items: center; gap: 6px; }
+.pagerBtn {
+  min-width: 34px; height: 34px; padding: 0 8px; border-radius: 10px; border: 1px solid #e9ecef; background: #fff;
+  color: #1a1a2e; font-size: 0.82rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+}
+.pagerBtn:hover:not(:disabled):not(.pagerActive) { border-color: rgba(203,37,37,0.35); background: #fff7f7; color: #cb2525; }
+.pagerBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+.pagerActive { background: #1a1a2e; border-color: #1a1a2e; color: #fff; }
+
 /* ── Create task page ── */
 .createGrid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(280px, 1fr); gap: 24px; align-items: start; }
 .createForm { display: flex; flex-direction: column; gap: 18px; }

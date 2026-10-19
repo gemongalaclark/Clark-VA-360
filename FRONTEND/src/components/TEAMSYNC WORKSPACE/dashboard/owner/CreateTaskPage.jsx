@@ -8,6 +8,8 @@ import styles from '../SharedPages.module.css';
 
 const TITLE_MAX = 120;
 const DESC_MAX = 1500;
+const RECENT_VISIBLE = 5;  // newest tasks shown; older ones go to the archive view
+const RECENT_FETCH = 30;
 
 /* yyyy-mm-ddThh:mm in local time, for <input type="datetime-local" min> */
 const localNow = () => {
@@ -29,12 +31,13 @@ export default function CreateTaskPage({ room, profile, onNavigate }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [created, setCreated] = useState(null);
+  const [showArchive, setShowArchive] = useState(false);
 
   const load = useCallback(async () => {
     if (!room || !supabase) return;
     const [{ data: members }, { data: tasks, error: tasksErr }] = await Promise.all([
       supabase.from('room_members').select('user_id, profiles(*)').eq('room_id', room.id).eq('role', 'employee'),
-      fetchRoomTasks(room.id, { limit: 6 }),
+      fetchRoomTasks(room.id, { limit: RECENT_FETCH }),
     ]);
     if (tasksErr) console.error('Could not load recent tasks:', tasksErr.message);
     setEmployees(members ?? []);
@@ -70,6 +73,9 @@ export default function CreateTaskPage({ room, profile, onNavigate }) {
     setTitle(''); setDescription(''); setAssignee(''); setHasDeadline(false); setDeadline('');
     load();
   };
+
+  const archivedTasks = recent.slice(RECENT_VISIBLE);
+  const shown = showArchive ? archivedTasks : recent.slice(0, RECENT_VISIBLE);
 
   if (loading) return <div className={styles.loading}><div className={styles.spinner} /></div>;
 
@@ -157,14 +163,16 @@ export default function CreateTaskPage({ room, profile, onNavigate }) {
 
           <aside className={styles.card}>
             <div className={styles.cardHeader}>
-              <h3 className={styles.cardTitle}>Recently assigned</h3>
-              <button className={styles.linkBtn} onClick={() => onNavigate?.('review')}>Review tasks</button>
+              <h3 className={styles.cardTitle}>{showArchive ? 'Archived' : 'Recently assigned'}</h3>
+              {showArchive
+                ? <button className={styles.linkBtn} onClick={() => setShowArchive(false)}>Back</button>
+                : <button className={styles.linkBtn} onClick={() => onNavigate?.('review')}>Review tasks</button>}
             </div>
-            {recent.length === 0 ? (
-              <p className={styles.subEmpty}>Tasks you assign will show up here.</p>
+            {shown.length === 0 ? (
+              <p className={styles.subEmpty}>{showArchive ? 'No archived tasks.' : 'Tasks you assign will show up here.'}</p>
             ) : (
               <ul className={styles.recentList}>
-                {recent.map(t => (
+                {shown.map(t => (
                   <li key={t.id} className={styles.recentItem}>
                     <div className={styles.miniAvatar}>{getInitials(t.profiles)}</div>
                     <div className={styles.recentBody}>
@@ -178,6 +186,11 @@ export default function CreateTaskPage({ room, profile, onNavigate }) {
                   </li>
                 ))}
               </ul>
+            )}
+            {!showArchive && archivedTasks.length > 0 && (
+              <button className={styles.linkBtn} style={{ marginTop: 12 }} onClick={() => setShowArchive(true)}>
+                View archived ({archivedTasks.length})
+              </button>
             )}
           </aside>
         </div>
