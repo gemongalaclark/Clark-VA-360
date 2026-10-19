@@ -804,6 +804,28 @@
 .taskRow .cancelBtn { display: inline-flex; align-items: center; gap: 6px; }
 .reviewerNote { border-top: 1px dashed rgba(203,37,37,0.15); background: #fffafa; }
 
+/* Delete task (owner) */
+.iconDeleteBtn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; flex-shrink: 0; border-radius: 10px; cursor: pointer;
+  background: transparent; border: 1px solid transparent; color: #8a93a0;
+  transition: all 0.2s;
+}
+.iconDeleteBtn:hover, .iconDeleteBtn[aria-expanded="true"] { background: #fff1f1; border-color: rgba(203,37,37,0.25); color: #cb2525; }
+.iconDeleteBtn:focus-visible, .dangerBtn:focus-visible { outline: 2px solid #cb2525; outline-offset: 2px; }
+.deleteWarn { display: flex; gap: 12px; align-items: flex-start; color: #7f1d1d; }
+.deleteWarn > svg { flex-shrink: 0; margin-top: 2px; color: #cb2525; }
+.deleteWarn strong { font-size: 0.9rem; color: #1a1a2e; }
+.deleteWarn p { margin: 4px 0 0; font-size: 0.82rem; line-height: 1.55; color: #4a4a6a; }
+.dangerBtn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 18px; background: #cb2525; color: #fff;
+  border: none; border-radius: 9px;
+  font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: background 0.2s;
+}
+.dangerBtn:hover:not(:disabled) { background: #a81c1c; }
+.dangerBtn:disabled { opacity: 0.6; cursor: not-allowed; }
+
 /* Members */
 .summaryChips { display: flex; gap: 8px; flex-wrap: wrap; }
 .summaryChip {

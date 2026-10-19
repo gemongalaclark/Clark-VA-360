@@ -60,6 +60,7 @@ begin
     when 'task_approved' then 'Task approved'
     when 'task_rejected' then 'Revision requested'
     when 'task_updated' then 'Task updated'
+    when 'task_deleted' then 'Task deleted'
     when 'task_deadline' then 'Deadline reminder'
     else 'New notification'
   end;

@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Check, RotateCcw, ChevronDown, Loader, Search, CalendarClock, Pencil, Save, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Check, RotateCcw, ChevronDown, Loader, Search, CalendarClock, Pencil, Save, ChevronLeft, ChevronRight, Trash2, TriangleAlert } from 'lucide-react';
 import { supabase } from '../../../../lib/supabase';
 import StatusBadge, { UrgentBadge, getName } from '../StatusBadge';
 import SubmissionTable from '../SubmissionTable';
 import AttachmentList from '../AttachmentList';
 import { deadlineInfo, formatDeadline, isActionable } from '../taskUtils';
 import { fetchRoomTasks } from '../taskApi';
+import { removeUploaded } from '../attachmentApi';
 import styles from '../SharedPages.module.css';
 import Avatar from '../../profile/Avatar';
 
@@ -45,6 +46,9 @@ export default function ReviewPage({ room }) {
   const [draft, setDraft] = useState({ title: '', description: '', hasDeadline: false, deadline: '' });
   const [editError, setEditError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);   // task whose delete confirmation is open
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   const load = useCallback(async (silent = false) => {
     if (!room || !supabase) return;
@@ -85,7 +89,33 @@ export default function ReviewPage({ room }) {
     setReviewingId(null);
   };
 
+  const toggleDelete = (task) => {
+    setExpandedId(null);
+    setEditingId(null);
+    setDeleteError('');
+    setDeletingId(id => (id === task.id ? null : task.id));
+  };
+
+  const handleDelete = async (task) => {
+    setDeleteBusy(true);
+    setDeleteError('');
+    /* .select() lets us detect an RLS-blocked delete (0 rows, no error) */
+    const { data, error } = await supabase.from('tasks').delete().eq('id', task.id).select('id');
+    if (error || !data?.length) {
+      setDeleteError(error?.message ?? 'You don’t have permission to delete this task.');
+      setDeleteBusy(false);
+      return;
+    }
+    /* Row is gone — clean up its stored files; a failure here only leaves orphaned objects */
+    const paths = (task.attachments ?? []).filter(a => a.type === 'file' && a.path).map(a => a.path);
+    try { await removeUploaded(paths); } catch (e) { console.error('Could not remove task files:', e); }
+    setTasks(prev => prev.filter(t => t.id !== task.id));
+    setDeletingId(null);
+    setDeleteBusy(false);
+  };
+
   const startEdit = (task) => {
+    setDeletingId(null);
     setExpandedId(null);
     setEditError('');
     setDraft({
@@ -264,13 +294,45 @@ export default function ReviewPage({ room }) {
                       <button
                         className={styles.reviewToggle}
                         aria-expanded={isExpanded}
-                        onClick={() => { setExpandedId(isExpanded ? null : task.id); setNotes(''); setNoteError(''); }}
+                        onClick={() => { setDeletingId(null); setExpandedId(isExpanded ? null : task.id); setNotes(''); setNoteError(''); }}
                       >
                         Review
                         <ChevronDown size={14} className={isExpanded ? styles.chevronUp : ''} />
                       </button>
                     )}
+
+                    <button
+                      className={styles.iconDeleteBtn}
+                      aria-label={`Delete task “${task.title}”`}
+                      title="Delete task"
+                      aria-expanded={deletingId === task.id}
+                      onClick={() => toggleDelete(task)}
+                    >
+                      <Trash2 size={15} />
+                    </button>
                   </div>
+
+                  {deletingId === task.id && (
+                    <div className={styles.reviewPanel} role="alertdialog" aria-label="Confirm task deletion">
+                      <div className={styles.deleteWarn}>
+                        <TriangleAlert size={18} />
+                        <div>
+                          <strong>Delete “{task.title}”?</strong>
+                          <p>
+                            This permanently removes the task{task.submission?.length ? ', the submission' : ''}
+                            {task.attachments?.length ? ' and its attachments' : ''} for {getName(task.profiles)}. This can’t be undone.
+                          </p>
+                        </div>
+                      </div>
+                      {deleteError && <p className={styles.formError} role="alert">{deleteError}</p>}
+                      <div className={styles.reviewBtnRow}>
+                        <button className={styles.cancelBtn} onClick={() => setDeletingId(null)} disabled={deleteBusy} autoFocus>Cancel</button>
+                        <button className={styles.dangerBtn} onClick={() => handleDelete(task)} disabled={deleteBusy}>
+                          {deleteBusy ? <Loader size={14} className={styles.spin} /> : <Trash2 size={14} />} Delete task
+                        </button>
+                      </div>
+                    </div>
+                  )}
 
                   {editingId === task.id && (
                     <div className={styles.reviewPanel}>
