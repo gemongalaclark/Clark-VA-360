@@ -5,6 +5,7 @@ import OverviewPage from './owner/OverviewPage';
 import CreateTaskPage from './owner/CreateTaskPage';
 import ReviewPage from './owner/ReviewPage';
 import MembersPage from './owner/MembersPage';
+import RoomSettingsPage from './owner/RoomSettingsPage';
 import EmpOverviewPage from './employee/EmpOverviewPage';
 import TaskPage from './employee/TaskPage';
 import styles from './Dashboard.module.css';
@@ -19,6 +20,7 @@ export default function Dashboard({ profile, room, role, session, onSignOut, onS
       if (currentTab === 'create')   return <CreateTaskPage room={room} profile={profile} onNavigate={setCurrentTab} />;
       if (currentTab === 'review')   return <ReviewPage room={room} profile={profile} />;
       if (currentTab === 'members')  return <MembersPage room={room} profile={profile} />;
+      if (currentTab === 'settings') return <RoomSettingsPage room={room} />;
     }
     if (role === 'employee') {
       if (currentTab === 'overview') return <EmpOverviewPage room={room} profile={profile} onNavigate={setCurrentTab} />;

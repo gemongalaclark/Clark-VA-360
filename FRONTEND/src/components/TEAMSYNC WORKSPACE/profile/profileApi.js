@@ -13,14 +13,12 @@ export function validateAvatar(file) {
   return '';
 }
 
-/** Mobile is optional: keeps digits, +, spaces, dashes, brackets. Returns { value, error }. */
-export function cleanMobile(raw) {
-  const v = raw.trim();
-  if (!v) return { value: null, error: '' };
-  if (!/^[+\d\s\-()]+$/.test(v)) return { value: null, error: 'Mobile number can only contain digits, spaces, + and -.' };
-  const digits = v.replace(/\D/g, '');
-  if (digits.length < 7 || digits.length > 15) return { value: null, error: 'Enter a valid mobile number (7–15 digits).' };
-  return { value: v, error: '' };
+/** Mobile is optional. `digits` is the number without the country code; returns an error string or ''. */
+export function validateMobile(country, digits) {
+  if (!digits) return '';
+  if (digits.length < 4 || country.dial.length + digits.length > 15)
+    return `Enter a valid mobile number for ${country.name} (+${country.dial}).`;
+  return '';
 }
 
 /** Facebook link is optional: accepts "facebook.com/name" too. Returns { value, error }. */

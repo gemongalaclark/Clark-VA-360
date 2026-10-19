@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LayoutDashboard, ClipboardCheck, ClipboardPlus, Users, ListTodo, Hash, LogOut, ChevronLeft, ChevronRight, ArrowLeftRight, Crown, User, Copy, Check } from 'lucide-react';
+import { LayoutDashboard, ClipboardCheck, ClipboardPlus, Users, Settings, ListTodo, Hash, LogOut, ChevronLeft, ChevronRight, ArrowLeftRight, Crown, User, Copy, Check } from 'lucide-react';
 import styles from './Sidebar.module.css';
 
 const ownerNav = [
@@ -7,6 +7,7 @@ const ownerNav = [
   { id: 'create',    label: 'Create Task', icon: <ClipboardPlus size={18} /> },
   { id: 'review',    label: 'Review',    icon: <ClipboardCheck size={18} /> },
   { id: 'members',   label: 'Members',   icon: <Users size={18} /> },
+  { id: 'settings',  label: 'Room Settings', icon: <Settings size={18} /> },
 ];
 
 const employeeNav = [

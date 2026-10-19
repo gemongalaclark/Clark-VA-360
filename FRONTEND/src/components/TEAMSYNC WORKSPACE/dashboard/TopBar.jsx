@@ -8,6 +8,7 @@ const PAGE_TITLES = {
   create: 'Create Task',
   review: 'Task Review',
   members: 'Members',
+  settings: 'Room Settings',
   tasks: 'My Tasks',
 };
 

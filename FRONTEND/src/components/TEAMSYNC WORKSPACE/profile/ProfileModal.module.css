@@ -87,3 +87,38 @@
   .twoCol { grid-template-columns: 1fr; }
   .photoRow { flex-direction: column; align-items: flex-start; }
 }
+
+/* Mobile number: country picker + national number */
+.phoneRow { display: flex; gap: 8px; align-items: stretch; }
+.phoneInput { flex: 1; min-width: 0; }
+.cpWrap { position: relative; flex-shrink: 0; }
+.cpBtn {
+  height: 100%; display: inline-flex; align-items: center; gap: 6px;
+  padding: 0 10px; border: 1.5px solid #dee2e6; border-radius: 12px; background: #fff;
+  font-family: inherit; font-size: 0.85rem; font-weight: 600; color: #1a1a2e; cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.cpBtn:hover:not(:disabled) { border-color: #c9ced6; }
+.cpBtn:focus-visible { outline: none; border-color: #cb2525; box-shadow: 0 0 0 3px rgba(203, 37, 37, 0.1); }
+.cpIso {
+  font-size: 0.7rem; font-weight: 800; letter-spacing: 0.03em; color: #cb2525;
+  background: #fef2f2; border-radius: 6px; padding: 2px 5px;
+}
+.cpDial { color: #4a4a6a; font-variant-numeric: tabular-nums; }
+.cpPop {
+  position: absolute; top: calc(100% + 6px); left: 0; z-index: 20; width: 300px; max-width: 80vw;
+  background: #fff; border: 1px solid #e9ecef; border-radius: 14px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18); overflow: hidden;
+}
+.cpSearch { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid #f1f3f5; color: #8a8fa3; }
+.cpSearch input { flex: 1; min-width: 0; border: none; outline: none; font-size: 0.85rem; font-family: inherit; color: #1a1a2e; }
+.cpList { list-style: none; margin: 0; padding: 4px; max-height: 240px; overflow-y: auto; }
+.cpItem {
+  width: 100%; display: flex; align-items: center; gap: 10px; padding: 8px 10px;
+  border: none; background: none; border-radius: 8px; cursor: pointer; text-align: left;
+  font-family: inherit; font-size: 0.84rem; color: #1a1a2e;
+}
+.cpItem:hover { background: #f8f9fa; }
+.cpActive { background: #fef7f7; }
+.cpName { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cpEmpty { padding: 14px; text-align: center; font-size: 0.82rem; color: #8a8fa3; }

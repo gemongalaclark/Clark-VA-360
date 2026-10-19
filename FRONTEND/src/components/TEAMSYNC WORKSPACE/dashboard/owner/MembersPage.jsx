@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { UserCheck, UserX, Shield, Copy, Check, Loader, Users, Clock, Share2, Settings, ImageIcon, Phone, Facebook } from 'lucide-react';
+import { UserCheck, UserX, Shield, Copy, Check, Loader, Users, Clock, Share2, Phone, Facebook } from 'lucide-react';
 import { supabase } from '../../../../lib/supabase';
 import { getName } from '../StatusBadge';
 import Avatar from '../../profile/Avatar';
@@ -21,26 +21,6 @@ export default function MembersPage({ room, profile }) {
   const [loading, setLoading] = useState(true);
   const [actionId, setActionId] = useState(null);
   const [copied, setCopied] = useState(false);
-  const [reqs, setReqs] = useState({ avatar: !!room?.require_avatar, mobile: !!room?.require_mobile });
-  const [reqSaving, setReqSaving] = useState(false);
-  const [reqError, setReqError] = useState('');
-
-  /* Requirements can be changed from another session, so read the fresh values */
-  useEffect(() => {
-    if (!room || !supabase) return;
-    supabase.from('rooms').select('require_avatar, require_mobile').eq('id', room.id).single()
-      .then(({ data }) => { if (data) setReqs({ avatar: !!data.require_avatar, mobile: !!data.require_mobile }); });
-  }, [room]);
-
-  const toggleReq = async (key) => {
-    const next = { ...reqs, [key]: !reqs[key] };
-    setReqs(next); setReqSaving(true); setReqError('');
-    const { error } = await supabase.rpc('set_room_requirements', {
-      p_room: room.id, p_avatar: next.avatar, p_mobile: next.mobile,
-    });
-    if (error) { setReqs(reqs); setReqError(error.message); }
-    setReqSaving(false);
-  };
 
   const load = useCallback(async (silent = false) => {
     if (!room || !supabase) return;
@@ -141,26 +121,6 @@ export default function MembersPage({ room, profile }) {
             {copied ? 'Copied!' : 'Copy'}
           </button>
         </div>
-      </div>
-
-      {/* Room settings */}
-      <div className={styles.card}>
-        <div className={styles.cardHeader}>
-          <h3 className={styles.cardTitle}><Settings size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />Room settings</h3>
-          {reqSaving && <Loader size={14} className={styles.spin} />}
-        </div>
-        <p className={styles.reqIntro}>Choose what new people need on their profile before they can request to join. Members already in the room are not affected.</p>
-        <div className={styles.reqList}>
-          <label className={`${styles.reqRow} ${reqs.avatar ? styles.reqRowOn : ''}`}>
-            <input type="checkbox" checked={reqs.avatar} onChange={() => toggleReq('avatar')} disabled={reqSaving} />
-            <ImageIcon size={16} /> <span>Only accept users with a profile picture</span>
-          </label>
-          <label className={`${styles.reqRow} ${reqs.mobile ? styles.reqRowOn : ''}`}>
-            <input type="checkbox" checked={reqs.mobile} onChange={() => toggleReq('mobile')} disabled={reqSaving} />
-            <Phone size={16} /> <span>Only accept users with a mobile number</span>
-          </label>
-        </div>
-        {reqError && <p className={styles.formError} role="alert">{reqError}</p>}
       </div>
 
       {/* Pending requests */}

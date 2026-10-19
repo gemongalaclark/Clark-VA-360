@@ -313,7 +313,7 @@ export default function RoomSelectionPage({ profile, session, onRoomJoined, onLe
                       <Phone size={16} />
                       <span>Only accept users with a mobile number</span>
                     </label>
-                    <p className={styles.reqHint}>Tick both to require both. You can change this anytime in Members → Room settings.</p>
+                    <p className={styles.reqHint}>Tick both to require both. You can change this anytime in Room Settings.</p>
                   </fieldset>
                 </>
               ) : (

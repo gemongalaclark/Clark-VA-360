@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { X, Camera, Trash2, Loader, Phone, Facebook, Mail, User } from 'lucide-react';
 import {
-  AVATAR_MAX_BYTES, validateAvatar, formatMB, cleanMobile, cleanFacebook,
+  AVATAR_MAX_BYTES, validateAvatar, formatMB, validateMobile, cleanFacebook,
   uploadAvatar, removeAvatarFile, saveProfileDetails, fetchMyContact, saveMyContact,
 } from './profileApi';
+import { DEFAULT_COUNTRY, parseMobile, buildMobile } from './countries';
+import CountryPicker from './CountryPicker';
 import styles from './ProfileModal.module.css';
 
 const capitalizeName = (v) => v.replace(/(^|[\s\-'])([a-zà-ÿ])/g, (_, sep, ch) => sep + ch.toUpperCase());
@@ -11,7 +13,8 @@ const capitalizeName = (v) => v.replace(/(^|[\s\-'])([a-zà-ÿ])/g, (_, sep, ch)
 export default function ProfileModal({ profile, onClose, onSaved }) {
   const [firstName, setFirstName] = useState(profile.first_name ?? '');
   const [lastName, setLastName] = useState(profile.last_name ?? '');
-  const [mobile, setMobile] = useState('');
+  const [country, setCountry] = useState(DEFAULT_COUNTRY);
+  const [mobile, setMobile] = useState('');   // national part only, without the +code
   const [facebook, setFacebook] = useState('');
   const [contactReady, setContactReady] = useState(false);
   const [newFile, setNewFile] = useState(null);        // staged, uploaded on Save
@@ -32,7 +35,9 @@ export default function ProfileModal({ profile, onClose, onSaved }) {
     let alive = true;
     fetchMyContact(profile.id).then((c) => {
       if (!alive) return;
-      setMobile(c.mobile_number ?? '');
+      const parsed = parseMobile(c.mobile_number);
+      setCountry(parsed.country);
+      setMobile(parsed.national);
       setFacebook(c.facebook_url ?? '');
       setContactReady(true);
     });
@@ -64,9 +69,10 @@ export default function ProfileModal({ profile, onClose, onSaved }) {
     const first = capitalizeName(firstName.trim());
     const last = capitalizeName(lastName.trim());
     if (!first || !last) { setError('First and last name are required.'); return; }
-    const m = cleanMobile(mobile);
-    if (m.error) { setError(m.error); return; }
-    const f = cleanFacebook(facebook);
+    const m = buildMobile(country, mobile);
+    const mobileProblem = validateMobile(country, m.digits);
+    if (mobileProblem) { setError(mobileProblem); return; }
+    const f = cleanFacebook(facebook);   // (mobile saved below as m.value)
     if (f.error) { setError(f.error); return; }
 
     setSaving(true);
@@ -143,10 +149,14 @@ export default function ProfileModal({ profile, onClose, onSaved }) {
 
           <label className={styles.field}>
             <span>Mobile number <em>(optional · only room owners can see this)</em></span>
-            <div className={styles.inputWrap}>
-              <Phone size={15} />
-              <input type="tel" inputMode="tel" placeholder="+63 912 345 6789" value={mobile}
-                onChange={(e) => setMobile(e.target.value)} maxLength={24} />
+            <div className={styles.phoneRow}>
+              <CountryPicker value={country} onChange={setCountry} disabled={saving} />
+              <div className={`${styles.inputWrap} ${styles.phoneInput}`}>
+                <Phone size={15} />
+                <input type="tel" inputMode="numeric" placeholder="912 345 6789" value={mobile}
+                  onChange={(e) => setMobile(e.target.value.replace(/[^\d\s\-()]/g, ''))} maxLength={20}
+                  autoComplete="tel-national" />
+              </div>
             </div>
           </label>
 
