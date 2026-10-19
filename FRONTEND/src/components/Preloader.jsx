@@ -13,7 +13,7 @@ const shouldPlay = () => {
   try { return !sessionStorage.getItem(KEY); } catch { return true; }
 };
 
-/* Intro splash: katakana title + 000→100 counter, then a stepped block wipe that reveals the hero.
+/* Intro splash: logo + 000→100 counter, then a stepped block wipe that reveals the hero.
    While it runs, <html> carries `intro-hold` so the hero's entrance animations wait for the wipe. */
 export default function Preloader() {
   const [play] = useState(shouldPlay);
@@ -87,7 +87,7 @@ export default function Preloader() {
       </div>
 
       <div className={styles.center} aria-hidden="true">
-        <p className={styles.kana}>CLARK VA 360</p>
+        <img className={styles.logo} src="/images/logo-preloader.webp" alt="" width="900" height="805" />
         <span className={styles.rule} />
         <div className={styles.meta}>
           <span className={styles.label}>Clark Gemongala</span>

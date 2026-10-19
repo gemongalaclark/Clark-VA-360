@@ -102,7 +102,7 @@ export default function Hero() {
               <span className={styles.pill}>Open !!</span>
             </div>
             <div className={styles.tlBody}>
-              <h2 className={styles.cardHeading}>Self-Intro</h2>
+              <h2 className={styles.cardHeading}>Introduction</h2>
               <p className={styles.italic}>
                 Hi, I&apos;m Clark! An IT graduate turned VA who turns busy workloads into smooth operations.
               </p>

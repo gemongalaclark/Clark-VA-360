@@ -47,14 +47,10 @@
   transform: translate(-50%, -56%);
 }
 
-.kana {
-  font-family: 'Playfair Display', Georgia, serif;
-  font-weight: 900;
-  font-size: clamp(2.6rem, 8vw, 4rem);
-  letter-spacing: 0.3em;
-  padding-left: 0.3em;
-  color: #fff;
-  line-height: 1;
+.logo {
+  width: clamp(170px, 40vw, 250px);
+  height: auto;
+  margin-bottom: 6px;
   animation: kanaIn 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) 0.1s both;
 }
 
@@ -97,6 +93,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .kana, .rule, .meta { animation: none; }
+  .logo, .rule, .meta { animation: none; }
   .wipe .block { animation-duration: 0.01s; animation-delay: 0s; }
 }
