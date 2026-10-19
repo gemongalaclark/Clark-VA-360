@@ -62,11 +62,12 @@
   left: 0;
   right: 0;
   text-align: center;
-  font-family: 'Noto Sans JP', var(--font-heading), sans-serif;
-  font-weight: 900;
-  font-size: clamp(0.95rem, 1.5vw, 1.35rem);
-  letter-spacing: 0.55em;
-  padding-left: 0.55em;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: clamp(0.7rem, 1vw, 0.9rem);
+  letter-spacing: 0.5em;
+  padding-left: 0.5em;
   color: var(--ink);
 }
 
@@ -80,7 +81,7 @@
   gap: 0.04em;
   font-family: 'Playfair Display', Georgia, serif;
   font-weight: 900;
-  font-size: clamp(5rem, min(17vw, 34vh), 17rem);
+  font-size: clamp(5rem, min(16vw, 32vh), 16rem);
   line-height: 0.95;
   letter-spacing: 0;
   color: var(--ink);
@@ -198,7 +199,6 @@
   white-space: nowrap;
 }
 .tlBody { padding: 14px 16px 16px; }
-.tlBody .cardHeading { font-family: 'Noto Sans JP', var(--font-heading), sans-serif; letter-spacing: 0.3em; }
 
 /* top-right */
 .meta {
@@ -206,22 +206,16 @@
   z-index: 4;
   top: 2%;
   right: 34px;
+  width: min(330px, 28vw);
+  min-width: 290px;
+  padding: 14px 16px;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   gap: 6px;
   text-align: right;
-}
-.barcode {
-  width: 92px;
-  height: 22px;
-  margin-bottom: 4px;
-  background: repeating-linear-gradient(
-    90deg,
-    var(--ink) 0 2px, transparent 2px 4px,
-    var(--ink) 4px 5px, transparent 5px 9px,
-    var(--ink) 9px 12px, transparent 12px 14px
-  );
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid var(--ink);
 }
 .metaLine,
 .metaLink {
@@ -232,7 +226,7 @@
   font-weight: 500;
   color: var(--ink);
 }
-.metaLink { color: var(--text-body); transition: color 0.2s ease; }
+.metaLink { font-size: 0.74rem; color: var(--text-body); transition: color 0.2s ease; }
 .metaLink:hover { color: var(--red-primary); }
 .socialRow {
   display: flex;
@@ -424,7 +418,8 @@
 
 /* ── Medium screens: tighten corner cards ── */
 @media (max-width: 1180px) {
-  .cardTL, .news, .cardBR { min-width: 0; }
+  .cardTL, .news, .cardBR, .meta { min-width: 0; }
+  .meta { width: 250px; }
   .cardTL { width: 270px; grid-template-columns: 78px 1fr; }
   .news { width: 290px; }
   .cardBR { width: 250px; }
@@ -473,7 +468,7 @@
   .cardTL { order: 1; }
   .news   { order: 2; padding: 4px 4px 0; }
   .cardBR { order: 3; }
-  .meta   { order: 4; padding: 4px; }
+  .meta   { order: 4; width: 100%; min-width: 0; }
 }
 
 @media (max-width: 480px) {

@@ -8,7 +8,7 @@ const highlights = [
   { value: '15+', label: 'VA tools' },
 ];
 
-const ticker = ['Clark Gemongala', 'クラーク', 'Virtual Assistant', 'Tech-Savvy VA', 'Open for Work'];
+const ticker = ['Clark Gemongala', 'VA 360', 'Virtual Assistant', 'Tech-Savvy VA', 'Open for Work'];
 
 export default function Hero() {
   const coverRef = useRef(null);
@@ -74,7 +74,7 @@ export default function Hero() {
         <div className={styles.stage}>
           {/* ── Cover: giant name, cut-out portrait, script signature ── */}
           <div className={styles.cover} ref={coverRef}>
-            <p className={`${styles.kana} ${styles.r}`} style={{ '--rd': '0s' }} aria-hidden="true">クラーク</p>
+            <p className={`${styles.kana} ${styles.r}`} style={{ '--rd': '0s' }} aria-hidden="true">Virtual Assistant</p>
 
             <h1 className={styles.name} aria-label="Clark Gemongala">
               {'CLARK'.split('').map((ch, i) => (
@@ -104,7 +104,7 @@ export default function Hero() {
               <span className={styles.pill}>Open !!</span>
             </div>
             <div className={styles.tlBody}>
-              <h2 className={styles.cardHeading}>自己紹介</h2>
+              <h2 className={styles.cardHeading}>Self-Intro</h2>
               <p className={styles.italic}>
                 Hi, I&apos;m Clark! An IT graduate turned VA who turns busy workloads into smooth operations.
               </p>
@@ -113,7 +113,6 @@ export default function Hero() {
 
           {/* ── Top-right: meta + socials ── */}
           <aside className={`${styles.meta} ${styles.r}`} style={{ '--rd': '0.65s' }}>
-            <span className={styles.barcode} aria-hidden="true" />
             <p className={styles.metaLine}><MapPin size={13} aria-hidden="true" /> Philippines · BSIT Graduate</p>
             <p className={styles.metaLine}>Portfolio · 2026</p>
             <a className={styles.metaLink} href="mailto:gemongalaclark.official@gmail.com">

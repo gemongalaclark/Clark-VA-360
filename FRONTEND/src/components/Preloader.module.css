@@ -48,10 +48,11 @@
 }
 
 .kana {
-  font-family: 'Noto Sans JP', 'Poppins', sans-serif;
+  font-family: 'Playfair Display', Georgia, serif;
   font-weight: 900;
-  font-size: clamp(2.4rem, 7vw, 3.6rem);
-  letter-spacing: 0.12em;
+  font-size: clamp(2.6rem, 8vw, 4rem);
+  letter-spacing: 0.3em;
+  padding-left: 0.3em;
   color: #fff;
   line-height: 1;
   animation: kanaIn 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) 0.1s both;
