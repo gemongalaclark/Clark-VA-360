@@ -1,6 +1,8 @@
 import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
+import Preloader from './components/Preloader';
+import Cursor from './components/Cursor';
 import About from './components/About';
 import Skills from './components/Skills';
 import Projects from './components/Projects';
@@ -85,6 +87,8 @@ export default function App() {
 
   return (
     <>
+      <Preloader />
+      <Cursor />
       <Navbar />
       <main>
         <Hero />

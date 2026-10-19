@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Mail, MapPin, Download, ArrowRight, BadgeCheck, GraduationCap } from 'lucide-react';
+import { Mail, MapPin, Download, ArrowRight } from 'lucide-react';
 import styles from './Hero.module.css';
 
 const highlights = [
@@ -8,13 +8,15 @@ const highlights = [
   { value: '15+', label: 'VA tools' },
 ];
 
-export default function Hero() {
-  const photoRef = useRef(null);
+const ticker = ['Clark Gemongala', 'クラーク', 'Virtual Assistant', 'Tech-Savvy VA', 'Open for Work'];
 
-  /* Photo motion: pointer parallax (mouse devices) + scroll-linked drift/fade.
-     Both only write CSS variables (--mx, --my, --sp); all visuals live in the stylesheet. */
+export default function Hero() {
+  const coverRef = useRef(null);
+
+  /* Pointer parallax (mouse devices) + scroll-linked drift/fade.
+     JS only writes --mx / --my / --sp; every visual lives in the stylesheet. */
   useEffect(() => {
-    const el = photoRef.current;
+    const el = coverRef.current;
     if (!el) return undefined;
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined;
 
@@ -30,7 +32,6 @@ export default function Hero() {
       raf = Math.abs(tx - cx) > 0.001 || Math.abs(ty - cy) > 0.001 ? requestAnimationFrame(loop) : 0;
     };
     const kick = () => { if (!raf) raf = requestAnimationFrame(loop); };
-
     const onMove = (e) => {
       tx = (e.clientX / window.innerWidth - 0.5) * 2;
       ty = (e.clientY / window.innerHeight - 0.5) * 2;
@@ -38,7 +39,7 @@ export default function Hero() {
     };
     const onLeave = () => { tx = 0; ty = 0; kick(); };
     const onScroll = () => {
-      const p = Math.min(1, Math.max(0, window.scrollY / (hero.offsetHeight * 0.7)));
+      const p = Math.min(1, Math.max(0, window.scrollY / (hero.offsetHeight * 0.8)));
       el.style.setProperty('--sp', p.toFixed(3));
     };
 
@@ -66,59 +67,58 @@ export default function Hero() {
   };
 
   return (
-    <section id="home" className={styles.hero}>
-      {/* Decorative blobs */}
-      <div className={styles.blob1} aria-hidden="true" />
-      <div className={styles.blob2} aria-hidden="true" />
-      <div className={styles.blob3} aria-hidden="true" />
+    <>
+      <section id="home" className={styles.hero}>
+        <div className={styles.frame} aria-hidden="true" />
 
-      <div className={`container ${styles.inner}`}>
-        {/* Left content */}
-        <div className={styles.content}>
-          <div className={styles.badge}>
-            <span className={styles.badgeDot} />
-            Available for hire · Philippines
+        <div className={styles.stage}>
+          {/* ── Cover: giant name, cut-out portrait, script signature ── */}
+          <div className={styles.cover} ref={coverRef}>
+            <p className={`${styles.kana} ${styles.r}`} style={{ '--rd': '0s' }} aria-hidden="true">クラーク</p>
+
+            <h1 className={styles.name} aria-label="Clark Gemongala">
+              {'CLARK'.split('').map((ch, i) => (
+                <span key={i} className={`${styles.letter} ${styles.r}`} style={{ '--rd': `${0.08 + i * 0.07}s` }} aria-hidden="true">{ch}</span>
+              ))}
+            </h1>
+
+            <div className={styles.portraitWrap}>
+              <img
+                src="/images/clark-cutout.webp"
+                alt="Clark Gemongala – Virtual Assistant"
+                className={`${styles.portrait} ${styles.r}`}
+                style={{ '--rd': '0.25s' }}
+                width="1400"
+                height="1875"
+                fetchPriority="high"
+              />
+            </div>
+
+            <span className={styles.script} aria-hidden="true">Gemongala</span>
           </div>
 
-          <h1 className={styles.heading}>
-            Hi, I&apos;m <span className={styles.highlight}>Clark!</span>
-          </h1>
+          {/* ── Top-left: self-intro card ── */}
+          <article className={`${styles.card} ${styles.cardTL} ${styles.r}`} style={{ '--rd': '0.55s' }}>
+            <div className={styles.tlBadgeBox}>
+              <span className={styles.tlBadgeTitle}>VA<br />360</span>
+              <span className={styles.pill}>Open !!</span>
+            </div>
+            <div className={styles.tlBody}>
+              <h2 className={styles.cardHeading}>自己紹介</h2>
+              <p className={styles.italic}>
+                Hi, I&apos;m Clark! An IT graduate turned VA who turns busy workloads into smooth operations.
+              </p>
+            </div>
+          </article>
 
-          <div className={styles.roles}>
-            <span className={styles.role}>Virtual Assistant</span>
-            <span className={styles.roleDivider}>/</span>
-            <span className={styles.role}>Tech-Savvy VA</span>
-          </div>
-
-          <p className={styles.description}>
-            IT graduate turned Virtual Assistant — combining a technical background
-            with formal VA training to streamline your daily operations and scale your business.
-          </p>
-
-          <div className={styles.ctaRow}>
-            <button id="hero-hire-btn" className="btn-primary" onClick={() => scrollTo('contact')}>
-              <Mail size={18} />
-              Hire Me
-              <ArrowRight size={16} className={styles.ctaArrow} />
-            </button>
-            <button id="hero-projects-btn" className="btn-secondary" onClick={() => scrollTo('projects')}>
-              See Projects
-            </button>
-          </div>
-
-          {/* Quick proof */}
-          <ul className={styles.highlights} aria-label="Highlights">
-            {highlights.map(h => (
-              <li key={h.label} className={styles.highlightItem}>
-                <strong>{h.value}</strong>
-                <span>{h.label}</span>
-              </li>
-            ))}
-          </ul>
-
-          {/* Connect */}
-          <div className={styles.connect}>
-            <span className={styles.connectLabel}>Find me on</span>
+          {/* ── Top-right: meta + socials ── */}
+          <aside className={`${styles.meta} ${styles.r}`} style={{ '--rd': '0.65s' }}>
+            <span className={styles.barcode} aria-hidden="true" />
+            <p className={styles.metaLine}><MapPin size={13} aria-hidden="true" /> Philippines · BSIT Graduate</p>
+            <p className={styles.metaLine}>Portfolio · 2026</p>
+            <a className={styles.metaLink} href="mailto:gemongalaclark.official@gmail.com">
+              <Mail size={13} aria-hidden="true" /> gemongalaclark.official@gmail.com
+            </a>
             <div className={styles.socialRow}>
               <a
                 id="hero-linkedin"
@@ -128,7 +128,7 @@ export default function Hero() {
                 className="social-btn"
                 aria-label="LinkedIn"
               >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
                   <rect x="2" y="9" width="4" height="12" /><circle cx="4" cy="4" r="2" />
                 </svg>
@@ -141,14 +141,13 @@ export default function Hero() {
                 className="social-btn"
                 aria-label="Facebook"
               >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
                 </svg>
               </a>
               <a id="hero-email" href="mailto:gemongalaclark.official@gmail.com" className="social-btn" aria-label="Email">
-                <Mail size={18} />
+                <Mail size={16} />
               </a>
-              <span className={styles.divider} aria-hidden="true" />
               <a
                 id="hero-cv"
                 href="#"
@@ -158,56 +157,68 @@ export default function Hero() {
                 onClick={(e) => e.preventDefault()}
                 title="CV coming soon"
               >
-                <Download size={15} /> CV <em>soon</em>
+                <Download size={14} /> CV <em>soon</em>
               </a>
             </div>
+          </aside>
+
+          {/* ── Bottom-left: current focus + CTAs ── */}
+          <div className={`${styles.news} ${styles.r}`} style={{ '--rd': '0.75s' }}>
+            <h2 className={styles.newsHeading}>Available now !!</h2>
+            <p className={styles.newsBody}>
+              A Virtual Assistant pairing a technical background with formal VA training,
+              ready to streamline your daily operations and help you scale.
+            </p>
+            <div className={styles.ctaRow}>
+              <button id="hero-hire-btn" className="btn-primary" onClick={() => scrollTo('contact')}>
+                <Mail size={18} />
+                Hire Me
+                <ArrowRight size={16} className={styles.ctaArrow} />
+              </button>
+              <button id="hero-projects-btn" className="btn-secondary" onClick={() => scrollTo('projects')}>
+                See Projects
+              </button>
+            </div>
           </div>
 
-          <div className={styles.contactInfo}>
-            <a className={styles.contactItem} href="mailto:gemongalaclark.official@gmail.com">
-              <Mail size={14} /> gemongalaclark.official@gmail.com
-            </a>
-            <span className={styles.contactItem}>
-              <MapPin size={14} /> Philippines
-            </span>
-          </div>
+          {/* ── Bottom-right: the question card ── */}
+          <article className={`${styles.card} ${styles.cardBR} ${styles.r}`} style={{ '--rd': '0.85s' }}>
+            <h2 className={styles.cardHeading}>The Question Is:</h2>
+            <p className={styles.italic}>&ldquo;Why settle for a VA who can&apos;t speak tech?&rdquo;</p>
+            <p className={styles.attrib}>&mdash; Clark Gemongala &mdash;</p>
+            <ul className={styles.highlights} aria-label="Highlights">
+              {highlights.map(h => (
+                <li key={h.label} className={styles.highlightItem}>
+                  <strong>{h.value}</strong>
+                  <span>{h.label}</span>
+                </li>
+              ))}
+            </ul>
+          </article>
+
+          {/* ── Scroll rail ── */}
+          <button type="button" className={styles.rail} onClick={() => scrollTo('about')} aria-label="Scroll to About section">
+            <span className={styles.railText}>S C R O L L</span>
+            <span className={styles.railTrack}><span className={styles.railDot} /></span>
+          </button>
         </div>
+      </section>
 
-        {/* Right – photo */}
-        <div className={styles.photoWrapper} ref={photoRef}>
-          <div className={styles.glow} aria-hidden="true" />
-          <div className={styles.ring} aria-hidden="true"><span className={styles.orbitDot} /></div>
-          <div className={styles.ringInner} aria-hidden="true" />
-
-          <div className={`${styles.floatBadge} ${styles.badgeTop}`}>
-            <span className={styles.badgeIcon}><BadgeCheck size={20} /></span>
-            <div>
-              <p className={styles.badgeLabel}>VA Certified</p>
-              <p className={styles.badgeSub}>The VA Bar</p>
-            </div>
-          </div>
-
-          <div className={`${styles.floatBadge} ${styles.badgeBottom}`}>
-            <span className={`${styles.badgeIcon} ${styles.badgeIconNavy}`}><GraduationCap size={20} /></span>
-            <div>
-              <p className={styles.badgeLabel}>BSIT Graduate</p>
-              <p className={styles.badgeSub}>CIT - University</p>
-            </div>
-          </div>
-
-          <div className={styles.photoCircle}>
-            <img src="/images/clark.png" alt="Clark Gemongala – Virtual Assistant" className={styles.photo} />
-          </div>
+      {/* Marquee ribbon that follows the hero */}
+      <div className={styles.marquee} aria-hidden="true">
+        <div className={styles.marqueeTrack}>
+          {[0, 1].map(copy => (
+            <ul key={copy} className={styles.marqueeGroup}>
+              {[...ticker, ...ticker].map((t, i) => (
+                <li key={i}>
+                  <span>{t}</span>
+                  <i>✦</i>
+                </li>
+              ))}
+            </ul>
+          ))}
         </div>
       </div>
-
-      {/* Scroll indicator */}
-      <button type="button" className={styles.scrollIndicator} onClick={() => scrollTo('about')} aria-label="Scroll to About section">
-        <span className={styles.scrollMouse}>
-          <span className={styles.scrollDot} />
-        </span>
-        <span className={styles.scrollText}>Scroll down</span>
-      </button>
-    </section>
+    </>
   );
 }
