@@ -164,64 +164,38 @@
   color: var(--ink);
 }
 
-/* top-left */
-.cardTL {
-  top: 2%;
-  left: 0;
-  width: min(340px, 28vw);
-  min-width: 290px;
-  height: 176px;
-  display: grid;
-  grid-template-columns: 96px 1fr;
-}
-.tlBadgeBox {
-  position: relative;
-  border-right: 1px solid var(--ink);
-  padding: 14px 10px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 18px;
-}
-.tlBadgeTitle {
-  font-family: 'Playfair Display', Georgia, serif;
-  font-weight: 900;
-  font-size: 1.55rem;
-  line-height: 1;
-}
-.pill {
-  align-self: flex-start;
-  padding: 3px 10px;
-  border-radius: 9999px;
-  background: var(--ink);
-  color: #fff;
-  font-size: 0.66rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-.tlBody { padding: 14px 16px 16px; }
-
-/* top-right */
-.meta {
+/* top row: open (box-less) blocks anchored by a hairline rule + short red accent */
+.open {
   position: absolute;
   z-index: 4;
   top: 2%;
+  width: min(330px, 28vw);
+  min-width: 270px;
+  padding-top: 16px;
+  color: var(--ink);
+}
+.open::before,
+.open::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  height: 1px;
+}
+.open::before { left: 0; right: 0; background: var(--rule); }
+.open::after  { width: 44px; height: 2px; top: -0.5px; background: var(--red-primary); }
+
+.cardTL { left: 0; }
+.cardTL::after { left: 0; }
+
+.meta {
   right: 34px;
-  width: min(340px, 28vw);
-  min-width: 290px;
-  height: 176px;
-  padding: 14px 16px;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  justify-content: center;
   gap: 6px;
   text-align: right;
-  background: rgba(255, 255, 255, 0.94);
-  border: 1px solid var(--ink);
 }
+.meta::after { right: 0; }
 .metaLine,
 .metaLink {
   display: inline-flex;
@@ -387,8 +361,8 @@
 /* ── Medium screens: tighten corner cards ── */
 @media (max-width: 1180px) {
   .cardTL, .news, .cardBR, .meta { min-width: 0; }
-  .meta { width: 270px; height: 190px; }
-  .cardTL { width: 270px; height: 190px; grid-template-columns: 78px 1fr; }
+  .meta { width: 260px; }
+  .cardTL { width: 260px; }
   .news { width: 290px; }
   .cardBR { width: 250px; }
   .cover { --nt: max(25%, 204px); }
@@ -421,6 +395,7 @@
   .script { font-size: clamp(2.4rem, 13vw, 4.6rem); top: 42%; left: 50%; }
 
   .card,
+  .open,
   .meta,
   .news,
   .rail { position: static; }
@@ -430,8 +405,10 @@
     min-width: 0;
     height: auto;
   }
+  .open { min-width: 0; }
   .cardBR { padding: 16px 18px 14px; }
   .meta { align-items: flex-start; text-align: left; }
+  .meta::after { right: auto; left: 0; }
   .socialRow { justify-content: flex-start; }
   .rail { display: none; }
 
@@ -439,13 +416,11 @@
   .cardTL { order: 1; }
   .news   { order: 2; padding: 4px 4px 0; }
   .cardBR { order: 3; }
-  .meta   { order: 4; width: 100%; min-width: 0; height: auto; justify-content: flex-start; }
+  .meta   { order: 4; width: 100%; min-width: 0; height: auto; }
 }
 
 @media (max-width: 480px) {
   .kana { letter-spacing: 0.4em; padding-left: 0.4em; }
-  .cardTL { grid-template-columns: 82px 1fr; }
-  .tlBadgeTitle { font-size: 1.3rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -96,21 +96,15 @@ export default function Hero() {
           </div>
 
           {/* ── Top-left: self-intro card ── */}
-          <article className={`${styles.card} ${styles.cardTL} ${styles.r}`} style={{ '--rd': '0.55s' }}>
-            <div className={styles.tlBadgeBox}>
-              <span className={styles.tlBadgeTitle}>VA<br />360</span>
-              <span className={styles.pill}>Open !!</span>
-            </div>
-            <div className={styles.tlBody}>
-              <h2 className={styles.cardHeading}>Introduction</h2>
-              <p className={styles.italic}>
-                Hi, I&apos;m Clark! An IT graduate turned VA who turns busy workloads into smooth operations.
-              </p>
-            </div>
+          <article className={`${styles.open} ${styles.cardTL} ${styles.r}`} style={{ '--rd': '0.55s' }}>
+            <h2 className={styles.cardHeading}>Introduction</h2>
+            <p className={styles.italic}>
+              Hi, I&apos;m Clark! An IT graduate turned VA who turns busy workloads into smooth operations.
+            </p>
           </article>
 
           {/* ── Top-right: meta + socials ── */}
-          <aside className={`${styles.meta} ${styles.r}`} style={{ '--rd': '0.65s' }}>
+          <aside className={`${styles.open} ${styles.meta} ${styles.r}`} style={{ '--rd': '0.65s' }}>
             <p className={styles.metaLine}><MapPin size={13} aria-hidden="true" /> Philippines · BSIT Graduate</p>
             <p className={styles.metaLine}>Portfolio · 2026</p>
             <a className={styles.metaLink} href="mailto:gemongalaclark.official@gmail.com">
