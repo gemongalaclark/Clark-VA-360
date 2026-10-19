@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Check, RotateCcw, ChevronDown, Loader, Search, CalendarClock } from 'lucide-react';
+import { Check, RotateCcw, ChevronDown, Loader, Search, CalendarClock, Pencil, Save } from 'lucide-react';
 import { supabase } from '../../../../lib/supabase';
 import StatusBadge, { UrgentBadge, getInitials, getName } from '../StatusBadge';
 import SubmissionTable from '../SubmissionTable';
-import { deadlineInfo, formatDeadline } from '../taskUtils';
+import { deadlineInfo, formatDeadline, isActionable } from '../taskUtils';
 import { fetchRoomTasks } from '../taskApi';
 import styles from '../SharedPages.module.css';
 
@@ -15,6 +15,17 @@ const FILTERS = [
   { key: 'rejected',  label: 'Revision',  activeClass: styles.filterRejectedActive },
 ];
 
+const TITLE_MAX = 120;
+const DESC_MAX = 1500;
+
+/* ISO -> value for <input type="datetime-local"> in the viewer's timezone */
+const toLocalInput = (iso) => {
+  if (!iso) return '';
+  const d = new Date(iso);
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  return d.toISOString().slice(0, 16);
+};
+
 export default function ReviewPage({ room }) {
   const [tasks, setTasks] = useState([]);
   const [filter, setFilter] = useState('all');
@@ -25,6 +36,10 @@ export default function ReviewPage({ room }) {
   const [notes, setNotes] = useState('');
   const [noteError, setNoteError] = useState('');
   const [loadError, setLoadError] = useState('');
+  const [editingId, setEditingId] = useState(null);
+  const [draft, setDraft] = useState({ title: '', description: '', hasDeadline: false, deadline: '' });
+  const [editError, setEditError] = useState('');
+  const [saving, setSaving] = useState(false);
 
   const load = useCallback(async (silent = false) => {
     if (!room || !supabase) return;
@@ -63,6 +78,37 @@ export default function ReviewPage({ room }) {
     setExpandedId(null);
     setNotes('');
     setReviewingId(null);
+  };
+
+  const startEdit = (task) => {
+    setExpandedId(null);
+    setEditError('');
+    setDraft({
+      title: task.title,
+      description: task.description ?? '',
+      hasDeadline: !!task.deadline,
+      deadline: toLocalInput(task.deadline),
+    });
+    setEditingId(task.id);
+  };
+
+  const handleSaveEdit = async (task) => {
+    const title = draft.title.trim();
+    if (!title) { setEditError('Please enter a task title.'); return; }
+    if (draft.hasDeadline && !draft.deadline) { setEditError('Pick a deadline or turn the deadline option off.'); return; }
+    const deadline = draft.hasDeadline ? new Date(draft.deadline).toISOString() : null;
+    const deadlineChanged = deadline !== (task.deadline ? new Date(task.deadline).toISOString() : null);
+    if (deadline && deadlineChanged && new Date(deadline).getTime() < Date.now()) {
+      setEditError('The deadline must be in the future.');
+      return;
+    }
+    setSaving(true);
+    const changes = { title, description: draft.description.trim() || null, deadline };
+    const { error } = await supabase.from('tasks').update(changes).eq('id', task.id);
+    setSaving(false);
+    if (error) { setEditError(error.message); return; }
+    setTasks(prev => prev.map(t => t.id === task.id ? { ...t, ...changes } : t));
+    setEditingId(null);
   };
 
   const formatDate = (iso) => new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -193,6 +239,16 @@ export default function ReviewPage({ room }) {
                     {info?.urgent && <UrgentBadge overdue={info.overdue} />}
                     <StatusBadge status={task.status} />
 
+                    {isActionable(task) && (
+                      <button
+                        className={styles.cancelBtn}
+                        aria-expanded={editingId === task.id}
+                        onClick={() => editingId === task.id ? setEditingId(null) : startEdit(task)}
+                      >
+                        <Pencil size={13} /> Edit
+                      </button>
+                    )}
+
                     {task.status === 'submitted' && (
                       <button
                         className={styles.reviewToggle}
@@ -204,6 +260,58 @@ export default function ReviewPage({ room }) {
                       </button>
                     )}
                   </div>
+
+                  {editingId === task.id && (
+                    <div className={styles.reviewPanel}>
+                      <label className={styles.reviewLabel} htmlFor={`edit-title-${task.id}`}>Task title *</label>
+                      <input
+                        id={`edit-title-${task.id}`}
+                        className={styles.input}
+                        value={draft.title}
+                        maxLength={TITLE_MAX}
+                        onChange={e => { setDraft(d => ({ ...d, title: e.target.value })); setEditError(''); }}
+                        autoFocus
+                      />
+                      <label className={styles.reviewLabel} htmlFor={`edit-desc-${task.id}`}>Task description</label>
+                      <textarea
+                        id={`edit-desc-${task.id}`}
+                        className={styles.reviewTextarea}
+                        rows={4}
+                        value={draft.description}
+                        maxLength={DESC_MAX}
+                        onChange={e => setDraft(d => ({ ...d, description: e.target.value }))}
+                      />
+                      <div className={styles.deadlineBox}>
+                        <label className={styles.switchRow}>
+                          <span className={styles.switch}>
+                            <input
+                              type="checkbox"
+                              checked={draft.hasDeadline}
+                              onChange={e => setDraft(d => ({ ...d, hasDeadline: e.target.checked }))}
+                            />
+                            <span className={styles.switchTrack} />
+                          </span>
+                          <span><strong>Set a deadline</strong></span>
+                        </label>
+                        {draft.hasDeadline && (
+                          <input
+                            type="datetime-local"
+                            className={`${styles.input} ${styles.deadlineInput}`}
+                            value={draft.deadline}
+                            onChange={e => { setDraft(d => ({ ...d, deadline: e.target.value })); setEditError(''); }}
+                            aria-label="Deadline"
+                          />
+                        )}
+                      </div>
+                      {editError && <p className={styles.formError} role="alert">{editError}</p>}
+                      <div className={styles.reviewBtnRow}>
+                        <button className={styles.cancelBtn} onClick={() => setEditingId(null)} disabled={saving}>Cancel</button>
+                        <button className={styles.acceptBtn} onClick={() => handleSaveEdit(task)} disabled={saving}>
+                          {saving ? <Loader size={14} className={styles.spin} /> : <Save size={14} />} Save changes
+                        </button>
+                      </div>
+                    </div>
+                  )}
 
                   {isExpanded && (
                     <div className={styles.reviewPanel}>

@@ -801,6 +801,7 @@
   font-size: 0.82rem; font-weight: 600; color: #6c757d;
 }
 .cancelBtn:hover { color: #1a1a2e; background: #f1f3f5; }
+.taskRow .cancelBtn { display: inline-flex; align-items: center; gap: 6px; }
 .reviewerNote { border-top: 1px dashed rgba(203,37,37,0.15); background: #fffafa; }
 
 /* Members */
