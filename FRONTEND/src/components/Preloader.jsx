@@ -87,7 +87,7 @@ export default function Preloader() {
       </div>
 
       <div className={styles.center} aria-hidden="true">
-        <p className={styles.kana}>CLARK</p>
+        <p className={styles.kana}>CLARK VA 360</p>
         <span className={styles.rule} />
         <div className={styles.meta}>
           <span className={styles.label}>Clark Gemongala</span>

@@ -1,7 +1,7 @@
 /* ============================================================
    HERO – editorial cover layout
    Giant serif name sits BEHIND a cut-out portrait; corner cards frame it;
-   a thin inset border, script signature, scroll rail and a marquee ribbon complete it.
+   a thin inset border, script signature, and scroll rail complete it.
    ============================================================ */
 
 .hero {
@@ -50,6 +50,8 @@
 /* ── Cover ── */
 .cover {
   --mx: 0; --my: 0; --sp: 0;
+  --nf: clamp(5rem, min(16vw, 29vh), 15rem);   /* name font-size */
+  --nt: max(25%, 192px);                       /* name top: always below the card row */
   position: absolute;
   inset: 0;
   opacity: calc(1 - var(--sp) * 0.65);
@@ -58,7 +60,7 @@
 
 .kana {
   position: absolute;
-  top: 3%;
+  top: 2%;
   left: 0;
   right: 0;
   text-align: center;
@@ -73,7 +75,7 @@
 
 .name {
   position: absolute;
-  top: 5%;
+  top: var(--nt);
   left: 0;
   right: 0;
   display: flex;
@@ -81,7 +83,7 @@
   gap: 0.04em;
   font-family: 'Playfair Display', Georgia, serif;
   font-weight: 900;
-  font-size: clamp(5rem, min(16vw, 32vh), 16rem);
+  font-size: var(--nf);
   line-height: 0.95;
   letter-spacing: 0;
   color: var(--ink);
@@ -116,7 +118,7 @@
 .script {
   position: absolute;
   left: 31%;
-  top: 37%;
+  top: calc(var(--nt) + var(--nf) * 0.8);
   z-index: 3;
   font-family: 'Pinyon Script', 'Snell Roundhand', cursive;
   font-size: clamp(2.6rem, 6.4vw, 5.8rem);
@@ -166,8 +168,9 @@
 .cardTL {
   top: 2%;
   left: 0;
-  width: min(330px, 28vw);
+  width: min(340px, 28vw);
   min-width: 290px;
+  height: 176px;
   display: grid;
   grid-template-columns: 96px 1fr;
 }
@@ -206,12 +209,14 @@
   z-index: 4;
   top: 2%;
   right: 34px;
-  width: min(330px, 28vw);
+  width: min(340px, 28vw);
   min-width: 290px;
+  height: 176px;
   padding: 14px 16px;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
+  justify-content: center;
   gap: 6px;
   text-align: right;
   background: rgba(255, 255, 255, 0.94);
@@ -379,50 +384,15 @@
   border-radius: 6px;
 }
 
-/* ── Marquee ribbon ── */
-.marquee {
-  position: relative;
-  z-index: 2;
-  background: #111118;
-  color: #fff;
-  overflow: hidden;
-  padding: 16px 0;
-  border-top: 1px solid #111118;
-}
-.marqueeTrack {
-  display: flex;
-  width: max-content;
-  animation: marquee 34s linear infinite;
-}
-.marquee:hover .marqueeTrack { animation-play-state: paused; }
-.marqueeGroup {
-  display: flex;
-  align-items: center;
-  list-style: none;
-  flex-shrink: 0;
-}
-.marqueeGroup li {
-  display: inline-flex;
-  align-items: center;
-  gap: 28px;
-  padding-right: 28px;
-  font-family: 'Playfair Display', Georgia, serif;
-  font-size: clamp(1.1rem, 2.2vw, 1.7rem);
-  font-weight: 500;
-  white-space: nowrap;
-}
-.marqueeGroup i { font-style: normal; color: var(--red-light); font-size: 0.8em; }
-@keyframes marquee {
-  to { transform: translateX(-50%); }
-}
-
 /* ── Medium screens: tighten corner cards ── */
 @media (max-width: 1180px) {
   .cardTL, .news, .cardBR, .meta { min-width: 0; }
-  .meta { width: 250px; }
-  .cardTL { width: 270px; grid-template-columns: 78px 1fr; }
+  .meta { width: 270px; height: 190px; }
+  .cardTL { width: 270px; height: 190px; grid-template-columns: 78px 1fr; }
   .news { width: 290px; }
   .cardBR { width: 250px; }
+  .cover { --nt: max(25%, 204px); }
+  .ctaRow :global(.btn-primary), .ctaRow :global(.btn-secondary) { padding: 11px 20px; font-size: 0.85rem; }
   .italic { font-size: 0.85rem; }
   .highlightItem { padding: 0 8px; }
 }
@@ -458,6 +428,7 @@
   .cardTL, .cardBR, .news {
     width: 100%;
     min-width: 0;
+    height: auto;
   }
   .cardBR { padding: 16px 18px 14px; }
   .meta { align-items: flex-start; text-align: left; }
@@ -468,7 +439,7 @@
   .cardTL { order: 1; }
   .news   { order: 2; padding: 4px 4px 0; }
   .cardBR { order: 3; }
-  .meta   { order: 4; width: 100%; min-width: 0; }
+  .meta   { order: 4; width: 100%; min-width: 0; height: auto; justify-content: flex-start; }
 }
 
 @media (max-width: 480px) {
@@ -483,5 +454,5 @@
   .cover { translate: none; opacity: 1; }
   .name, .portraitWrap { translate: none; }
   .script { translate: -50% 0; }
-  .railDot, .marqueeTrack { animation: none; }
+  .railDot { animation: none; }
 }

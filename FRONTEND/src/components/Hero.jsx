@@ -8,7 +8,6 @@ const highlights = [
   { value: '15+', label: 'VA tools' },
 ];
 
-const ticker = ['Clark Gemongala', 'VA 360', 'Virtual Assistant', 'Tech-Savvy VA', 'Open for Work'];
 
 export default function Hero() {
   const coverRef = useRef(null);
@@ -67,8 +66,7 @@ export default function Hero() {
   };
 
   return (
-    <>
-      <section id="home" className={styles.hero}>
+    <section id="home" className={styles.hero}>
         <div className={styles.frame} aria-hidden="true" />
 
         <div className={styles.stage}>
@@ -201,23 +199,6 @@ export default function Hero() {
             <span className={styles.railTrack}><span className={styles.railDot} /></span>
           </button>
         </div>
-      </section>
-
-      {/* Marquee ribbon that follows the hero */}
-      <div className={styles.marquee} aria-hidden="true">
-        <div className={styles.marqueeTrack}>
-          {[0, 1].map(copy => (
-            <ul key={copy} className={styles.marqueeGroup}>
-              {[...ticker, ...ticker].map((t, i) => (
-                <li key={i}>
-                  <span>{t}</span>
-                  <i>✦</i>
-                </li>
-              ))}
-            </ul>
-          ))}
-        </div>
-      </div>
-    </>
+    </section>
   );
 }
