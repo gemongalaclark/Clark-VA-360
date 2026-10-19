@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Bell, Search, ChevronDown, LayoutDashboard, ClipboardCheck, Users, ListTodo, Check, Pencil, Clock } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import styles from './TopBar.module.css';
+import Avatar from '../profile/Avatar';
 
 const PAGE_TITLES = {
   overview: 'Overview',
@@ -23,7 +24,6 @@ export default function TopBar({ currentTab, profile, session, room }) {
   const notifsRef = useRef(null);
   const profileRef = useRef(null);
 
-  const initials = profile ? `${profile.first_name[0]}${profile.last_name[0]}`.toUpperCase() : 'U';
   const unread = notifications.filter(n => !n.read).length;
   const recent = notifications.slice(0, NOTIF_VISIBLE);
   const archived = notifications.slice(NOTIF_VISIBLE);
@@ -157,7 +157,7 @@ export default function TopBar({ currentTab, profile, session, room }) {
         {/* Profile */}
         <div className={styles.profileWrap} ref={profileRef}>
           <button className={styles.profileBtn} onClick={() => setShowProfile(v => !v)}>
-            <div className={styles.avatar}>{initials}</div>
+            <Avatar profile={profile} className={styles.avatar} />
             <span className={styles.profileName}>{profile?.first_name ?? 'User'} {profile?.last_name ?? ''}</span>
             <ChevronDown size={14} />
           </button>
@@ -165,7 +165,7 @@ export default function TopBar({ currentTab, profile, session, room }) {
           {showProfile && (
             <div className={styles.profileDropdown}>
               <div className={styles.profileInfo}>
-                <div className={styles.profileAvatar}>{initials}</div>
+                <Avatar profile={profile} className={styles.profileAvatar} />
                 <div>
                   <p className={styles.profileFullName}>{profile?.first_name} {profile?.last_name}</p>
                   <p className={styles.profileEmail}>{profile?.email}</p>

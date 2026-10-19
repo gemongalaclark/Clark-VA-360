@@ -3,8 +3,9 @@ import { Users, ClipboardCheck, CheckCircle, Clock, TrendingUp, Activity, ArrowR
 import { supabase } from '../../../../lib/supabase';
 import ActivityChart from '../ActivityChart';
 import { fetchRoomTasks } from '../taskApi';
-import { getInitials, getName, greeting } from '../StatusBadge';
+import { getName, greeting } from '../StatusBadge';
 import styles from '../SharedPages.module.css';
+import Avatar from '../../profile/Avatar';
 
 const CHART_SERIES = [
   { key: 'submitted', label: 'Assigned', color: '#e59a9a' },
@@ -158,7 +159,7 @@ export default function OverviewPage({ room, profile, onNavigate }) {
               {employees.map((emp, i) => (
                 <div key={i} className={styles.empRow}>
                   <div className={`${styles.empRank} ${i < 3 ? styles[`rank${i + 1}`] : ''}`}>{i + 1}</div>
-                  <div className={styles.miniAvatar}>{getInitials(emp.profile)}</div>
+                  <Avatar profile={emp.profile} className={styles.miniAvatar} />
                   <div className={styles.empInfo}>
                     <span className={styles.empName}>{getName(emp.profile)}</span>
                     <div className={styles.rateTrack} aria-hidden="true">

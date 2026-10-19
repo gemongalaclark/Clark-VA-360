@@ -1,21 +1,22 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
-/* Round avatar: the profile picture when there is one, otherwise gradient initials.
-   `className` supplies the size/typography (callers already style their own avatar circle). */
-export default function Avatar({ profile, className = '' }) {
+/* Round avatar: the profile picture when there is one, otherwise the initials.
+   Renders the caller's own avatar element (so its size/gradient/tooltip styles keep working)
+   and fills it with the picture. Extra props (e.g. data-tip) pass through to that element. */
+export default function Avatar({ profile, className = '', ...rest }) {
   const [broken, setBroken] = useState(false);
-  const initials = profile ? `${profile.first_name?.[0] ?? ''}${profile.last_name?.[0] ?? ''}`.toUpperCase() : '?';
+  const url = profile?.avatar_url;
+  useEffect(() => { setBroken(false); }, [url]);
 
-  if (profile?.avatar_url && !broken) {
-    return (
-      <img
-        src={profile.avatar_url}
-        alt=""
-        className={className}
-        style={{ objectFit: 'cover', background: '#e9ecef' }}
-        onError={() => setBroken(true)}
-      />
-    );
-  }
-  return <div className={className}>{initials}</div>;
+  const initials = profile ? `${profile.first_name?.[0] ?? ''}${profile.last_name?.[0] ?? ''}`.toUpperCase() : '?';
+  const showImg = !!url && !broken;
+
+  return (
+    <div className={className} {...rest} style={showImg ? { overflow: 'hidden', padding: 0, ...rest.style } : rest.style}>
+      {showImg
+        ? <img src={url} alt="" onError={() => setBroken(true)}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', borderRadius: 'inherit' }} />
+        : initials}
+    </div>
+  );
 }

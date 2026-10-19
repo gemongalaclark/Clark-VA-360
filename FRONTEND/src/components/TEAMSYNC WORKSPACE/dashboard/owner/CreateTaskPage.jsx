@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Send, Loader, CheckCircle2, UserPlus, CalendarClock, Paperclip, Link2, FileText, X, Plus, Upload } from 'lucide-react';
 import { supabase } from '../../../../lib/supabase';
-import StatusBadge, { getInitials, getName } from '../StatusBadge';
+import StatusBadge, { getName } from '../StatusBadge';
 import { formatDeadline } from '../taskUtils';
 import { fetchRoomTasks } from '../taskApi';
 import {
@@ -9,6 +9,7 @@ import {
   formatBytes, normalizeUrl, uploadAttachments, removeUploaded,
 } from '../attachmentApi';
 import styles from '../SharedPages.module.css';
+import Avatar from '../../profile/Avatar';
 
 const TITLE_MAX = 120;
 const DESC_MAX = 1500;
@@ -279,7 +280,7 @@ export default function CreateTaskPage({ room, profile, onNavigate }) {
               <ul className={styles.recentList}>
                 {shown.map(t => (
                   <li key={t.id} className={styles.recentItem}>
-                    <div className={styles.miniAvatar}>{getInitials(t.profiles)}</div>
+                    <Avatar profile={t.profiles} className={styles.miniAvatar} />
                     <div className={styles.recentBody}>
                       <p className={styles.recentTitle}>{t.title}</p>
                       <p className={styles.recentMeta}>

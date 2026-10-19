@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { LayoutDashboard, ClipboardCheck, ClipboardPlus, Users, Settings, ListTodo, Hash, LogOut, ChevronLeft, ChevronRight, ArrowLeftRight, Crown, User, Copy, Check } from 'lucide-react';
 import styles from './Sidebar.module.css';
+import Avatar from '../profile/Avatar';
 
 const ownerNav = [
   { id: 'overview',  label: 'Overview',  icon: <LayoutDashboard size={18} /> },
@@ -19,7 +20,6 @@ export default function Sidebar({ role, currentTab, setTab, room, profile, onSig
   const [copied, setCopied] = useState(false);
   const isOwner = role === 'owner';
   const nav = isOwner ? ownerNav : employeeNav;
-  const initials = profile ? `${profile.first_name[0]}${profile.last_name[0]}`.toUpperCase() : 'U';
   const fullName = profile ? `${profile.first_name} ${profile.last_name}` : 'User';
   const roleLabel = isOwner ? 'Owner' : 'Employee';
   const RoleIcon = isOwner ? Crown : User;
@@ -138,9 +138,7 @@ export default function Sidebar({ role, currentTab, setTab, room, profile, onSig
 
       {/* ── User + sign out ────────────────────────────────── */}
       <div className={styles.userArea}>
-        <div className={styles.avatar} data-tip={collapsed ? `${fullName} · ${roleLabel}` : undefined}>
-          {initials}
-        </div>
+        <Avatar profile={profile} className={styles.avatar} data-tip={collapsed ? `${fullName} · ${roleLabel}` : undefined} />
         {!collapsed && (
           <div className={styles.userInfo}>
             <span className={styles.userName}>{fullName}</span>

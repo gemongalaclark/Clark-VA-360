@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Check, RotateCcw, ChevronDown, Loader, Search, CalendarClock, Pencil, Save, ChevronLeft, ChevronRight } from 'lucide-react';
 import { supabase } from '../../../../lib/supabase';
-import StatusBadge, { UrgentBadge, getInitials, getName } from '../StatusBadge';
+import StatusBadge, { UrgentBadge, getName } from '../StatusBadge';
 import SubmissionTable from '../SubmissionTable';
 import AttachmentList from '../AttachmentList';
 import { deadlineInfo, formatDeadline, isActionable } from '../taskUtils';
 import { fetchRoomTasks } from '../taskApi';
 import styles from '../SharedPages.module.css';
+import Avatar from '../../profile/Avatar';
 
 const PAGE_SIZE = 5;
 
@@ -231,7 +232,7 @@ export default function ReviewPage({ room }) {
                 >
                   <div className={styles.taskRow}>
                     <div className={styles.taskEmployee}>
-                      <div className={styles.miniAvatar}>{getInitials(task.profiles)}</div>
+                      <Avatar profile={task.profiles} className={styles.miniAvatar} />
                       <span className={styles.empNameSm}>{getName(task.profiles)}</span>
                     </div>
 
