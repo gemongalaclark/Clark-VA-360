@@ -745,3 +745,21 @@
   background: var(--red-primary); color: #fff; font-weight: 700; font-size: 0.9rem; text-decoration: none;
 }
 .docsOpen:hover { background: #a81d1d; }
+
+/* Status badge on non-featured cards (e.g. TeamSync "Live Project") */
+.liveRibbon {
+  position: absolute; top: 14px; left: 14px;
+  background: linear-gradient(135deg, #1a1a2e, #2d2d5e);
+  box-shadow: 0 2px 8px rgba(26, 26, 46, 0.3);
+}
+.liveDot {
+  width: 7px; height: 7px; border-radius: 50%; background: #4ade80;
+  box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7);
+  animation: liveDotPulse 1.8s ease-out infinite;
+}
+@keyframes liveDotPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.6); }
+  70%  { box-shadow: 0 0 0 7px rgba(74, 222, 128, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); }
+}
+@media (prefers-reduced-motion: reduce) { .liveDot { animation: none; } }

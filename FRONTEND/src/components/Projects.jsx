@@ -28,6 +28,7 @@ const projects = [
     placeholder: false,
     featured: false,
     inDevelopment: false,
+    badge: 'Full-System Project',
   },
   {
     id: 3,
@@ -199,6 +200,12 @@ function ProjectCard({ project, onDocs }) {
         <div className={styles.featuredRibbon}>
           <Sparkles size={12} />
           <span>Featured AI Project</span>
+        </div>
+      )}
+      {project.badge && !project.featured && (
+        <div className={`${styles.featuredRibbon} ${styles.liveRibbon}`}>
+          <span className={styles.liveDot} aria-hidden="true" />
+          <span>{project.badge}</span>
         </div>
       )}
 
