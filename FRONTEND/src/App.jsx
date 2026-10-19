@@ -9,7 +9,6 @@ import Footer from './components/Footer';
 import GoogleCalendarAutoScheduler from './components/GOOGLE CALENDAR AUTO SCHEDULER/GoogleCalendarAutoScheduler';
 import TeamSyncWorkspace from './components/TEAMSYNC WORKSPACE/TeamSyncWorkspace';
 import OnboardBase from './components/ONBOARDBASE/OnboardBase';
-import QuoteVelo from './components/QUOTEVELO AI/QuoteVelo';
 import './App.css';
 
 function checkRoute() {
@@ -28,7 +27,6 @@ function checkRoute() {
     hash.includes('teamsync')
   ) return 'teamsync';
   if (path.startsWith('/onboardbase') || hash.includes('onboardbase')) return 'onboardbase';
-  if (path.startsWith('/quotevelo') || hash.includes('quotevelo')) return 'quotevelo';
   return 'portfolio';
 }
 
@@ -82,12 +80,6 @@ export default function App() {
   if (route === 'onboardbase') {
     return (
       <OnboardBase onBackToPortfolio={goToPortfolio} />
-    );
-  }
-
-  if (route === 'quotevelo') {
-    return (
-      <QuoteVelo onBackToPortfolio={goToPortfolio} />
     );
   }
 
