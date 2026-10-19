@@ -1045,3 +1045,49 @@
   .urgentSummary { width: 100%; }
 }
 @media (prefers-reduced-motion: reduce) { .switchTrack, .switchTrack::after, .submitTaskBtn { transition: none; } }
+
+/* ── Task attachments ───────────────────────────────────── */
+.dropZone {
+  display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center;
+  padding: 18px 16px; border: 1.5px dashed rgba(203,37,37,0.3); border-radius: 14px;
+  background: #fffafa; color: #cb2525; transition: background 0.15s, border-color 0.15s;
+}
+.dropZone p { font-size: 0.85rem; color: #1a1a2e; margin: 2px 0 0; }
+.dropZone > span { font-size: 0.75rem; color: #8a93a0; }
+.dropZoneActive { background: #fff0f0; border-color: #cb2525; }
+.dropActions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; justify-content: center; }
+.attachAddBtn {
+  display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px;
+  border-radius: 10px; border: 1.5px solid rgba(203,37,37,0.25); background: #fff;
+  color: #cb2525; font-size: 0.8rem; font-weight: 600; cursor: pointer; white-space: nowrap;
+}
+.attachAddBtn:hover { background: #fff1f1; border-color: #cb2525; }
+.linkAddRow { display: flex; gap: 8px; margin-top: 10px; }
+.linkAddRow .input { flex: 1; min-width: 0; }
+
+.attachEditList, .attachList { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.attachEditItem {
+  display: flex; flex-direction: column; gap: 8px; padding: 10px 12px;
+  border: 1px solid rgba(203,37,37,0.12); border-radius: 12px; background: #fff;
+}
+.attachEditTop { display: flex; align-items: center; gap: 10px; }
+.attachIcon {
+  width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0; background: rgba(203,37,37,0.08);
+  color: #cb2525; display: flex; align-items: center; justify-content: center;
+}
+.attachBody { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.attachFileName { font-size: 0.82rem; font-weight: 600; color: #1a1a2e; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.attachSize { font-size: 0.72rem; color: #8a93a0; font-weight: 500; margin-left: 6px; }
+.attachEditTop .attachSize { margin-left: 0; }
+
+.attachBlock { margin: 4px 0 8px; padding: 10px 12px; border-radius: 12px; background: #fdf7f7; border: 1px solid rgba(203,37,37,0.08); }
+.attachHeading { display: flex; align-items: center; gap: 6px; font-size: 0.74rem; font-weight: 700; color: #6c757d; text-transform: uppercase; letter-spacing: 0.04em; margin: 0; }
+.attachList { margin-top: 8px; }
+.attachItem { display: flex; align-items: flex-start; gap: 10px; }
+.attachName {
+  display: inline-flex; align-items: center; gap: 5px; max-width: 100%; padding: 0; border: none; background: none;
+  font: inherit; font-size: 0.82rem; font-weight: 600; color: #cb2525; cursor: pointer; text-align: left; word-break: break-all;
+}
+.attachName:hover { text-decoration: underline; }
+.attachNote { margin: 2px 0 0; font-size: 0.78rem; color: #6c757d; line-height: 1.45; }
+@media (max-width: 520px) { .linkAddRow { flex-direction: column; } }

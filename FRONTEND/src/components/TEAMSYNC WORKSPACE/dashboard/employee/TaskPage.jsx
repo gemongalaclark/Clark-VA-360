@@ -4,6 +4,7 @@ import { supabase } from '../../../../lib/supabase';
 import StatusBadge, { UrgentBadge } from '../StatusBadge';
 import SubmissionTable from '../SubmissionTable';
 import SubmitTaskModal from './SubmitTaskModal';
+import AttachmentList from '../AttachmentList';
 import { sortForEmployee, deadlineInfo, formatDeadline, isActionable } from '../taskUtils';
 import styles from '../SharedPages.module.css';
 
@@ -138,6 +139,7 @@ export default function TaskPage({ room, profile }) {
                 </div>
 
                 {task.description && <p className={styles.myTaskDesc}>{task.description}</p>}
+                <AttachmentList items={task.attachments} />
 
                 <div className={styles.myTaskFoot}>
                   <div className={styles.metaRow}>

@@ -3,6 +3,7 @@ import { Check, RotateCcw, ChevronDown, Loader, Search, CalendarClock, Pencil, S
 import { supabase } from '../../../../lib/supabase';
 import StatusBadge, { UrgentBadge, getInitials, getName } from '../StatusBadge';
 import SubmissionTable from '../SubmissionTable';
+import AttachmentList from '../AttachmentList';
 import { deadlineInfo, formatDeadline, isActionable } from '../taskUtils';
 import { fetchRoomTasks } from '../taskApi';
 import styles from '../SharedPages.module.css';
@@ -330,6 +331,7 @@ export default function ReviewPage({ room }) {
                           {task.description}
                         </div>
                       )}
+                      <AttachmentList items={task.attachments} />
                       <span className={styles.fullDescLabel}>Submission</span>
                       <SubmissionTable rows={task.submission} />
                       <label className={styles.reviewLabel} htmlFor={`notes-${task.id}`}>
