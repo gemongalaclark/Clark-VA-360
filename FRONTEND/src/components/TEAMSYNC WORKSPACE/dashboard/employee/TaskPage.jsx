@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Send, MessageSquareQuote, CalendarClock, ChevronDown, CheckCircle2, PartyPopper, Inbox } from 'lucide-react';
 import { supabase } from '../../../../lib/supabase';
-import StatusBadge, { UrgentBadge } from '../StatusBadge';
+import StatusBadge, { UrgentBadge, getName } from '../StatusBadge';
 import SubmissionTable from '../SubmissionTable';
 import SubmitTaskModal from './SubmitTaskModal';
 import AttachmentList from '../AttachmentList';
+import Avatar from '../../profile/Avatar';
 import { sortForEmployee, deadlineInfo, formatDeadline, isActionable } from '../taskUtils';
 import styles from '../SharedPages.module.css';
 
@@ -24,6 +25,7 @@ export default function TaskPage({ room, profile }) {
   const [submitting, setSubmitting] = useState(null);   // task being submitted
   const [openId, setOpenId] = useState(null);           // task whose submission is expanded
   const [now, setNow] = useState(Date.now());
+  const [givers, setGivers] = useState({});               // assigned_by id -> profile
   const userId = profile?.id;
 
   const load = useCallback(async (silent = false) => {
@@ -35,6 +37,13 @@ export default function TaskPage({ room, profile }) {
       .eq('room_id', room.id)
       .eq('employee_id', userId);
     setTasks(data ?? []);
+
+    /* Who gave each task: look the assigners' profiles up separately (tasks has two FKs to profiles) */
+    const ids = [...new Set((data ?? []).map(t => t.assigned_by).filter(Boolean))];
+    if (ids.length) {
+      const { data: profs } = await supabase.from('profiles').select('*').in('id', ids);
+      setGivers(Object.fromEntries((profs ?? []).map(p => [p.id, p])));
+    }
     setLoading(false);
   }, [room, userId]);
 
@@ -157,6 +166,12 @@ export default function TaskPage({ room, profile }) {
 
                 <div className={styles.myTaskFoot}>
                   <div className={styles.metaRow}>
+                    {task.assigned_by && (
+                      <span className={styles.assignerChip} title="Assigned by">
+                        <Avatar profile={givers[task.assigned_by]} className={styles.assignerAvatar} />
+                        <span>Assigned by <strong>{givers[task.assigned_by] ? getName(givers[task.assigned_by]) : 'Room owner'}</strong></span>
+                      </span>
+                    )}
                     {task.deadline ? (
                       <span className={`${styles.deadlineChip} ${info?.urgent ? styles.deadlineUrgent : ''}`}>
                         <CalendarClock size={13} />
