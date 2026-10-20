@@ -29,24 +29,10 @@
   margin-bottom: 28px;
 }
 
-.logoMark {
-  width: 36px; height: 36px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, #cb2525, #ea4343);
-  color: #fff;
-  font-family: 'Poppins', sans-serif;
-  font-size: 0.8rem;
-  font-weight: 800;
-  display: flex; align-items: center; justify-content: center;
+.logoImg {
+  display: block;
+  height: 44px; width: auto;
 }
-
-.logoName {
-  font-family: 'Poppins', sans-serif;
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: #1a1a2e;
-}
-.logoName span { color: #cb2525; }
 
 .checkIcon {
   width: 60px; height: 60px;
@@ -203,8 +189,6 @@
   border: 1px solid rgba(203,37,37,0.08);
   box-shadow: 0 1px 2px rgba(26,26,46,0.04), 0 24px 64px rgba(26,26,46,0.12);
 }
-.logoMark { width: 40px; height: 40px; border-radius: 12px; box-shadow: 0 4px 14px rgba(203,37,37,0.35); }
-.logoName { font-size: 1.05rem; letter-spacing: -0.01em; }
 .title { letter-spacing: -0.02em; }
 .checkIcon { box-shadow: 0 0 0 6px rgba(203,37,37,0.06); }
 .input:hover { border-color: #c9ced6; }

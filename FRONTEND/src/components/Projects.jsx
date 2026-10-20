@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight, ExternalLink, Sparkles, Calendar, ArrowUpRight, ArrowRight, Users, Zap, Rocket, ClipboardCheck, ShieldCheck, BookOpen, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ExternalLink, Sparkles, Calendar, ArrowUpRight, ArrowRight, Zap, Rocket, ClipboardCheck, ShieldCheck, BookOpen, X } from 'lucide-react';
 import styles from './Projects.module.css';
 
 /* Projects data */
@@ -232,10 +232,7 @@ function ProjectCard({ project, onDocs }) {
           <div className={styles.teamsyncGraphic}>
             <div className={styles.teamsyncGlow} />
             <div className={styles.teamsyncGraphicInner}>
-              <div className={styles.teamsyncIconWrap}>
-                <Users size={30} className={styles.teamsyncIcon} />
-              </div>
-              <span className={styles.teamsyncTitle}>TeamSync</span>
+              <img src="/images/teamsync/teamsync-logo.png" alt="TeamSync Workspace" className={styles.teamsyncLogoImg} />
               <div className={styles.graphicBadgeRow}>
                 <span className={styles.graphicAiPill}><Zap size={11} /> Real-time</span>
                 <span className={styles.teamsyncRolePill}>Role-based</span>

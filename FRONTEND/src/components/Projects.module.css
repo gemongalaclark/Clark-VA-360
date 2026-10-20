@@ -492,6 +492,13 @@
   box-shadow: 0 4px 16px rgba(26, 26, 46, 0.25);
 }
 
+.teamsyncLogoImg {
+  display: block;
+  width: 180px;
+  max-width: 70%;
+  height: auto;
+}
+
 .teamsyncIcon {
   color: #ffffff;
 }

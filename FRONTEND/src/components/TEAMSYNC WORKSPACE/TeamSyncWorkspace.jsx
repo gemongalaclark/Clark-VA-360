@@ -20,6 +20,19 @@ export default function TeamSyncWorkspace({ onBackToPortfolio }) {
   /* Keep ref in sync so auth listener always sees current page */
   useEffect(() => { pageRef.current = page; }, [page]);
 
+  /* TeamSync branding in the browser tab; restore the portfolio's on exit */
+  useEffect(() => {
+    const icon = document.querySelector('link[rel="icon"]');
+    const prevIcon = icon?.getAttribute('href');
+    const prevTitle = document.title;
+    icon?.setAttribute('href', '/images/teamsync/teamsync-icon.png');
+    document.title = 'TeamSync Workspace';
+    return () => {
+      if (icon && prevIcon) icon.setAttribute('href', prevIcon);
+      document.title = prevTitle;
+    };
+  }, []);
+
   useEffect(() => {
     if (!supabase) { setPage('landing'); return; }
 

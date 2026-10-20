@@ -18,15 +18,7 @@
 }
 
 .logo { display: flex; align-items: center; gap: 10px; }
-.logoMark {
-  width: 32px; height: 32px; border-radius: 9px;
-  background: linear-gradient(135deg, #cb2525, #ea4343);
-  color: #fff; font-family: 'Poppins', sans-serif;
-  font-size: 0.75rem; font-weight: 800;
-  display: flex; align-items: center; justify-content: center;
-}
-.logoName { font-family: 'Poppins', sans-serif; font-size: 0.9rem; font-weight: 700; color: #1a1a2e; }
-.logoName span { color: #cb2525; }
+.logoImg { display: block; height: 36px; width: auto; }
 
 .userRow { display: flex; align-items: center; gap: 10px; }
 .avatar {
@@ -374,7 +366,6 @@
     #f7f4f4;
 }
 .header { background: rgba(255,255,255,0.88); backdrop-filter: blur(12px); border-bottom-color: rgba(203,37,37,0.08); }
-.logoMark { box-shadow: 0 3px 10px rgba(203,37,37,0.3); }
 .avatar { box-shadow: 0 0 0 2px #fff, 0 0 0 3px rgba(203,37,37,0.2); }
 .content { padding-top: 64px; }
 .headline { letter-spacing: -0.02em; }

@@ -17,8 +17,7 @@ export default function LandingPage({ onSignIn, onSignUp, onBackToPortfolio }) {
           <ArrowLeft size={16} /> Portfolio
         </button>
         <div className={styles.navLogo}>
-          <span className={styles.logoMark}>TS</span>
-          <span className={styles.logoName}>TeamSync <span>Workspace</span></span>
+          <img src="/images/teamsync/teamsync-logo.png" alt="TeamSync Workspace" className={styles.logoImg} />
         </div>
         <div className={styles.navActions}>
           <button className={styles.signInBtn} onClick={onSignIn}>Sign In</button>
@@ -60,7 +59,7 @@ export default function LandingPage({ onSignIn, onSignUp, onBackToPortfolio }) {
       <section className={styles.previewSection}>
         <div className={styles.previewCard}>
           <div className={styles.previewSidebar}>
-            <div className={styles.previewSidebarLogo}>TS</div>
+            <img src="/images/teamsync/teamsync-logo-light.png" alt="" className={styles.previewSidebarLogo} />
             {['Overview', 'Review', 'Members'].map((item, i) => (
               <div key={item} className={`${styles.previewNavItem} ${i === 0 ? styles.previewNavActive : ''}`}>
                 <div className={styles.previewNavDot} />

@@ -44,13 +44,9 @@ export default function Sidebar({ role, currentTab, setTab, room, profile, onSig
       {/* ── Header: logo + collapse toggle ─────────────────── */}
       <div className={styles.header}>
         <div className={styles.logoArea}>
-          <div className={styles.logoMark}>TS</div>
-          {!collapsed && (
-            <div className={styles.logoText}>
-              <span className={styles.logoName}>TeamSync</span>
-              <span className={styles.logoSub}>Workspace</span>
-            </div>
-          )}
+          {collapsed
+            ? <img src="/images/teamsync/teamsync-icon.png" alt="TeamSync Workspace" className={styles.logoMark} />
+            : <img src="/images/teamsync/teamsync-logo-light.png" alt="TeamSync Workspace" className={styles.logoImg} />}
         </div>
         <button
           className={styles.collapseBtn}

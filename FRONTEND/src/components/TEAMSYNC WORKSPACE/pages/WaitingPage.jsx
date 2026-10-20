@@ -8,8 +8,7 @@ export default function WaitingPage({ profile, room, onSignOut }) {
     <div className={styles.page}>
       <header className={styles.header}>
         <div className={styles.logo}>
-          <span className={styles.logoMark}>TS</span>
-          <span className={styles.logoName}>TeamSync <span>Workspace</span></span>
+          <img src="/images/teamsync/teamsync-logo.png" alt="TeamSync Workspace" className={styles.logoImg} />
         </div>
         <button className={styles.signOutBtn} onClick={onSignOut}>
           <LogOut size={16} /> Sign Out

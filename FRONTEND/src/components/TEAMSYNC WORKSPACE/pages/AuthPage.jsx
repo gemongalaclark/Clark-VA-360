@@ -246,8 +246,7 @@ export default function AuthPage({ mode, setMode, onSuccess, onBack }) {
       <div className={styles.card}>
         {/* Logo */}
         <div className={styles.logoRow}>
-          <div className={styles.logoMark}>TS</div>
-          <span className={styles.logoName}>TeamSync <span>Workspace</span></span>
+          <img src="/images/teamsync/teamsync-logo.png" alt="TeamSync Workspace" className={styles.logoImg} />
         </div>
 
         {step === 'form' && (
