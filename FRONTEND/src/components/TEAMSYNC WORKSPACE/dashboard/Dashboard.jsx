@@ -13,18 +13,25 @@ import styles from './Dashboard.module.css';
 export default function Dashboard({ profile, room, role, session, onSignOut, onSwitchRoom, onLeaveRoom }) {
   const [currentTab, setCurrentTab] = useState('overview');
   const [collapsed, setCollapsed] = useState(false);
+  /* Task picked in the top-bar search; `n` makes picking the same task again re-open it */
+  const [focusTask, setFocusTask] = useState(null);
+
+  const openTask = (id) => {
+    setFocusTask(prev => ({ id, n: (prev?.n ?? 0) + 1 }));
+    setCurrentTab(role === 'owner' ? 'review' : 'tasks');
+  };
 
   const renderContent = () => {
     if (role === 'owner') {
       if (currentTab === 'overview') return <OverviewPage room={room} profile={profile} onNavigate={setCurrentTab} />;
       if (currentTab === 'create')   return <CreateTaskPage room={room} profile={profile} onNavigate={setCurrentTab} />;
-      if (currentTab === 'review')   return <ReviewPage room={room} profile={profile} />;
+      if (currentTab === 'review')   return <ReviewPage room={room} profile={profile} focusTask={focusTask} />;
       if (currentTab === 'members')  return <MembersPage room={room} profile={profile} />;
       if (currentTab === 'settings') return <RoomSettingsPage room={room} />;
     }
     if (role === 'employee') {
       if (currentTab === 'overview') return <EmpOverviewPage room={room} profile={profile} onNavigate={setCurrentTab} />;
-      if (currentTab === 'tasks')    return <TaskPage room={room} profile={profile} />;
+      if (currentTab === 'tasks')    return <TaskPage room={room} profile={profile} focusTask={focusTask} />;
     }
     return null;
   };
@@ -49,6 +56,8 @@ export default function Dashboard({ profile, room, role, session, onSignOut, onS
           profile={profile}
           session={session}
           room={room}
+          role={role}
+          onOpenTask={openTask}
         />
         <div className={styles.content}>
           {renderContent()}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Send, MessageSquareQuote, CalendarClock, ChevronDown, CheckCircle2, PartyPopper, Inbox, ChevronsUpDown, ChevronsDownUp } from 'lucide-react';
 import { supabase } from '../../../../lib/supabase';
 import StatusBadge, { UrgentBadge, getName } from '../StatusBadge';
@@ -18,7 +18,7 @@ const FILTERS = [
   { key: 'approved',  label: 'Approved',    activeClass: styles.filterApprovedActive },
 ];
 
-export default function TaskPage({ room, profile }) {
+export default function TaskPage({ room, profile, focusTask }) {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
@@ -108,6 +108,19 @@ export default function TaskPage({ room, profile }) {
   const allOpen = visible.length > 0 && visible.every(t => openCards.has(t.id));
   const toggleAll = () => setOpenCards(allOpen ? new Set() : new Set(visible.map(t => t.id)));
 
+  /* Top-bar search picked a task: show it, expand it and scroll it into view */
+  const handledFocus = useRef(null);
+  useEffect(() => {
+    if (loading || !focusTask || handledFocus.current === focusTask.n) return;
+    handledFocus.current = focusTask.n;
+    if (!tasks.some(t => t.id === focusTask.id)) return;
+    setFilter('all');
+    setOpenCards(prev => new Set(prev).add(focusTask.id));
+    requestAnimationFrame(() => {
+      document.getElementById(`task-${focusTask.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  }, [focusTask, loading, tasks]);
+
   if (loading) return <div className={styles.loading}><div className={styles.spinner} /></div>;
 
   return (
@@ -180,6 +193,7 @@ export default function TaskPage({ room, profile }) {
             return (
               <article
                 key={task.id}
+                id={`task-${task.id}`}
                 className={`${styles.myTaskCard} ${open ? '' : styles.myTaskClosed} ${info?.urgent ? styles.myTaskUrgent : ''}`}
               >
                 <div className={styles.myTaskHead}>

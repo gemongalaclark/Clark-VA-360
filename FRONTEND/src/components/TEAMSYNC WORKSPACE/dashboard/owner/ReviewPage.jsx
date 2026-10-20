@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Check, RotateCcw, ChevronDown, Loader, Search, CalendarClock, Pencil, Save, ChevronLeft, ChevronRight, Trash2, TriangleAlert, Sparkles, Maximize2 } from 'lucide-react';
 import { supabase } from '../../../../lib/supabase';
 import StatusBadge, { UrgentBadge, getName } from '../StatusBadge';
@@ -61,7 +61,7 @@ const toLocalInput = (iso) => {
   return d.toISOString().slice(0, 16);
 };
 
-export default function ReviewPage({ room }) {
+export default function ReviewPage({ room, focusTask }) {
   const [tasks, setTasks] = useState([]);
   const [filter, setFilter] = useState('all');
   const [query, setQuery] = useState('');
@@ -225,6 +225,14 @@ export default function ReviewPage({ room }) {
   const safePage = Math.min(page, totalPages);
   const pageTasks = visible.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
   useEffect(() => { setPage(1); }, [filter, query]);
+  /* Top-bar search picked a task: open its details once the list is loaded */
+  const handledFocus = useRef(null);
+  useEffect(() => {
+    if (loading || !focusTask || handledFocus.current === focusTask.n) return;
+    handledFocus.current = focusTask.n;
+    if (tasks.some(t => t.id === focusTask.id)) setDetailId(focusTask.id);
+  }, [focusTask, loading, tasks]);
+
   const detailTask = tasks.find(t => t.id === detailId);  // live row, so realtime changes show in the modal
 
   if (loading) return <div className={styles.loading}><div className={styles.spinner} /></div>;

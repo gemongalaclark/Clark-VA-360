@@ -3,9 +3,9 @@ import styles from './LandingPage.module.css';
 
 const features = [
   { icon: <Users size={22} />, title: 'Room-Based Workspaces', desc: 'Create or join rooms with a unique 8-character code. Built for teams of any size.' },
-  { icon: <Zap size={22} />, title: 'Real-time Notifications', desc: 'Instant alerts when tasks are submitted, reviewed, or members request to join.' },
-  { icon: <Shield size={22} />, title: 'Role-Based Access', desc: 'Owners manage and review. Employees submit and track. Clear boundaries, zero confusion.' },
-  { icon: <CheckCircle size={22} />, title: 'Task Review System', desc: 'Employees submit tasks; owners approve or reject with notes. Full audit trail included.' },
+  { icon: <Zap size={22} />, title: 'Real-time Notifications', desc: 'Instant in-app and email alerts when tasks are assigned, submitted, reviewed or nearing their deadline.' },
+  { icon: <Shield size={22} />, title: 'Role-Based Access', desc: 'Owners assign, review and manage the team. Employees complete and submit their work. Clear boundaries, zero confusion.' },
+  { icon: <CheckCircle size={22} />, title: 'Task Review System', desc: 'Owners assign tasks with briefs, files and deadlines; employees submit; owners approve or request a revision with notes.' },
 ];
 
 export default function LandingPage({ onSignIn, onSignUp, onBackToPortfolio }) {
@@ -36,7 +36,7 @@ export default function LandingPage({ onSignIn, onSignUp, onBackToPortfolio }) {
         </h1>
         <p className={styles.heroDesc}>
           TeamSync Workspace brings owners and employees together in organised rooms.
-          Submit tasks, review submissions, and manage your team — all in one place.
+          Assign tasks, review submissions, and manage your team — all in one place.
         </p>
         <div className={styles.heroCta}>
           <button className={styles.ctaPrimary} onClick={onSignUp}>
@@ -113,9 +113,9 @@ export default function LandingPage({ onSignIn, onSignUp, onBackToPortfolio }) {
         <h2 className={styles.sectionTitle}>How it works</h2>
         <div className={styles.steps}>
           {[
-            { n: '01', title: 'Sign Up', desc: 'Create your account with your email and verify with a 6-digit code.' },
-            { n: '02', title: 'Create or Join', desc: 'Owners create a room and get a unique Room ID. Employees use it to join.' },
-            { n: '03', title: 'Collaborate', desc: 'Employees submit tasks; owners review, approve or reject — in real-time.' },
+            { n: '01', title: 'Sign Up', desc: 'Create your account with your email and a strong password, then verify with a 6-digit code.' },
+            { n: '02', title: 'Create or Join', desc: 'Owners create a room and get a unique Room ID. Employees use it to request access.' },
+            { n: '03', title: 'Collaborate', desc: 'Owners assign tasks; employees complete and submit them; owners approve or request a revision — in real time.' },
           ].map((s) => (
             <div key={s.n} className={styles.step}>
               <span className={styles.stepNum}>{s.n}</span>

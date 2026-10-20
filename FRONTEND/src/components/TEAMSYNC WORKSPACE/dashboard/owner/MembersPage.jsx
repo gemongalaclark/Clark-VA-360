@@ -20,6 +20,7 @@ export default function MembersPage({ room, profile }) {
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionId, setActionId] = useState(null);
+  const [actionError, setActionError] = useState('');
   const [copied, setCopied] = useState(false);
 
   const load = useCallback(async (silent = false) => {
@@ -54,27 +55,30 @@ export default function MembersPage({ room, profile }) {
     return () => supabase.removeChannel(channel);
   }, [room, load]);
 
-  const handleAccept = async (memberId) => {
+  /* .select() lets us detect an RLS-blocked change (0 rows, no error) */
+  const runAction = async (memberId, query, onDone) => {
     setActionId(memberId);
-    await supabase.from('room_members').update({ role: 'employee' }).eq('id', memberId);
-    setMembers(prev => prev.map(m => m.id === memberId ? { ...m, role: 'employee' } : m));
+    setActionError('');
+    const { data, error } = await query.eq('id', memberId).select('id');
+    if (error || !data?.length) setActionError(error?.message ?? 'You don’t have permission to do that.');
+    else onDone();
     setActionId(null);
   };
 
-  const handleKick = async (memberId) => {
+  const handleAccept = (memberId) =>
+    runAction(memberId, supabase.from('room_members').update({ role: 'employee' }),
+      () => setMembers(prev => prev.map(m => m.id === memberId ? { ...m, role: 'employee' } : m)));
+
+  const handleKick = (memberId) => {
     if (!window.confirm('Remove this member from the room?')) return;
-    setActionId(memberId);
-    await supabase.from('room_members').delete().eq('id', memberId);
-    setMembers(prev => prev.filter(m => m.id !== memberId));
-    setActionId(null);
+    return runAction(memberId, supabase.from('room_members').delete(),
+      () => setMembers(prev => prev.filter(m => m.id !== memberId)));
   };
 
-  const handlePromote = async (memberId) => {
+  const handlePromote = (memberId) => {
     if (!window.confirm('Promote this member to Room Owner? They will have full owner permissions.')) return;
-    setActionId(memberId);
-    await supabase.from('room_members').update({ role: 'owner' }).eq('id', memberId);
-    setMembers(prev => prev.map(m => m.id === memberId ? { ...m, role: 'owner' } : m));
-    setActionId(null);
+    return runAction(memberId, supabase.from('room_members').update({ role: 'owner' }),
+      () => setMembers(prev => prev.map(m => m.id === memberId ? { ...m, role: 'owner' } : m)));
   };
 
   const copyCode = async () => {
@@ -107,6 +111,8 @@ export default function MembersPage({ room, profile }) {
           </span>
         </div>
       </div>
+
+      {actionError && <p className={styles.formError} role="alert">{actionError}</p>}
 
       {/* Invite card */}
       <div className={`${styles.card} ${styles.roomCodeCard}`}>

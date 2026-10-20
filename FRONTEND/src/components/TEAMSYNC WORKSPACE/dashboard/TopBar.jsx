@@ -3,6 +3,7 @@ import { Bell, Search, ChevronDown, LayoutDashboard, ClipboardCheck, Users, List
 import { supabase } from '../../../lib/supabase';
 import styles from './TopBar.module.css';
 import Avatar from '../profile/Avatar';
+import StatusBadge from './StatusBadge';
 
 const PAGE_TITLES = {
   overview: 'Overview',
@@ -16,13 +17,23 @@ const PAGE_TITLES = {
 const NOTIF_VISIBLE = 5;   // newest notifications shown in the dropdown; older ones are archived
 const NOTIF_FETCH = 50;    // how many we load in total
 
-export default function TopBar({ currentTab, profile, session, room }) {
+const SEARCH_LIMIT = 8;
+/* Escape LIKE wildcards so "50%" or "a_b" match literally */
+const likeEscape = (s) => s.replace(/[\\%_]/g, m => `\\${m}`);
+
+export default function TopBar({ currentTab, profile, session, room, role, onOpenTask }) {
   const [notifications, setNotifications] = useState([]);
   const [showNotifs, setShowNotifs] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [showArchive, setShowArchive] = useState(false);
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState([]);
+  const [searching, setSearching] = useState(false);
+  const [showResults, setShowResults] = useState(false);
+  const [activeIdx, setActiveIdx] = useState(-1);
   const notifsRef = useRef(null);
   const profileRef = useRef(null);
+  const searchRef = useRef(null);
 
   const unread = notifications.filter(n => !n.read).length;
   const recent = notifications.slice(0, NOTIF_VISIBLE);
@@ -68,11 +79,50 @@ export default function TopBar({ currentTab, profile, session, room }) {
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
   };
 
+  /* Task search: debounced; owners search the whole room, employees only their own tasks */
+  useEffect(() => {
+    const q = query.trim();
+    if (!q || !room || !supabase) { setResults([]); setSearching(false); return; }
+    setSearching(true);
+    let alive = true;
+    const t = setTimeout(async () => {
+      let req = supabase.from('tasks')
+        .select('id, title, status, deadline')
+        .eq('room_id', room.id)
+        .ilike('title', `%${likeEscape(q)}%`)
+        .order('created_at', { ascending: false })
+        .limit(SEARCH_LIMIT);
+      if (role !== 'owner') req = req.eq('employee_id', userId);
+      const { data } = await req;
+      if (!alive) return;
+      setResults(data ?? []);
+      setActiveIdx(-1);
+      setSearching(false);
+    }, 250);
+    return () => { alive = false; clearTimeout(t); };
+  }, [query, room, role, userId]);
+
+  const openResult = (task) => {
+    onOpenTask?.(task.id);
+    setQuery('');
+    setShowResults(false);
+    searchRef.current?.querySelector('input')?.blur();
+  };
+
+  const onSearchKey = (e) => {
+    if (e.key === 'Escape') { setShowResults(false); e.currentTarget.blur(); return; }
+    if (!results.length) return;
+    if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIdx(i => (i + 1) % results.length); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); setActiveIdx(i => (i <= 0 ? results.length - 1 : i - 1)); }
+    else if (e.key === 'Enter') { e.preventDefault(); openResult(results[Math.max(0, activeIdx)]); }
+  };
+
   /* Close dropdowns on outside click */
   useEffect(() => {
     const handle = (e) => {
       if (notifsRef.current && !notifsRef.current.contains(e.target)) setShowNotifs(false);
       if (profileRef.current && !profileRef.current.contains(e.target)) setShowProfile(false);
+      if (searchRef.current && !searchRef.current.contains(e.target)) setShowResults(false);
     };
     document.addEventListener('mousedown', handle);
     return () => document.removeEventListener('mousedown', handle);
@@ -107,9 +157,46 @@ export default function TopBar({ currentTab, profile, session, room }) {
 
       <div className={styles.right}>
         {/* Search */}
-        <div className={styles.searchWrap}>
+        <div className={styles.searchWrap} ref={searchRef}>
           <Search size={15} className={styles.searchIcon} />
-          <input type="text" className={styles.searchInput} placeholder="Search…" />
+          <input
+            type="search"
+            className={styles.searchInput}
+            placeholder={role === 'owner' ? 'Search tasks…' : 'Search my tasks…'}
+            value={query}
+            onChange={e => { setQuery(e.target.value); setShowResults(true); }}
+            onFocus={() => setShowResults(true)}
+            onKeyDown={onSearchKey}
+            role="combobox"
+            aria-expanded={showResults && !!query.trim()}
+            aria-controls="ts-search-results"
+            aria-autocomplete="list"
+            aria-label="Search tasks"
+          />
+          {showResults && query.trim() && (
+            <div className={`${styles.dropdown} ${styles.searchDropdown}`}>
+              <ul className={styles.notifList} id="ts-search-results" role="listbox">
+                {searching && results.length === 0 ? (
+                  <li className={styles.emptyNotifs}>Searching…</li>
+                ) : results.length === 0 ? (
+                  <li className={styles.emptyNotifs}>No tasks match “{query.trim()}”</li>
+                ) : results.map((t, i) => (
+                  <li key={t.id} role="option" aria-selected={i === activeIdx}>
+                    <button
+                      type="button"
+                      className={`${styles.searchItem} ${i === activeIdx ? styles.searchItemActive : ''}`}
+                      onMouseEnter={() => setActiveIdx(i)}
+                      onClick={() => openResult(t)}
+                    >
+                      <span className={styles.notifIcon}><ListTodo size={14} /></span>
+                      <span className={styles.searchItemTitle}>{t.title}</span>
+                      <StatusBadge status={t.status} />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
 
         {/* Notifications */}
