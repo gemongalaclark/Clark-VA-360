@@ -61,6 +61,10 @@ export default function TaskPage({ room, profile }) {
       .on('postgres_changes', {
         event: '*', schema: 'public', table: 'tasks', filter: `employee_id=eq.${userId}`,
       }, () => load(true))
+      /* Supabase can't filter DELETE events, so the listener above never sees an owner deleting a task.
+         Deletes only carry the row id: drop the card if it is one of ours. */
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'tasks' },
+        ({ old }) => setTasks(prev => prev.filter(t => t.id !== old?.id)))
       .subscribe();
     return () => supabase.removeChannel(channel);
   }, [room, userId, load]);
