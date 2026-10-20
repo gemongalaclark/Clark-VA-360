@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Send, MessageSquareQuote, CalendarClock, ChevronDown, CheckCircle2, PartyPopper, Inbox } from 'lucide-react';
+import { Send, MessageSquareQuote, CalendarClock, ChevronDown, CheckCircle2, PartyPopper, Inbox, ChevronsUpDown, ChevronsDownUp } from 'lucide-react';
 import { supabase } from '../../../../lib/supabase';
 import StatusBadge, { UrgentBadge, getName } from '../StatusBadge';
 import SubmissionTable from '../SubmissionTable';
@@ -24,6 +24,7 @@ export default function TaskPage({ room, profile }) {
   const [filter, setFilter] = useState('all');
   const [submitting, setSubmitting] = useState(null);   // task being submitted
   const [openId, setOpenId] = useState(null);           // task whose submission is expanded
+  const [openCards, setOpenCards] = useState(() => new Set());  // cards showing their full brief
   const [now, setNow] = useState(Date.now());
   const [givers, setGivers] = useState({});               // assigned_by id -> profile
   const userId = profile?.id;
@@ -99,6 +100,14 @@ export default function TaskPage({ room, profile }) {
     return t.status === filter;
   });
 
+  const toggleCard = (id) => setOpenCards(prev => {
+    const next = new Set(prev);
+    if (!next.delete(id)) next.add(id);
+    return next;
+  });
+  const allOpen = visible.length > 0 && visible.every(t => openCards.has(t.id));
+  const toggleAll = () => setOpenCards(allOpen ? new Set() : new Set(visible.map(t => t.id)));
+
   if (loading) return <div className={styles.loading}><div className={styles.spinner} /></div>;
 
   return (
@@ -117,16 +126,23 @@ export default function TaskPage({ room, profile }) {
         )}
       </div>
 
-      <div className={styles.filterRow} role="tablist" aria-label="Filter tasks">
-        {FILTERS.map(({ key, label, activeClass }) => (
-          <button
-            key={key} role="tab" aria-selected={filter === key}
-            className={`${styles.filterTab} ${filter === key ? activeClass : ''}`}
-            onClick={() => setFilter(key)}
-          >
-            {label}<span className={styles.filterCount}>{counts[key]}</span>
+      <div className={styles.toolbar}>
+        <div className={styles.filterRow} role="tablist" aria-label="Filter tasks">
+          {FILTERS.map(({ key, label, activeClass }) => (
+            <button
+              key={key} role="tab" aria-selected={filter === key}
+              className={`${styles.filterTab} ${filter === key ? activeClass : ''}`}
+              onClick={() => setFilter(key)}
+            >
+              {label}<span className={styles.filterCount}>{counts[key]}</span>
+            </button>
+          ))}
+        </div>
+        {visible.length > 0 && (
+          <button className={styles.linkBtn} onClick={toggleAll}>
+            {allOpen ? <><ChevronsDownUp size={14} /> Collapse all</> : <><ChevronsUpDown size={14} /> Expand all</>}
           </button>
-        ))}
+        )}
       </div>
 
       {visible.length === 0 ? (
@@ -159,27 +175,53 @@ export default function TaskPage({ room, profile }) {
             const info = deadlineInfo(task, now);
             const actionable = isActionable(task);
             const expanded = openId === task.id;
+            const open = openCards.has(task.id);
+            const giver = givers[task.assigned_by];
             return (
-              <article key={task.id} className={`${styles.myTaskCard} ${info?.urgent ? styles.myTaskUrgent : ''}`}>
+              <article
+                key={task.id}
+                className={`${styles.myTaskCard} ${open ? '' : styles.myTaskClosed} ${info?.urgent ? styles.myTaskUrgent : ''}`}
+              >
                 <div className={styles.myTaskHead}>
-                  <h4 className={styles.myTaskTitle}>{task.title}</h4>
+                  <button
+                    type="button"
+                    className={styles.myTaskToggle}
+                    onClick={() => toggleCard(task.id)}
+                    aria-expanded={open}
+                    aria-controls={`task-body-${task.id}`}
+                  >
+                    <ChevronDown size={16} className={`${styles.myTaskChevron} ${open ? styles.chevronUp : ''}`} />
+                    <span className={styles.myTaskHeadText}>
+                      <span className={styles.myTaskTitle}>{task.title}</span>
+                      {!open && task.description && <span className={styles.myTaskPreview}>{task.description}</span>}
+                    </span>
+                  </button>
                   <div className={styles.badgeRow}>
                     {info?.urgent && <UrgentBadge overdue={info.overdue} />}
                     <StatusBadge status={task.status} />
                   </div>
                 </div>
 
-                {task.description && <p className={styles.myTaskDesc}>{task.description}</p>}
-                <AttachmentList items={task.attachments} />
+                {/* Full brief: grid rows 0fr -> 1fr animates to the content's real height */}
+                <div
+                  id={`task-body-${task.id}`}
+                  className={`${styles.myTaskCollapse} ${open ? styles.myTaskCollapseOpen : ''}`}
+                  inert={open ? undefined : ''}
+                >
+                  <div className={styles.myTaskCollapseInner}>
+                    {task.description && <p className={styles.myTaskDesc}>{task.description}</p>}
+                    <AttachmentList items={task.attachments} />
+                    {task.assigned_by && (
+                      <span className={styles.assignerChip} title="Assigned by">
+                        <Avatar profile={giver} className={styles.assignerAvatar} />
+                        <span>Assigned by <strong>{giver ? getName(giver) : 'Room owner'}</strong></span>
+                      </span>
+                    )}
+                  </div>
+                </div>
 
                 <div className={styles.myTaskFoot}>
                   <div className={styles.metaRow}>
-                    {task.assigned_by && (
-                      <span className={styles.assignerChip} title="Assigned by">
-                        <Avatar profile={givers[task.assigned_by]} className={styles.assignerAvatar} />
-                        <span>Assigned by <strong>{givers[task.assigned_by] ? getName(givers[task.assigned_by]) : 'Room owner'}</strong></span>
-                      </span>
-                    )}
                     {task.deadline ? (
                       <span className={`${styles.deadlineChip} ${info?.urgent ? styles.deadlineUrgent : ''}`}>
                         <CalendarClock size={13} />
@@ -188,6 +230,9 @@ export default function TaskPage({ room, profile }) {
                       </span>
                     ) : (
                       <span className={styles.deadlineChip}><CalendarClock size={13} /> No deadline</span>
+                    )}
+                    {!open && task.attachments?.length > 0 && (
+                      <span className={styles.myTaskCount}>{task.attachments.length} attachment{task.attachments.length > 1 ? 's' : ''}</span>
                     )}
                   </div>
 
@@ -203,13 +248,14 @@ export default function TaskPage({ room, profile }) {
                   )}
                 </div>
 
+                {/* Feedback stays visible when collapsed: it's what the employee has to act on */}
                 {task.status === 'rejected' && task.reviewer_notes && (
                   <div className={`${styles.feedback} ${styles.feedbackRejected}`}>
                     <MessageSquareQuote size={15} />
                     <div><strong>Revision requested</strong>{task.reviewer_notes}</div>
                   </div>
                 )}
-                {task.status === 'approved' && (
+                {open && task.status === 'approved' && (
                   <div className={`${styles.feedback} ${styles.feedbackApproved}`}>
                     <CheckCircle2 size={15} />
                     <div><strong>Approved — you're good to go</strong>{task.reviewer_notes}</div>

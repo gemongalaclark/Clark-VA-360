@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Check, RotateCcw, ChevronDown, Loader, Search, CalendarClock, Pencil, Save, ChevronLeft, ChevronRight, Trash2, TriangleAlert, Sparkles } from 'lucide-react';
+import { Check, RotateCcw, ChevronDown, Loader, Search, CalendarClock, Pencil, Save, ChevronLeft, ChevronRight, Trash2, TriangleAlert, Sparkles, Maximize2 } from 'lucide-react';
 import { supabase } from '../../../../lib/supabase';
 import StatusBadge, { UrgentBadge, getName } from '../StatusBadge';
 import SubmissionTable from '../SubmissionTable';
@@ -10,6 +10,7 @@ import { removeUploaded } from '../attachmentApi';
 import { fetchAiReviews, isAiAutomationEnabled } from '../aiApi';
 import styles from '../SharedPages.module.css';
 import Avatar from '../../profile/Avatar';
+import TaskDetailModal from './TaskDetailModal';
 
 const PAGE_SIZE = 5;
 
@@ -80,6 +81,7 @@ export default function ReviewPage({ room }) {
   const [deleteError, setDeleteError] = useState('');
   const [aiReviews, setAiReviews] = useState({});      // task_id -> AI QA row
   const [aiEnabled, setAiEnabled] = useState(false);
+  const [detailId, setDetailId] = useState(null);       // task open in the details modal
 
   const load = useCallback(async (silent = false) => {
     if (!room || !supabase) return;
@@ -191,6 +193,14 @@ export default function ReviewPage({ room }) {
     setEditingId(null);
   };
 
+  const openReview = (task) => {
+    setDeletingId(null);
+    setEditingId(null);
+    setExpandedId(task.id);
+    setNotes('');
+    setNoteError('');
+  };
+
   const formatDate = (iso) => new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
   const counts = useMemo(() => ({
@@ -215,6 +225,7 @@ export default function ReviewPage({ room }) {
   const safePage = Math.min(page, totalPages);
   const pageTasks = visible.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
   useEffect(() => { setPage(1); }, [filter, query]);
+  const detailTask = tasks.find(t => t.id === detailId);  // live row, so realtime changes show in the modal
 
   if (loading) return <div className={styles.loading}><div className={styles.spinner} /></div>;
 
@@ -312,8 +323,19 @@ export default function ReviewPage({ room }) {
                     </div>
 
                     <div className={styles.taskInfo}>
-                      <p className={styles.taskTitle}>{task.title}</p>
-                      {task.description && <p className={styles.taskDesc}>{task.description}</p>}
+                      <button
+                        type="button"
+                        className={styles.taskOpenBtn}
+                        onClick={() => setDetailId(task.id)}
+                        aria-haspopup="dialog"
+                        title="View task details"
+                      >
+                        <span className={styles.taskTitle}>
+                          {task.title}
+                          <Maximize2 size={12} className={styles.taskOpenIcon} aria-hidden="true" />
+                        </span>
+                        {task.description && <span className={styles.taskDesc}>{task.description}</span>}
+                      </button>
                       {task.deadline && (
                         <span className={`${styles.deadlineChip} ${info?.urgent ? styles.deadlineUrgent : ''}`}>
                           <CalendarClock size={12} /> {formatDeadline(task.deadline)}{info && !info.done && <em>· {info.label}</em>}
@@ -344,7 +366,7 @@ export default function ReviewPage({ room }) {
                       <button
                         className={styles.reviewToggle}
                         aria-expanded={isExpanded}
-                        onClick={() => { setDeletingId(null); setExpandedId(isExpanded ? null : task.id); setNotes(''); setNoteError(''); }}
+                        onClick={() => (isExpanded ? setExpandedId(null) : openReview(task))}
                       >
                         Review
                         <ChevronDown size={14} className={isExpanded ? styles.chevronUp : ''} />
@@ -513,6 +535,16 @@ export default function ReviewPage({ room }) {
           </nav>
         )}
       </div>
+
+      {detailTask && (
+        <TaskDetailModal
+          task={detailTask}
+          aiReview={aiReviews[detailTask.id]}
+          onClose={() => setDetailId(null)}
+          onEdit={() => { setDetailId(null); startEdit(detailTask); }}
+          onReview={() => { setDetailId(null); openReview(detailTask); }}
+        />
+      )}
     </div>
   );
 }

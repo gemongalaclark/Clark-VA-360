@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Plus, Trash2, Send, Loader, Info, AlertCircle, Link2 } from 'lucide-react';
 import { supabase } from '../../../../lib/supabase';
 import { CHANNELS, DAYS, POST_STATUSES, emptyRow, dayFromDate, isValidUrl } from '../taskUtils';
@@ -55,7 +56,8 @@ export default function SubmitTaskModal({ task, onClose, onSubmitted }) {
 
   const cell = (i, key) => (errors[i]?.[key] ? styles.cellError : '');
 
-  return (
+  /* Portal to <body> so the page's animated transform can't trap the fixed overlay */
+  return createPortal(
     <div className={styles.modalOverlay} onClick={(e) => e.target === e.currentTarget && !saving && onClose()}>
       <div className={`${styles.modal} ${styles.modalWide}`} role="dialog" aria-modal="true" aria-labelledby="submit-title">
         <div className={styles.modalHeader}>
@@ -167,6 +169,7 @@ export default function SubmitTaskModal({ task, onClose, onSubmitted }) {
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

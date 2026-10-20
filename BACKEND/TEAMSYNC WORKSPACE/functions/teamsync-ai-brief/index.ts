@@ -8,7 +8,7 @@
 // Deploy:  Supabase Dashboard → Edge Functions → Deploy a new function → Via Editor
 //          (name it exactly  teamsync-ai-brief) — or: supabase functions deploy teamsync-ai-brief
 // Secrets: GEMINI_API_KEY (required, from aistudio.google.com/apikey)
-//          GEMINI_MODEL   (optional, defaults to gemini-2.5-flash)
+//          GEMINI_MODEL   (optional, defaults to gemini-flash-lite-latest, falling back to gemini-flash-latest)
 //          SUPABASE_URL / SUPABASE_ANON_KEY / SUPABASE_SERVICE_ROLE_KEY are injected automatically.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -68,24 +68,55 @@ Deno.serve(async (req: Request) => {
     .eq('room_id', payload.roomId).eq('user_id', userData.user.id).maybeSingle();
   if (membership?.role !== 'owner') return json({ error: 'Only room owners can use this.' }, 403);
 
-  // 4. Ask Gemini.
-  const model = Deno.env.get('GEMINI_MODEL') || 'gemini-2.5-flash';
-  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-    body: JSON.stringify({
-      systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
-      contents: [{
-        role: 'user',
-        parts: [{ text: `Task title: ${title}\nOwner's notes: ${notes || '(none)'}` }],
-      }],
-      generationConfig: { temperature: 0.6, maxOutputTokens: 2048 },
-    }),
-  });
+  // 4. Ask Gemini. Flash-Lite first (a brief needs speed, not deep reasoning); if this key can't use a
+  //    model (404) try the next one, and if a model rejects the thinking setting (400) retry without it.
+  const models = [Deno.env.get('GEMINI_MODEL') || 'gemini-flash-lite-latest', 'gemini-flash-latest'];
+  const signal = AbortSignal.timeout(45_000);  // one budget for all attempts, so the button never spins forever
+  const ask = (model: string, thinking: boolean) =>
+    fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+      signal,
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+        contents: [{
+          role: 'user',
+          parts: [{ text: `Task title: ${title}\nOwner's notes: ${notes || '(none)'}` }],
+        }],
+        generationConfig: {
+          temperature: 0.6,
+          maxOutputTokens: 8192,  // thinking tokens count toward this, so leave room
+          ...(thinking && { thinkingConfig: { thinkingLevel: 'low' } }),
+        },
+      }),
+    });
+
+  let res!: Response;
+  let detail = '';
+  try {
+    for (const model of models) {
+      res = await ask(model, true);
+      if (res.ok) break;
+      detail = await res.text();
+      if (res.status === 400 && /thinking/i.test(detail)) {
+        res = await ask(model, false);
+        if (res.ok) break;
+        detail = await res.text();
+      }
+      console.error('Gemini error', model, res.status, detail);
+      if (res.status !== 404) break;  // only "model not available" is worth trying the next model for
+    }
+  } catch (err) {
+    const timedOut = err instanceof DOMException && err.name === 'TimeoutError';
+    console.error('Gemini fetch failed', err);
+    return json({ error: timedOut ? 'AI took too long to answer. Try again.' : 'Could not reach the AI service.' }, 504);
+  }
   if (!res.ok) {
-    const detail = await res.text();
-    console.error('Gemini error', res.status, detail);
-    return json({ error: res.status === 429 ? 'AI is busy (rate limit). Try again in a minute.' : 'AI request failed.' }, 502);
+    if (res.status === 429) return json({ error: 'AI is busy (rate limit). Try again in a minute.' }, 502);
+    // Owners only reach this point, so Google's own message is safe to show and makes setup issues obvious
+    let reason = '';
+    try { reason = JSON.parse(detail).error?.message ?? ''; } catch { /* not JSON */ }
+    return json({ error: `AI request failed (${res.status}${reason ? `: ${reason}` : ''})` }, 502);
   }
 
   const data = await res.json();
@@ -93,7 +124,10 @@ Deno.serve(async (req: Request) => {
     .map((p: { text?: string }) => p.text ?? '').join('').trim()
     .replace(/\*\*/g, '')            // strip stray markdown bold
     .replace(/^#+\s*/gm, '');
-  if (!text) return json({ error: 'AI returned an empty brief. Try again.' }, 502);
+  if (!text) {
+    console.error('Gemini empty reply', JSON.stringify(data).slice(0, 1000));
+    return json({ error: `AI returned an empty brief (${data.candidates?.[0]?.finishReason ?? 'no reason given'}). Try again.` }, 502);
+  }
 
   return json({ brief: text.slice(0, DESC_MAX) });
 });

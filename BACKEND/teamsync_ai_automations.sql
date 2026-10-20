@@ -181,6 +181,8 @@ begin
         'parts', jsonb_build_array(jsonb_build_object('text', v_prompt)))),
       'generationConfig', jsonb_build_object(
         'temperature', 0.2,
+        -- Gemini 3.x thinks by default and can exceed Make's 40 s HTTP timeout; a QA check only needs a little
+        'thinkingConfig', jsonb_build_object('thinkingLevel', 'low'),
         'responseMimeType', 'application/json',
         'responseSchema', jsonb_build_object(
           'type', 'OBJECT',

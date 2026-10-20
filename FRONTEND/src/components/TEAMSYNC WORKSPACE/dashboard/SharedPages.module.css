@@ -1181,3 +1181,97 @@
   font-size: 0.74rem; font-weight: 600; color: #7c3aed;
 }
 .aiQaUse:hover { text-decoration: underline; }
+
+/* ── Owner: open a task's details from the review list ── */
+.taskOpenBtn {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 0; max-width: 100%;
+  padding: 4px 8px; margin: -4px -8px 2px; border: none; border-radius: 10px;
+  background: transparent; text-align: left; cursor: pointer; font: inherit;
+  transition: background 0.15s;
+}
+.taskOpenBtn .taskTitle { display: inline-flex; align-items: center; gap: 6px; }
+.taskOpenBtn .taskDesc { display: block; }
+.taskOpenIcon { color: #cb2525; opacity: 0; transform: scale(0.8); transition: opacity 0.15s, transform 0.15s; }
+.taskOpenBtn:hover { background: rgba(203,37,37,0.06); }
+.taskOpenBtn:hover .taskTitle { color: #cb2525; }
+.taskOpenBtn:hover .taskOpenIcon, .taskOpenBtn:focus-visible .taskOpenIcon { opacity: 1; transform: none; }
+.taskOpenBtn:focus-visible { outline: 2px solid #cb2525; outline-offset: 2px; }
+
+.detailModal {
+  max-width: 760px; max-height: min(88vh, 860px); padding: 0;
+  display: flex; flex-direction: column;
+}
+.detailModal .modalHeader {
+  margin: 0; padding: 24px 28px 18px; align-items: flex-start; gap: 16px;
+  border-bottom: 1px solid #f1ecec; flex-shrink: 0;
+}
+.detailHeadText { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.detailModal .modalTitle { font-size: 1.25rem; line-height: 1.35; overflow-wrap: anywhere; }
+.detailModal .modalClose { flex-shrink: 0; }
+.detailBody {
+  flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+  padding: 20px 28px 24px; display: flex; flex-direction: column; gap: 20px;
+}
+.detailMeta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.detailSection { display: flex; flex-direction: column; gap: 8px; }
+.detailDesc {
+  padding: 16px 18px; border-radius: 14px; background: #fcfafa; border: 1px solid #f0e6e6;
+  font-size: 0.9rem; color: #33334d; line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere;
+}
+.detailEmpty { margin: 0; font-size: 0.85rem; color: #8a93a0; font-style: italic; }
+.detailFooter {
+  display: flex; justify-content: flex-end; align-items: center; gap: 10px; flex-shrink: 0;
+  padding: 14px 28px; border-top: 1px solid #f1ecec; background: #fdfbfb;
+}
+.detailFooter .cancelBtn, .detailFooter .acceptBtn { display: inline-flex; align-items: center; gap: 6px; }
+.detailFooter .cancelBtn:first-child { margin-right: auto; }
+@media (max-width: 640px) {
+  .detailModal { max-height: 92vh; padding: 0; }
+  .detailModal .modalHeader { padding: 20px 20px 14px; }
+  .detailBody { padding: 16px 20px 20px; }
+  .detailFooter { padding: 12px 20px; flex-wrap: wrap; }
+}
+
+/* ── Employee: collapsible task cards ── */
+.myTaskClosed { padding-top: 14px; padding-bottom: 14px; }
+.myTaskToggle {
+  display: flex; align-items: flex-start; gap: 10px; flex: 1; min-width: 0;
+  padding: 0; border: none; background: none; text-align: left; cursor: pointer; font: inherit; color: inherit;
+}
+.myTaskToggle:focus-visible { outline: 2px solid #cb2525; outline-offset: 4px; border-radius: 8px; }
+.myTaskChevron {
+  flex-shrink: 0; margin-top: 3px; color: #8a93a0;
+  transition: transform 0.25s ease, color 0.15s;
+}
+.myTaskToggle:hover .myTaskChevron { color: #cb2525; }
+.myTaskToggle:hover .myTaskTitle { color: #cb2525; }
+.myTaskHeadText { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.myTaskHead .myTaskToggle .myTaskTitle { display: block; margin: 0; font-size: 0.98rem; line-height: 1.4; transition: color 0.15s; }
+.myTaskPreview {
+  font-size: 0.8rem; color: #8a93a0; line-height: 1.45;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.myTaskCount { font-size: 0.74rem; color: #8a93a0; font-weight: 500; }
+
+/* The card's 10px gap still applies to the collapsed wrapper, so pull it back and re-add it inside */
+.myTaskCollapse {
+  display: grid; grid-template-rows: 0fr; margin-top: -10px;
+  transition: grid-template-rows 0.28s ease;
+}
+.myTaskCollapseOpen { grid-template-rows: 1fr; }
+.myTaskCollapseInner {
+  min-height: 0; overflow: hidden;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
+  padding-top: 10px; padding-left: 26px;
+}
+.myTaskCollapseInner > .myTaskDesc { margin: 0; white-space: pre-wrap; }
+.myTaskCollapseInner > :not(.assignerChip) { align-self: stretch; }
+
+@media (max-width: 640px) {
+  .myTaskHead { flex-direction: column; }
+  .myTaskHead .badgeRow { justify-content: flex-start; padding-left: 26px; }
+  .myTaskCollapseInner { padding-left: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .myTaskCollapse, .myTaskChevron, .taskOpenIcon, .taskOpenBtn { transition: none; }
+}
