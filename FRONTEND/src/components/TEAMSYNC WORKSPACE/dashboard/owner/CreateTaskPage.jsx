@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Send, Loader, CheckCircle2, UserPlus, CalendarClock, Paperclip, Link2, FileText, X, Plus, Upload } from 'lucide-react';
+import { Send, Loader, CheckCircle2, UserPlus, CalendarClock, Paperclip, Link2, FileText, X, Plus, Upload, Sparkles, Undo2 } from 'lucide-react';
 import { supabase } from '../../../../lib/supabase';
 import StatusBadge, { getName } from '../StatusBadge';
 import { formatDeadline } from '../taskUtils';
 import { fetchRoomTasks } from '../taskApi';
+import { generateBrief } from '../aiApi';
 import {
   ATTACH_MAX_FILES, ATTACH_MAX_BYTES, ATTACH_NOTE_MAX,
   formatBytes, normalizeUrl, uploadAttachments, removeUploaded,
@@ -42,6 +43,8 @@ export default function CreateTaskPage({ room, profile, onNavigate }) {
   const [linkOpen, setLinkOpen] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const fileInput = useRef(null);
+  const [briefBusy, setBriefBusy] = useState(false);
+  const [briefUndo, setBriefUndo] = useState(null);     // description before the AI rewrite
 
   const load = useCallback(async () => {
     if (!room || !supabase) return;
@@ -82,6 +85,20 @@ export default function CreateTaskPage({ room, profile, onNavigate }) {
     setAttachments(prev => prev.map(a => (a.id === id ? { ...a, ...patch } : a)));
   const removeAttachment = (id) => setAttachments(prev => prev.filter(a => a.id !== id));
 
+  /* The owner's existing notes are sent along and folded into the brief; Undo restores them */
+  const writeBrief = async () => {
+    if (!title.trim()) { setError('Type a task title first — the AI writes the brief from it.'); return; }
+    setError(''); setBriefBusy(true);
+    try {
+      const brief = await generateBrief({ roomId: room.id, title: title.trim(), notes: description.trim() });
+      setBriefUndo(description);
+      setDescription(brief);
+    } catch (err) {
+      setError(`AI brief failed: ${err.message}`);
+    }
+    setBriefBusy(false);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -113,7 +130,7 @@ export default function CreateTaskPage({ room, profile, onNavigate }) {
     const person = employees.find(m => m.user_id === assignee)?.profiles;
     setCreated({ title: title.trim(), name: getName(person) });
     setTitle(''); setDescription(''); setAssignee(''); setHasDeadline(false); setDeadline('');
-    setAttachments([]); setLinkOpen(false); setLinkUrl('');
+    setAttachments([]); setLinkOpen(false); setLinkUrl(''); setBriefUndo(null);
     load();
   };
 
@@ -164,9 +181,22 @@ export default function CreateTaskPage({ room, profile, onNavigate }) {
                 <label htmlFor="ct-desc">Task description</label>
                 <span className={styles.charCount}>{description.length}/{DESC_MAX}</span>
               </div>
-              <textarea id="ct-desc" className={styles.textarea} rows={5}
+              <div className={styles.aiBriefRow}>
+                <button type="button" className={styles.aiBtn} onClick={writeBrief} disabled={briefBusy || saving}>
+                  {briefBusy ? <Loader size={14} className={styles.spin} /> : <Sparkles size={14} />}
+                  {briefBusy ? 'Writing brief…' : 'Auto-Write Brief with AI'}
+                </button>
+                {briefUndo !== null && !briefBusy && (
+                  <button type="button" className={styles.linkBtn} onClick={() => { setDescription(briefUndo); setBriefUndo(null); }}>
+                    <Undo2 size={13} style={{ verticalAlign: '-2px' }} /> Undo
+                  </button>
+                )}
+                <span className={styles.aiHint}>Turns your title{description.trim() ? ' and notes' : ''} into goals, deliverables and a step-by-step checklist.</span>
+              </div>
+              <textarea id="ct-desc" className={`${styles.textarea} ${briefBusy ? styles.aiWorking : ''}`} rows={briefUndo !== null ? 12 : 5}
                 placeholder="Goals, tone, references, anything the employee needs to know…"
-                value={description} maxLength={DESC_MAX} onChange={e => setDescription(e.target.value)} />
+                value={description} maxLength={DESC_MAX} readOnly={briefBusy}
+                onChange={e => setDescription(e.target.value)} />
             </div>
 
             <div className={styles.formGroup}>

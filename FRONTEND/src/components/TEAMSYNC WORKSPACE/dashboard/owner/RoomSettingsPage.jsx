@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Copy, Check, Loader, Share2, ShieldCheck, ImageIcon, Phone } from 'lucide-react';
+import { Copy, Check, Loader, Share2, ShieldCheck, ImageIcon, Phone, MessageSquare, Save, Trash2 } from 'lucide-react';
 import { supabase } from '../../../../lib/supabase';
+import { CHAT_WEBHOOK_RE, chatPlatform, fetchChatWebhook, saveChatWebhook } from '../aiApi';
 import styles from '../SharedPages.module.css';
 
 export default function RoomSettingsPage({ room }) {
@@ -10,6 +11,10 @@ export default function RoomSettingsPage({ room }) {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
+  const [hook, setHook] = useState('');           // input value
+  const [savedHook, setSavedHook] = useState(''); // what is stored
+  const [hookBusy, setHookBusy] = useState(false);
+  const [hookMsg, setHookMsg] = useState({ type: '', text: '' });
 
   /* Requirements may have been changed from another session, so read the fresh values */
   useEffect(() => {
@@ -19,7 +24,22 @@ export default function RoomSettingsPage({ room }) {
         if (data) setReqs({ avatar: !!data.require_avatar, mobile: !!data.require_mobile });
         setLoading(false);
       });
+    fetchChatWebhook(room.id).then(({ url }) => { setHook(url); setSavedHook(url); });
   }, [room]);
+
+  const saveHook = async (value) => {
+    const url = value.trim();
+    if (url && !CHAT_WEBHOOK_RE.test(url)) {
+      setHookMsg({ type: 'error', text: 'Paste a Discord (discord.com/api/webhooks/…) or Slack (hooks.slack.com/services/…) webhook URL.' });
+      return;
+    }
+    setHookBusy(true); setHookMsg({ type: '', text: '' });
+    const { error: err } = await saveChatWebhook(room.id, url);
+    setHookBusy(false);
+    if (err) { setHookMsg({ type: 'error', text: err.message }); return; }
+    setHook(url); setSavedHook(url);
+    setHookMsg({ type: 'ok', text: url ? `Connected — ${chatPlatform(url)} will get live task updates.` : 'Chat notifications turned off.' });
+  };
 
   const toggle = async (key) => {
     const prev = reqs;
@@ -87,6 +107,37 @@ export default function RoomSettingsPage({ room }) {
           </label>
         </div>
         {error && <p className={styles.formError} role="alert">{error}</p>}
+      </div>
+
+      <div className={styles.card}>
+        <div className={styles.cardHeader}>
+          <h3 className={styles.cardTitle}><MessageSquare size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />Discord / Slack Webhook URL <span className={styles.optional}>(optional)</span></h3>
+          {savedHook && <span className={styles.memberCount}>{chatPlatform(savedHook)} connected</span>}
+        </div>
+        <p className={styles.reqIntro}>
+          Post live updates to your team’s chat room — new tasks, submissions with the ✨ AI QA score,
+          approvals and room progress. Only owners can see this URL.
+        </p>
+        <div className={styles.linkAddRow}>
+          <input
+            className={styles.input} type="url" inputMode="url" aria-label="Discord or Slack webhook URL"
+            placeholder="https://discord.com/api/webhooks/…  or  https://hooks.slack.com/services/…"
+            value={hook} onChange={e => { setHook(e.target.value); setHookMsg({ type: '', text: '' }); }}
+          />
+          <button type="button" className={styles.attachAddBtn} onClick={() => saveHook(hook)} disabled={hookBusy || hook.trim() === savedHook}>
+            {hookBusy ? <Loader size={14} className={styles.spin} /> : <Save size={14} />} Save
+          </button>
+          {savedHook && (
+            <button type="button" className={styles.cancelBtn} onClick={() => saveHook('')} disabled={hookBusy} aria-label="Disconnect chat webhook">
+              <Trash2 size={14} />
+            </button>
+          )}
+        </div>
+        {hookMsg.text && (
+          <p className={hookMsg.type === 'error' ? styles.formError : styles.reqIntro} role={hookMsg.type === 'error' ? 'alert' : 'status'} style={{ marginTop: 10 }}>
+            {hookMsg.text}
+          </p>
+        )}
       </div>
     </div>
   );

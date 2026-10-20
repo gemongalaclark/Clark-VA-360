@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Check, RotateCcw, ChevronDown, Loader, Search, CalendarClock, Pencil, Save, ChevronLeft, ChevronRight, Trash2, TriangleAlert } from 'lucide-react';
+import { Check, RotateCcw, ChevronDown, Loader, Search, CalendarClock, Pencil, Save, ChevronLeft, ChevronRight, Trash2, TriangleAlert, Sparkles } from 'lucide-react';
 import { supabase } from '../../../../lib/supabase';
 import StatusBadge, { UrgentBadge, getName } from '../StatusBadge';
 import SubmissionTable from '../SubmissionTable';
@@ -7,6 +7,7 @@ import AttachmentList from '../AttachmentList';
 import { deadlineInfo, formatDeadline, isActionable } from '../taskUtils';
 import { fetchRoomTasks } from '../taskApi';
 import { removeUploaded } from '../attachmentApi';
+import { fetchAiReviews, isAiAutomationEnabled } from '../aiApi';
 import styles from '../SharedPages.module.css';
 import Avatar from '../../profile/Avatar';
 
@@ -19,6 +20,34 @@ const FILTERS = [
   { key: 'approved',  label: 'Approved',  activeClass: styles.filterApprovedActive },
   { key: 'rejected',  label: 'Revision',  activeClass: styles.filterRejectedActive },
 ];
+
+const AI_WAIT_MS = 3 * 60 * 1000;  // show "AI is checking…" this long after a submission
+
+/* Gemini's pre-review, written back by the Make.com scenario (see teamsync_ai_automations.sql) */
+function AiQaCheck({ task, review, enabled, onUseAsFeedback }) {
+  if (review) {
+    const approve = review.recommendation === 'approve';
+    return (
+      <div className={styles.aiQa} role="note" aria-label="AI QA check">
+        <div className={styles.aiQaHead}>
+          <span className={styles.aiQaTitle}><Sparkles size={14} /> AI QA Check ({review.score}% match)</span>
+          <span className={`${styles.aiQaRec} ${approve ? styles.aiQaRecOk : styles.aiQaRecWarn}`}>
+            Recommended: {approve ? 'Approve' : 'Request revision'}
+          </span>
+        </div>
+        <p className={styles.aiQaText}>“{review.summary}”</p>
+        <button type="button" className={styles.aiQaUse} onClick={() => onUseAsFeedback(review.summary)}>Use as feedback</button>
+      </div>
+    );
+  }
+  const recent = task.submitted_at && Date.now() - new Date(task.submitted_at).getTime() < AI_WAIT_MS;
+  if (!enabled || !recent) return null;
+  return (
+    <div className={`${styles.aiQa} ${styles.aiQaPending}`} role="status">
+      <span className={styles.aiQaTitle}><Loader size={14} className={styles.spin} /> AI is pre-checking this submission against your brief…</span>
+    </div>
+  );
+}
 
 const TITLE_MAX = 120;
 const DESC_MAX = 1500;
@@ -49,6 +78,8 @@ export default function ReviewPage({ room }) {
   const [deletingId, setDeletingId] = useState(null);   // task whose delete confirmation is open
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [deleteError, setDeleteError] = useState('');
+  const [aiReviews, setAiReviews] = useState({});      // task_id -> AI QA row
+  const [aiEnabled, setAiEnabled] = useState(false);
 
   const load = useCallback(async (silent = false) => {
     if (!room || !supabase) return;
@@ -62,16 +93,30 @@ export default function ReviewPage({ room }) {
 
   useEffect(() => { load(); }, [load]);
 
+  const loadAi = useCallback(async () => {
+    if (!room || !supabase) return;
+    const { data, error } = await fetchAiReviews(room.id);
+    if (error) console.error('Could not load AI reviews:', error.message);  // table missing until the SQL is run
+    else setAiReviews(data);
+  }, [room]);
+
+  useEffect(() => {
+    loadAi();
+    isAiAutomationEnabled().then(setAiEnabled);
+  }, [loadAi]);
+
   /* Realtime updates */
   useEffect(() => {
     if (!room || !supabase) return;
     const channel = supabase
       .channel('ts-review-tasks')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks', filter: `room_id=eq.${room.id}` },
-        () => load(true))
+        () => { load(true); loadAi(); })  // a resubmission also clears the old AI review
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'task_ai_reviews', filter: `room_id=eq.${room.id}` },
+        () => loadAi())
       .subscribe();
     return () => supabase.removeChannel(channel);
-  }, [room, load]);
+  }, [room, load, loadAi]);
 
   const handleReview = async (taskId, status) => {
     const note = notes.trim();
@@ -278,6 +323,11 @@ export default function ReviewPage({ room }) {
 
                     <span className={styles.taskDate}>{formatDate(task.created_at)}</span>
                     {info?.urgent && <UrgentBadge overdue={info.overdue} />}
+                    {task.status === 'submitted' && aiReviews[task.id] && (
+                      <span className={styles.aiChip} title="AI QA match score">
+                        <Sparkles size={11} /> {aiReviews[task.id].score}%
+                      </span>
+                    )}
                     <StatusBadge status={task.status} />
 
                     {isActionable(task) && (
@@ -397,6 +447,12 @@ export default function ReviewPage({ room }) {
                       <AttachmentList items={task.attachments} />
                       <span className={styles.fullDescLabel}>Submission</span>
                       <SubmissionTable rows={task.submission} />
+                      <AiQaCheck
+                        task={task}
+                        review={aiReviews[task.id]}
+                        enabled={aiEnabled}
+                        onUseAsFeedback={text => { setNotes(text); setNoteError(''); }}
+                      />
                       <label className={styles.reviewLabel} htmlFor={`notes-${task.id}`}>
                         Feedback for {task.profiles?.first_name ?? 'employee'} <span className={styles.optional}>(required if you request a revision)</span>
                       </label>
