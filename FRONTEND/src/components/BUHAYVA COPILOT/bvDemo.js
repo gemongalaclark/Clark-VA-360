@@ -183,6 +183,37 @@ export const demoApi = {
     return read().profile;
   },
 
+  /* Rule-based stand-in for the Gemini resume reader. PDFs and images need real OCR, so they're live-only. */
+  async parseResume(payload) {
+    await wait(900);
+    if (payload.file) throw new Error('PDF and image import uses Gemini, so it’s live-only. In the demo, try a Word (.docx) or text file.');
+    const lines = payload.text.split('\n').map(l => l.trim()).filter(Boolean);
+    const first = lines[0] || '';
+    const name = first.length < 60 && first === first.toUpperCase()
+      ? first.toLowerCase().replace(/\b\p{L}/gu, c => c.toUpperCase())
+      : first.slice(0, 60);
+    /* The lookbehind skips the domain part of email addresses (…@gmail.com). */
+    const links = [...new Set(payload.text.match(/(?<![@\w.-])(?:https?:\/\/)?(?:[\w-]+\.)+(?:com|app|io|ph|dev|net|me|co)(?:\/[^\s,♦]*)?/gi) || [])]
+      .map(l => (l.startsWith('http') ? l : `https://${l}`));
+    const lower = payload.text.toLowerCase();
+    const niches = [
+      /virtual assistant|\bva\b/.test(lower) && 'Virtual Assistant',
+      /web|html|react|wordpress/.test(lower) && 'Web Developer',
+      /automation|zapier|make\.com|prompt/.test(lower) && 'Automation Specialist',
+      /social media|canva/.test(lower) && 'Social Media Manager',
+    ].filter(Boolean);
+    return {
+      full_name: name,
+      target_niches: niches.join(', ') || 'Virtual Assistant',
+      portfolio_links: links.join('\n'),
+      resume_text: lines.join('\n')
+        .replace(/[♦|]\s*\+?\d[\d\s-]{7,}\d\s*/g, '')   // drop phone numbers
+        .replace(/[♦▪●]/g, '·')
+        .slice(0, 12000),
+      hourly_rate_min: null,
+    };
+  },
+
   async listJobs() {
     await wait();
     return [...read().jobs].sort((a, b) => b.created_at.localeCompare(a.created_at));

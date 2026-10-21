@@ -1,12 +1,67 @@
-import { useState } from 'react';
-import { Loader2, Save } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Loader2, Save, Upload, Sparkles, Check } from 'lucide-react';
 import styles from './BuhayvaCopilot.module.css';
 import { Modal } from './ui';
+import { readResumeFile, RESUME_ACCEPT } from './bvResume';
 
 /* Master resume + niche preferences. Gemini reads this on every analysis, so the more specific the
-   resume (tools, numbers, results), the more specific the pitches. */
+   resume (tools, numbers, results), the more specific the pitches.
+   "Import from resume" lets Gemini fill the form from a file; the user still reviews and saves. */
 
 const MAX_RESUME = 12000;
+
+function ResumeImport({ api, onFilled }) {
+  const [state, setState] = useState('idle');   // idle | reading | done
+  const [over, setOver] = useState(false);
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+  const input = useRef(null);
+  const busy = state === 'reading';
+
+  const importFile = async (file) => {
+    if (!file || busy) return;
+    setState('reading');
+    setError('');
+    setMessage(`Reading ${file.name}…`);
+    try {
+      onFilled(await api.parseResume(await readResumeFile(file)));
+      setMessage(`Filled from ${file.name}. Check every field, then press Save profile.`);
+      setState('done');
+    } catch (e) {
+      setError(e.message || 'Could not read that resume.');
+      setState('idle');
+    }
+  };
+
+  return (
+    <div>
+      <div
+        className={`${styles.importZone} ${over ? styles.importZoneOver : ''}`}
+        role="button"
+        tabIndex={0}
+        aria-label="Import profile from a resume file"
+        onClick={() => !busy && input.current?.click()}
+        onKeyDown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && !busy) { e.preventDefault(); input.current?.click(); } }}
+        onDragOver={(e) => { e.preventDefault(); setOver(true); }}
+        onDragLeave={() => setOver(false)}
+        onDrop={(e) => { e.preventDefault(); setOver(false); importFile(e.dataTransfer.files[0]); }}
+      >
+        <span className={styles.flowIcon}>{busy ? <Loader2 className={styles.spin} size={20} /> : <Sparkles size={20} />}</span>
+        <div>
+          <strong>{busy ? 'Gemini is reading your resume…' : 'Import from resume'}</strong>
+          <span className={styles.muted}>Drop a PDF, Word, text file or screenshot. AI fills in the form below.</span>
+        </div>
+        {!busy && <Upload size={18} className={styles.importIcon} />}
+        <input
+          ref={input} type="file" hidden accept={RESUME_ACCEPT}
+          onChange={(e) => { importFile(e.target.files[0]); e.target.value = ''; }}
+        />
+      </div>
+      {state === 'done' && <p className={styles.importDone}><Check size={15} /> {message}</p>}
+      {error && <p className={styles.fieldError} role="alert">{error}</p>}
+    </div>
+  );
+}
 
 export default function ProfileModal({ api, profile, onClose, onSaved }) {
   const [form, setForm] = useState({
@@ -19,6 +74,14 @@ export default function ProfileModal({ api, profile, onClose, onSaved }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const set = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }));
+
+  /* Only overwrite what the AI actually found, so an empty answer never wipes a field. */
+  const fillFromResume = (parsed) => setForm(f => ({
+    ...f,
+    ...Object.fromEntries(['full_name', 'target_niches', 'portfolio_links', 'resume_text']
+      .filter(k => parsed[k]).map(k => [k, parsed[k]])),
+    ...(parsed.hourly_rate_min ? { hourly_rate_min: parsed.hourly_rate_min } : {}),
+  }));
 
   const save = async (e) => {
     e.preventDefault();
@@ -41,6 +104,7 @@ export default function ProfileModal({ api, profile, onClose, onSaved }) {
   return (
     <Modal title="Master profile" onClose={onClose} wide>
       <p className={styles.muted}>Saved once, used for every job. Gemini only ever sees what you put here.</p>
+      <ResumeImport api={api} onFilled={fillFromResume} />
       <form onSubmit={save}>
         <div className={styles.formGrid}>
           <div className={styles.field}>

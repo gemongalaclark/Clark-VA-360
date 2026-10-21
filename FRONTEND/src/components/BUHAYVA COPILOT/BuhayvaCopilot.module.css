@@ -247,6 +247,21 @@
   font: 0.8rem/1.5 'Inter', sans-serif; white-space: pre-wrap; overflow-wrap: anywhere; color: #3b3f52;
 }
 
+/* ── Resume import ───────────────────────────────────────── */
+.importZone {
+  display: flex; align-items: center; gap: 14px; margin-top: 16px; padding: 14px 16px;
+  border: 2px dashed #e9b4b4; border-radius: 12px; background: #fffafa; cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.importZone .flowIcon { flex: none; margin: 0; }
+.importZone > div { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.importZone strong { font-size: 0.95rem; }
+.importZone .muted { font-size: 0.82rem; }
+.importZone:hover, .importZoneOver { border-color: var(--bv-accent); background: var(--bv-accent-soft); }
+.importZone:focus-visible { outline: 2px solid var(--bv-accent); outline-offset: 2px; }
+.importIcon { flex: none; color: var(--bv-accent); }
+.importDone { display: flex; align-items: center; gap: 6px; color: var(--bv-green); font-size: 0.85rem; font-weight: 500; }
+
 /* ── Bookmarklet modal ───────────────────────────────────── */
 .bookmarkletDrop { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 16px; padding: 18px; border: 2px dashed #e9b4b4; border-radius: 12px; background: var(--bv-accent-soft); }
 .bookmarklet {

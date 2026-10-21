@@ -42,6 +42,20 @@ const liveApi = {
       .upsert({ ...fields, user_id: user.id }, { onConflict: 'user_id' }).select().single());
   },
 
+  /* Gemini reads the resume (bv-parse-resume Edge Function) and returns profile fields. Nothing is saved. */
+  async parseResume(payload) {
+    const { data, error } = await supabase.functions.invoke('bv-parse-resume', { body: payload });
+    if (error) {
+      /* functions.invoke hides the JSON error body on non-2xx; dig it out for a useful message. */
+      let msg = error.message;
+      try { msg = (await error.context.json()).error || msg; } catch { /* keep default */ }
+      if (/failed to send|not found/i.test(msg)) msg = 'Resume import isn’t deployed yet (bv-parse-resume Edge Function).';
+      throw new Error(msg);
+    }
+    if (data?.error) throw new Error(data.error);
+    return data;
+  },
+
   async listJobs() {
     return must(await supabase.from('bv_job_applications').select('*').order('created_at', { ascending: false }));
   },
