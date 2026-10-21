@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight, ExternalLink, Sparkles, Calendar, ArrowUpRight, ArrowRight, Zap, Rocket, ClipboardCheck, ShieldCheck, BookOpen, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ExternalLink, Sparkles, Calendar, ArrowUpRight, ArrowRight, Zap, Rocket, ClipboardCheck, ShieldCheck, BookOpen, X, Briefcase } from 'lucide-react';
 import styles from './Projects.module.css';
 
 /* Projects data */
@@ -44,6 +44,18 @@ const projects = [
   },
   {
     id: 4,
+    category: 'AI Career Tools',
+    title: 'BuhayVA Copilot',
+    description: '1-click job analyzer for Upwork and OnlineJobs.ph: Gemini scores your fit, catches hidden attention checks and red flags, drafts a tailored pitch, and tracks every application.',
+    tags: ['Gemini AI', 'Make.com', 'Supabase', 'React'],
+    image: null,
+    liveUrl: '/buhayva-copilot',
+    githubUrl: null,
+    placeholder: false,
+    featured: false,
+  },
+  {
+    id: 5,
     category: 'In the pipeline',
     title: 'Coming Soon',
     description: 'Building out my portfolio one project at a time.',
@@ -108,6 +120,24 @@ const docs = {
       'Private and safe: each customer can only ever see their own stuff.',
       'The owner sees a board of all customers and spots anyone who has gone quiet.',
       'You can try it with the demo buttons. No account needed.',
+    ],
+  },
+  4: {
+    what: 'BuhayVA Copilot is a helper for freelancers who apply to jobs on Upwork and OnlineJobs.ph. You give it a job post, and it tells you how well you match, warns you about anything fishy, and writes a proposal for you based on your own resume.',
+    use: [
+      'Save your resume, your skills and your minimum rate once in “Master profile”.',
+      'Paste a job post, or click the “Send to Copilot” bookmark while you are looking at the job.',
+      'The AI (Google Gemini) gives the job a fit score from 0 to 100 and lists the skills you share.',
+      'It points out secret code words the client asked for, like “put BANANA in the subject”, plus red flags like very low pay.',
+      'Copy the ready-made proposal, send it, then move the job along: Applied, Interviewing, Offer.',
+    ],
+    purpose: 'Applying for online jobs takes a long time: reading every post, deciding if it is worth it, and writing a fresh proposal each time. Clients also hide little tests in their posts to see who actually read them. Copilot does the reading and the first draft, so you can apply faster and smarter.',
+    help: [
+      'Spend your time on jobs you can actually win.',
+      'Never miss a hidden code word again.',
+      'Proposals that mention your real projects, not generic filler.',
+      'One board shows every job you applied to and where it stands.',
+      'Try it with the demo button. No account needed.',
     ],
   },
 };
@@ -250,6 +280,20 @@ function ProjectCard({ project, onDocs }) {
               <div className={styles.graphicBadgeRow}>
                 <span className={styles.graphicAiPill}><ShieldCheck size={11} /> RLS secured</span>
                 <span className={styles.teamsyncRolePill}>Client portal</span>
+              </div>
+            </div>
+          </div>
+        ) : project.id === 4 ? (
+          <div className={styles.teamsyncGraphic}>
+            <div className={styles.teamsyncGlow} />
+            <div className={styles.teamsyncGraphicInner}>
+              <div className={styles.teamsyncIconWrap}>
+                <Briefcase size={30} className={styles.teamsyncIcon} />
+              </div>
+              <span className={styles.teamsyncTitle}>BuhayVA Copilot</span>
+              <div className={styles.graphicBadgeRow}>
+                <span className={styles.graphicAiPill}><Sparkles size={11} /> Gemini AI</span>
+                <span className={styles.teamsyncRolePill}>Fit score + CRM</span>
               </div>
             </div>
           </div>

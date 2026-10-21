@@ -11,12 +11,15 @@ import Footer from './components/Footer';
 import GoogleCalendarAutoScheduler from './components/GOOGLE CALENDAR AUTO SCHEDULER/GoogleCalendarAutoScheduler';
 import TeamSyncWorkspace from './components/TEAMSYNC WORKSPACE/TeamSyncWorkspace';
 import OnboardBase from './components/ONBOARDBASE/OnboardBase';
+import BuhayvaCopilot from './components/BUHAYVA COPILOT/BuhayvaCopilot';
 import './App.css';
 
 function checkRoute() {
   if (typeof window === 'undefined') return 'portfolio';
   const path = window.location.pathname.toLowerCase();
   const hash = window.location.hash.toLowerCase();
+  /* Checked first: the copilot's #ingest= fragment carries job text that may contain other route words. */
+  if (path.startsWith('/buhayva-copilot') || hash.startsWith('#buhayva-copilot')) return 'copilot';
   if (
     path.startsWith('/auto-scheduler') ||
     path.startsWith('/google-calendar-auto-scheduler') ||
@@ -82,6 +85,12 @@ export default function App() {
   if (route === 'onboardbase') {
     return (
       <OnboardBase onBackToPortfolio={goToPortfolio} />
+    );
+  }
+
+  if (route === 'copilot') {
+    return (
+      <BuhayvaCopilot onBackToPortfolio={goToPortfolio} />
     );
   }
 
