@@ -1,0 +1,256 @@
+/* ============================================================
+   CV VIEWER – résumé preview modal with download
+   ============================================================ */
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(26, 26, 46, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: cvFade 0.25s ease both;
+}
+
+.modal {
+  width: min(1120px, 100%);
+  height: min(860px, calc(100dvh - 48px));
+  display: flex;
+  flex-direction: column;
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 30px 80px rgba(26, 26, 46, 0.35);
+  overflow: hidden;
+  animation: cvRise 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+/* ── Header ── */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px 14px 20px;
+  border-bottom: 1px solid #f3dede;
+  background: linear-gradient(180deg, #fff 0%, var(--bg-light) 100%);
+}
+.fileIcon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--gradient-red);
+  color: var(--white);
+  box-shadow: var(--shadow-md);
+}
+.titleWrap { flex: 1; min-width: 0; }
+.title {
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-dark);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sub { font-size: 0.76rem; color: var(--text-muted); }
+.actions { display: flex; align-items: center; gap: 8px; }
+
+.primaryBtn,
+.ghostBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 38px;
+  padding: 0 16px;
+  border-radius: var(--radius-full);
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
+}
+.primaryBtn {
+  background: linear-gradient(135deg, var(--red-primary), var(--red-light));
+  color: var(--white);
+  box-shadow: 0 6px 18px rgba(203, 37, 37, 0.28);
+}
+.primaryBtn:hover { transform: translateY(-1px); box-shadow: 0 10px 24px rgba(203, 37, 37, 0.36); }
+.ghostBtn {
+  background: var(--white);
+  color: var(--text-dark);
+  border: 1px solid #ecd2d2;
+}
+.ghostBtn:hover { background: var(--off-white); border-color: var(--red-pastel); }
+
+.closeBtn {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  margin-left: 4px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-body);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
+}
+.closeBtn:hover { background: #fde8e8; color: var(--red-primary); transform: rotate(90deg); }
+
+.primaryBtn:focus-visible,
+.ghostBtn:focus-visible,
+.closeBtn:focus-visible {
+  outline: 2px solid var(--red-primary);
+  outline-offset: 2px;
+}
+
+/* ── Body ── */
+.body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr 300px;
+}
+
+.viewer {
+  position: relative;
+  min-height: 0;
+  padding: 18px;
+  background:
+    radial-gradient(circle at 20% 0%, rgba(234, 67, 67, 0.06), transparent 55%),
+    #f4f1f3;
+}
+.frame {
+  width: 100%;
+  height: 100%;
+  border: none;
+  border-radius: 12px;
+  background: var(--white);
+  box-shadow: 0 10px 30px rgba(26, 26, 46, 0.12);
+}
+
+/* ── Side panel ── */
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 22px 20px;
+  overflow-y: auto;
+  border-left: 1px solid #f3dede;
+}
+.eyebrow {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--red-primary);
+}
+.role {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-style: italic;
+  font-size: 1.2rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--text-dark);
+}
+.summary { font-size: 0.84rem; color: var(--text-body); line-height: 1.55; }
+
+.facts {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 4px 0 6px;
+  padding: 14px;
+  border-radius: var(--radius-md);
+  background: var(--bg-light);
+}
+.facts li { display: flex; gap: 10px; align-items: flex-start; }
+.factIcon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: var(--white);
+  color: var(--red-primary);
+  box-shadow: var(--shadow-sm);
+}
+.factLabel { display: block; font-size: 0.68rem; font-weight: 700; color: var(--text-muted); }
+.factValue { display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-dark); line-height: 1.35; }
+
+.chips { list-style: none; display: flex; flex-wrap: wrap; gap: 6px; }
+.chips li {
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  border: 1px solid #f0d4d4;
+  background: var(--white);
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--text-body);
+}
+.sideCta { margin-top: auto; width: 100%; height: 44px; }
+
+/* ── Phone fallback (no inline PDF support) ── */
+.fallback {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  text-align: center;
+}
+.paper {
+  width: min(220px, 60vw);
+  aspect-ratio: 8.5 / 11;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px 18px;
+  border-radius: 8px;
+  background: var(--white);
+  box-shadow: 0 16px 36px rgba(26, 26, 46, 0.16);
+  transform: rotate(-2deg);
+}
+.paperName { font-family: Georgia, serif; font-size: 1rem; color: var(--text-dark); text-align: left; }
+.paperHead { width: 45%; height: 7px; margin-top: 8px; border-radius: 4px; background: var(--red-pastel); }
+.paperLine { width: 100%; height: 5px; border-radius: 4px; background: #ece7ea; }
+.fallbackText { max-width: 280px; font-size: 0.86rem; color: var(--text-body); }
+.fallbackActions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .body { grid-template-columns: 1fr; }
+  .side { display: none; }
+}
+@media (max-width: 700px) {
+  .backdrop { padding: 0; place-items: end center; }
+  .modal {
+    height: min(92dvh, 720px);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    animation-name: cvSheet;
+  }
+  .header { padding: 12px 12px 12px 16px; gap: 10px; }
+  .fileIcon { width: 34px; height: 34px; border-radius: 10px; }
+  .title { font-size: 0.92rem; }
+  .actions > .ghostBtn,
+  .actions > .primaryBtn { display: none; }
+  .viewer { padding: 16px; }
+}
+
+@keyframes cvFade { from { opacity: 0; } }
+@keyframes cvRise { from { opacity: 0; transform: translateY(18px) scale(0.98); } }
+@keyframes cvSheet { from { transform: translateY(100%); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .backdrop, .modal { animation: none; }
+  .closeBtn:hover, .primaryBtn:hover { transform: none; }
+}

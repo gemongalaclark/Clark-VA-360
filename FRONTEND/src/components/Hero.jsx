@@ -1,5 +1,6 @@
-import { useEffect, useRef } from 'react';
-import { Mail, MapPin, Download, ArrowRight } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Mail, MapPin, Download, ArrowRight, FileText } from 'lucide-react';
+import CvViewer from './CvViewer';
 import styles from './Hero.module.css';
 
 const highlights = [
@@ -11,6 +12,8 @@ const highlights = [
 
 export default function Hero() {
   const coverRef = useRef(null);
+  const [cvOpen, setCvOpen] = useState(false);
+  const closeCv = useCallback(() => setCvOpen(false), []);
 
   /* Pointer parallax (mouse devices) + scroll-linked drift/fade.
      JS only writes --mx / --my / --sp; every visual lives in the stylesheet. */
@@ -139,17 +142,18 @@ export default function Hero() {
               <a id="hero-email" href="mailto:gemongalaclark.official@gmail.com" className="social-btn" aria-label="Email">
                 <Mail size={16} />
               </a>
-              <a
+              <button
                 id="hero-cv"
-                href="#"
+                type="button"
                 className={styles.cvBtn}
-                aria-label="Download CV (coming soon)"
-                aria-disabled="true"
-                onClick={(e) => e.preventDefault()}
-                title="CV coming soon"
+                onClick={() => setCvOpen(true)}
+                aria-haspopup="dialog"
+                aria-label="View or download CV"
               >
-                <Download size={14} /> CV <em>soon</em>
-              </a>
+                <span className={styles.cvIcon}><FileText size={13} /></span>
+                CV
+                <Download size={13} className={styles.cvDl} aria-hidden="true" />
+              </button>
             </div>
           </aside>
 
@@ -193,6 +197,7 @@ export default function Hero() {
             <span className={styles.railTrack}><span className={styles.railDot} /></span>
           </button>
         </div>
+        <CvViewer open={cvOpen} onClose={closeCv} />
     </section>
   );
 }

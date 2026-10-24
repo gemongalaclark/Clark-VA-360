@@ -91,6 +91,10 @@ export default function AuthPage({ mode, setMode, onSuccess, onBack }) {
 
   const isSignup = mode === 'signup';
   const passwordLogin = !isSignup && !useCode;
+  /* Sign-up: keep "Send Verification Code" disabled until every field is valid */
+  const signupReady = !isSignup || (
+    firstName.trim() && lastName.trim() && email.trim() && isStrong(password) && password === confirm
+  );
 
   const startCooldown = () => {
     setResendCooldown(60);
@@ -351,7 +355,7 @@ export default function AuthPage({ mode, setMode, onSuccess, onBack }) {
 
               {error && <p className={styles.error}>{error}</p>}
 
-              <button type="submit" className={styles.btnPrimary} disabled={loading}>
+              <button type="submit" className={styles.btnPrimary} disabled={loading || !signupReady}>
                 {loading ? <Loader size={16} className={styles.spin} /> : null}
                 {submitLabel()}
               </button>
