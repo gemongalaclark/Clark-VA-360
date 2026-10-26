@@ -136,15 +136,13 @@ export default function TeamSyncWorkspace({ onBackToPortfolio }) {
     setUserRole(null);
   };
 
+  /* After sign-in always land on room selection; the user picks a room from their list */
   const handleProfileCreated = async (prof) => {
+    userIdRef.current = prof.id;
+    /* The auth listener skips events while on the auth page, so pick up the new session here */
+    const { data: { session } } = await supabase.auth.getSession();
+    setSession(session);
     setProfile(prof);
-    /* Re-check memberships after profile creation */
-    const { data: memberships } = await supabase
-      .from('room_members').select('*, rooms(*)').eq('user_id', prof.id);
-    if (memberships?.length) {
-      const active = memberships.find(m => m.role === 'owner' || m.role === 'employee');
-      if (active) { setCurrentRoom(active.rooms); setUserRole(active.role); setPage('dashboard'); return; }
-    }
     setPage('room-select');
   };
 
