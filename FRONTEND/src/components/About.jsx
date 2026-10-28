@@ -1,4 +1,4 @@
-import { GraduationCap, Briefcase, Wrench, Target, BookOpen, ArrowRight } from 'lucide-react';
+import { GraduationCap, Briefcase, Wrench, Target, BookOpen, ArrowRight, Play } from 'lucide-react';
 import styles from './About.module.css';
 
 const stats = [
@@ -13,6 +13,14 @@ const journey = [
   { Icon: Briefcase,     title: 'Web Developer Intern', meta: 'Knowles Training Institute' },
   { Icon: BookOpen,      title: 'VA Training', meta: 'The VA Bar · ongoing' },
 ];
+
+const INTRO_VIDEO = '/videos/Introductionvideo.mp4';
+const PREVIEW_SECONDS = 15;
+
+// Loop only the first few seconds as a silent teaser
+function loopPreview(e) {
+  if (e.currentTarget.currentTime >= PREVIEW_SECONDS) e.currentTarget.currentTime = 0;
+}
 
 export default function About() {
   return (
@@ -51,6 +59,29 @@ export default function About() {
 
           {/* At a glance */}
           <aside className={styles.glance} aria-label="Background at a glance">
+            <a
+              href={INTRO_VIDEO}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.videoPreview}
+              aria-label="Watch my full introduction video (opens in a new tab)"
+            >
+              <video
+                src={`${INTRO_VIDEO}#t=0,${PREVIEW_SECONDS}`}
+                muted
+                autoPlay
+                loop
+                playsInline
+                preload="metadata"
+                onTimeUpdate={loopPreview}
+                aria-hidden="true"
+                tabIndex={-1}
+              />
+              <span className={styles.videoOverlay}>
+                <span className={styles.playIcon}><Play size={20} fill="currentColor" /></span>
+                Watch full intro
+              </span>
+            </a>
             <span className={styles.status}>
               <span className={styles.statusDot} /> Open to my first client
             </span>
