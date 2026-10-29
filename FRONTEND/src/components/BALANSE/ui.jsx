@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { X, AlertTriangle, Archive, Pencil, Trash2 } from 'lucide-react';
 import styles from './Balanse.module.css';
 
@@ -125,12 +125,80 @@ export function Field({ label, hint, children }) {
   );
 }
 
-/* Number input with a ₱ prefix. Uncontrolled unless value/onChange are passed. */
-export function PesoInput(props) {
+/* Keep digits and one decimal point (max 2 decimals); drop leading zeros. "08,0.5x" → "80.5" */
+function cleanAmount(str) {
+  const s = String(str ?? '').replace(/[^\d.]/g, '');
+  const dot = s.indexOf('.');
+  let int = dot === -1 ? s : s.slice(0, dot);
+  const dec = dot === -1 ? null : s.slice(dot + 1).replace(/\./g, '').slice(0, 2);
+  int = int.replace(/^0+(?=\d)/, '');
+  if (dec !== null && int === '') int = '0';
+  return dec === null ? int : `${int}.${dec}`;
+}
+
+/* "1234567.5" → "1,234,567.5" (keeps a trailing "." while the user is typing decimals). */
+function groupAmount(raw) {
+  if (!raw) return '';
+  const [int, dec] = raw.split('.');
+  const grouped = int.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return dec === undefined ? grouped : `${grouped}.${dec}`;
+}
+
+/* Peso amount field that shows thousands separators as you type (800000 → 800,000).
+   A hidden input carries the plain number under `name`, so FormData gets "800000".
+   Controlled via value/onChange (onChange receives { target: { value: raw } }) or
+   uncontrolled via defaultValue. min/max are enforced with custom validity messages,
+   since a text input ignores them natively. */
+export function PesoInput({ name, value, defaultValue, onChange, min, max, placeholder, ...rest }) {
+  const controlled = value !== undefined;
+  const [inner, setInner] = useState(() => cleanAmount(defaultValue));
+  const raw = cleanAmount(controlled ? value : inner);
+  const ref = useRef(null);
+  const caret = useRef(null);   // count of digits/dots that should sit left of the caret
+
+  /* Re-place the caret after commas are inserted or removed, so typing never jumps. */
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (caret.current == null || !el || document.activeElement !== el) return;
+    let seen = 0, pos = 0;
+    while (pos < el.value.length && seen < caret.current) {
+      if (/[\d.]/.test(el.value[pos])) seen++;
+      pos++;
+    }
+    el.setSelectionRange(pos, pos);
+    caret.current = null;
+  });
+
+  useEffect(() => {
+    const n = Number(raw);
+    let msg = '';
+    if (raw !== '' && min != null && n < Number(min)) msg = Number(min) > 0 ? 'Enter an amount greater than ₱0.' : 'Amount can’t be negative.';
+    else if (raw !== '' && max != null && n > Number(max)) msg = `This can’t be more than ${peso(max)}.`;
+    ref.current?.setCustomValidity(msg);
+  }, [raw, min, max]);
+
+  const handleChange = (e) => {
+    const el = e.target;
+    caret.current = el.value.slice(0, el.selectionStart ?? el.value.length).replace(/[^\d.]/g, '').length;
+    const next = cleanAmount(el.value);
+    if (controlled) onChange?.({ target: { value: next } });
+    else setInner(next);
+  };
+
   return (
     <span className={styles.pesoInput}>
       <span aria-hidden="true">₱</span>
-      <input type="number" step="0.01" inputMode="decimal" {...props} />
+      <input
+        ref={ref}
+        type="text"
+        inputMode="decimal"
+        autoComplete="off"
+        value={groupAmount(raw)}
+        onChange={handleChange}
+        placeholder={placeholder ? groupAmount(cleanAmount(placeholder)) : undefined}
+        {...rest}
+      />
+      {name && <input type="hidden" name={name} value={raw} />}
     </span>
   );
 }
