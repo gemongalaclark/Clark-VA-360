@@ -68,6 +68,60 @@
   --navbar-height: 72px;
 }
 
+/* Dark theme – set on <html> by the portfolio's theme toggle (src/lib/theme.js).
+   --white stays white: it is also the text colour on red buttons. */
+html[data-theme='dark'] {
+  --red-primary: #ea4343;
+  --red-light: #f26b6b;
+  --off-white: #1c1c27;
+  --bg-light: #1c1c27;
+  --bg-section: #13131b;
+
+  --gray-100: #1e1e29;
+  --gray-200: #2a2a37;
+  --gray-300: #3a3a48;
+  --gray-400: #4f4f5e;
+  --gray-500: #7a7a8c;
+  --gray-600: #9a9aab;
+  --gray-700: #c0c0cf;
+  --gray-800: #dcdce6;
+  --gray-900: #f0f0f5;
+
+  --text-dark: #f2f2f7;
+  --text-body: #c3c3d4;
+  --text-muted: #8f8fa8;
+
+  --gradient-hero: linear-gradient(135deg, #15151e 0%, #1c1620 50%, #15151e 100%);
+  --gradient-card: linear-gradient(145deg, rgba(30,30,41,0.9), rgba(36,26,32,0.7));
+
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.5);
+  --shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.55);
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.4);
+
+  /* Dark-only surfaces used by component overrides */
+  --dk-page: #101017;
+  --dk-surface: #1a1a24;
+  --dk-raised: #22222e;
+  --dk-border: rgba(255, 255, 255, 0.08);
+  --dk-border-strong: rgba(255, 255, 255, 0.14);
+}
+
+html[data-theme='dark'] body {
+  background-color: var(--dk-page);
+}
+
+html[data-theme='dark'] .social-btn {
+  background: var(--dk-raised);
+  border-color: var(--dk-border-strong);
+}
+
+html[data-theme='dark'] .social-btn:hover {
+  background: var(--red-primary);
+  border-color: var(--red-primary);
+}
+
 html {
   scroll-behavior: smooth;
 }

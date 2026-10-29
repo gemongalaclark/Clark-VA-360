@@ -437,3 +437,21 @@
   .script { translate: -50% 0; }
   .railDot { animation: none; }
 }
+
+/* ── Dark theme ── */
+:global(html[data-theme='dark']) .hero {
+  --ink: #f2f2f7;
+  --paper: #101017;
+  --rule: rgba(255, 255, 255, 0.14);
+  background:
+    radial-gradient(900px 520px at 50% 38%, rgba(234, 67, 67, 0.14), transparent 70%),
+    linear-gradient(180deg, #15131b 0%, var(--paper) 100%);
+}
+:global(html[data-theme='dark']) .card { background: rgba(26, 26, 36, 0.94); }
+:global(html[data-theme='dark']) .script { text-shadow: 0 2px 0 rgba(0, 0, 0, 0.5); }
+:global(html[data-theme='dark']) .portrait { filter: drop-shadow(0 24px 40px rgba(0, 0, 0, 0.5)); }
+:global(html[data-theme='dark']) .cvBtn {
+  background: var(--dk-raised);
+  border-color: var(--dk-border-strong);
+}
+:global(html[data-theme='dark']) .cvBtn:hover { border-color: var(--red-pastel); }

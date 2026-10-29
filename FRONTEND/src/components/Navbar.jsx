@@ -1,6 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, Sun, Moon, Monitor } from 'lucide-react';
+import { useTheme } from '../lib/theme';
 import styles from './Navbar.module.css';
+
+const themeOptions = [
+  { id: 'light', label: 'Light mode',          Icon: Sun },
+  { id: 'dark',  label: 'Dark mode',           Icon: Moon },
+  { id: 'auto',  label: 'Auto (system theme)', Icon: Monitor },
+];
 
 const navLinks = [
   { id: 'home',     label: 'Home' },
@@ -17,6 +24,7 @@ export default function Navbar() {
   const [indicator, setIndicator]   = useState({ left: 0, width: 0 });
   const [indReady, setIndReady]     = useState(false);
   const navListRef                  = useRef(null);
+  const [theme, setTheme]           = useTheme();
 
   /* scroll spy + scrolled state */
   useEffect(() => {
@@ -87,24 +95,44 @@ export default function Navbar() {
           ))}
         </ul>
 
-        {/* CTA */}
-        <button
-          className={`btn-primary ${styles.ctaBtn}`}
-          onClick={() => scrollTo('contact')}
-        >
-          Let&apos;s Talk
-        </button>
+        <div className={styles.actions}>
+          {/* Theme toggle */}
+          <div className={styles.themeToggle} role="radiogroup" aria-label="Color theme">
+            {themeOptions.map(({ id, label, Icon }) => (
+              <button
+                key={id}
+                type="button"
+                role="radio"
+                aria-checked={theme === id}
+                aria-label={label}
+                title={label}
+                className={`${styles.themeBtn} ${theme === id ? styles.themeBtnActive : ''}`}
+                onClick={() => setTheme(id)}
+              >
+                <Icon size={15} />
+              </button>
+            ))}
+          </div>
 
-        {/* Hamburger */}
-        <button
-          className={`${styles.hamburger} ${menuOpen ? styles.hamburgerOpen : ''}`}
-          onClick={() => setMenuOpen(o => !o)}
-          aria-label="Toggle menu"
-        >
-          <span className={styles.hamburgerBar} />
-          <span className={styles.hamburgerBar} />
-          <span className={styles.hamburgerBar} />
-        </button>
+          {/* CTA */}
+          <button
+            className={`btn-primary ${styles.ctaBtn}`}
+            onClick={() => scrollTo('contact')}
+          >
+            Let&apos;s Talk
+          </button>
+
+          {/* Hamburger */}
+          <button
+            className={`${styles.hamburger} ${menuOpen ? styles.hamburgerOpen : ''}`}
+            onClick={() => setMenuOpen(o => !o)}
+            aria-label="Toggle menu"
+          >
+            <span className={styles.hamburgerBar} />
+            <span className={styles.hamburgerBar} />
+            <span className={styles.hamburgerBar} />
+          </button>
+        </div>
       </div>
 
       {/* Mobile menu */}

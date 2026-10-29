@@ -254,3 +254,22 @@
   .backdrop, .modal { animation: none; }
   .closeBtn:hover, .primaryBtn:hover { transform: none; }
 }
+
+/* ── Dark theme (the PDF page itself stays white) ── */
+:global(html[data-theme='dark']) .backdrop { background: rgba(0, 0, 0, 0.65); }
+:global(html[data-theme='dark']) .modal { background: var(--dk-surface); box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6); }
+:global(html[data-theme='dark']) .header {
+  border-bottom-color: var(--dk-border);
+  background: linear-gradient(180deg, var(--dk-raised) 0%, var(--dk-surface) 100%);
+}
+:global(html[data-theme='dark']) .ghostBtn { background: var(--dk-raised); border-color: var(--dk-border-strong); }
+:global(html[data-theme='dark']) .ghostBtn:hover { background: #2a2a37; border-color: var(--red-pastel); }
+:global(html[data-theme='dark']) .closeBtn:hover { background: rgba(234, 67, 67, 0.14); }
+:global(html[data-theme='dark']) .viewer {
+  background: radial-gradient(circle at 20% 0%, rgba(234, 67, 67, 0.08), transparent 55%), #12121a;
+}
+:global(html[data-theme='dark']) .side { border-left-color: var(--dk-border); }
+:global(html[data-theme='dark']) .factIcon,
+:global(html[data-theme='dark']) .chips li { background: var(--dk-raised); }
+:global(html[data-theme='dark']) .chips li { border-color: var(--dk-border-strong); }
+:global(html[data-theme='dark']) .paperName { color: #1a1a2e; } /* sits on the white paper mock */

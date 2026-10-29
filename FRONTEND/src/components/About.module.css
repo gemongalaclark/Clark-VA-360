@@ -291,3 +291,22 @@
   .statusDot { animation: none; }
   .statCard, .primaryBtn, .videoPreview video { transition: none; }
 }
+
+/* ── Dark theme ── */
+:global(html[data-theme='dark']) .about { background: var(--dk-page); }
+:global(html[data-theme='dark']) .secondaryBtn {
+  background: var(--dk-surface);
+  border-color: var(--dk-border-strong);
+}
+:global(html[data-theme='dark']) .glance,
+:global(html[data-theme='dark']) .statCard {
+  background: var(--dk-surface);
+  border-color: var(--dk-border);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+}
+:global(html[data-theme='dark']) .statCard:hover { border-color: rgba(234, 67, 67, 0.35); }
+:global(html[data-theme='dark']) .status { background: rgba(16, 185, 129, 0.14); color: #6ee7b7; }
+:global(html[data-theme='dark']) .timelineItem:not(:last-child)::before { background: rgba(234, 67, 67, 0.2); }
+:global(html[data-theme='dark']) .timelineIcon,
+:global(html[data-theme='dark']) .statIcon { background: rgba(234, 67, 67, 0.14); }
+:global(html[data-theme='dark']) .secondaryBtn:hover { border-color: var(--red-primary); }

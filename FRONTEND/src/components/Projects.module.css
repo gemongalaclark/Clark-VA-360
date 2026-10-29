@@ -769,3 +769,69 @@
   100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); }
 }
 @media (prefers-reduced-motion: reduce) { .liveDot { animation: none; } }
+
+/* ── Dark theme ── */
+:global(html[data-theme='dark']) .projects { background: var(--dk-page); }
+
+:global(html[data-theme='dark']) .card {
+  background: var(--dk-surface);
+  border-color: var(--dk-border);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+:global(html[data-theme='dark']) .card:hover {
+  border-color: rgba(234, 67, 67, 0.35);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.5);
+}
+:global(html[data-theme='dark']) .featuredCard { border-color: rgba(234, 67, 67, 0.35); }
+:global(html[data-theme='dark']) .featuredCard:hover { border-color: rgba(234, 67, 67, 0.6); }
+
+/* card art panels */
+:global(html[data-theme='dark']) .featuredGraphic {
+  background: radial-gradient(circle at 70% 30%, #3a1a22 0%, #22161e 60%, #1a1a24 100%);
+}
+:global(html[data-theme='dark']) .teamsyncGraphic {
+  background: radial-gradient(circle at 30% 70%, #3a1a22 0%, #1d1d33 60%, #1a1a24 100%);
+}
+:global(html[data-theme='dark']) .teamsyncLogoImg { filter: invert(1) hue-rotate(180deg); } /* dark wordmark -> light */
+:global(html[data-theme='dark']) .teamsyncRolePill {
+  background: rgba(255, 255, 255, 0.08); color: var(--text-dark); border-color: var(--dk-border-strong);
+}
+:global(html[data-theme='dark']) .graphicAiPill { background: rgba(234, 67, 67, 0.14); color: #f26b6b; border-color: rgba(234, 67, 67, 0.3); }
+:global(html[data-theme='dark']) .graphicSyncPill { background: rgba(43, 138, 62, 0.18); color: #86efac; }
+
+:global(html[data-theme='dark']) .tag { background: rgba(234, 67, 67, 0.1); border-color: rgba(234, 67, 67, 0.22); }
+:global(html[data-theme='dark']) .cardFooter { border-top-color: var(--dk-border); }
+:global(html[data-theme='dark']) .viewBtn:hover { color: #f26b6b; }
+:global(html[data-theme='dark']) .cardArrowLink {
+  background: var(--dk-raised); border-color: var(--dk-border-strong);
+}
+:global(html[data-theme='dark']) .cardArrowLink:hover { background: var(--red-primary); border-color: var(--red-primary); }
+
+/* coming-soon placeholders */
+:global(html[data-theme='dark']) .placeholderCard,
+:global(html[data-theme='dark']) .placeholderCard:hover {
+  background: #16161f; border-color: var(--dk-border-strong); box-shadow: none;
+}
+:global(html[data-theme='dark']) .placeholderImg { background: linear-gradient(135deg, #1f1a22 0%, #261b22 100%); }
+:global(html[data-theme='dark']) .placeholderIconWrap { background: var(--dk-raised); box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35); }
+:global(html[data-theme='dark']) .placeholderCard .cardTitle { color: #9a9aab; }
+:global(html[data-theme='dark']) .soonChip { background: rgba(255, 255, 255, 0.06); color: #9a9aab; }
+
+/* carousel controls */
+:global(html[data-theme='dark']) .navBtn { background: var(--dk-surface); border-color: var(--dk-border-strong); }
+:global(html[data-theme='dark']) .navBtn:hover:not(.disabled) {
+  background: var(--red-primary); border-color: var(--red-primary); color: var(--white);
+}
+:global(html[data-theme='dark']) .hint {
+  background: rgba(234, 67, 67, 0.08); border-color: rgba(234, 67, 67, 0.2); color: #fca5a5;
+}
+
+/* project guide popup */
+:global(html[data-theme='dark']) .docsBtn { background: var(--dk-raised); border-color: var(--dk-border-strong); }
+:global(html[data-theme='dark']) .docsBtn:hover { border-color: var(--red-primary); }
+:global(html[data-theme='dark']) .docsBackdrop { background: rgba(0, 0, 0, 0.65); }
+:global(html[data-theme='dark']) .docsModal { background: var(--dk-surface); box-shadow: 0 24px 70px rgba(0, 0, 0, 0.6); }
+:global(html[data-theme='dark']) .docsClose { background: var(--dk-raised); border-color: var(--dk-border-strong); }
+:global(html[data-theme='dark']) .docsClose:hover { border-color: var(--red-primary); }
+:global(html[data-theme='dark']) .docsActions { border-top-color: var(--dk-border); }
+:global(html[data-theme='dark']) .docsOpen:hover { background: #c92e2e; }

@@ -256,3 +256,24 @@ a.contactItem:hover {
     grid-template-columns: 1fr;
   }
 }
+
+/* ── Dark theme ── */
+:global(html[data-theme='dark']) .contactIcon { background: rgba(234, 67, 67, 0.14); }
+:global(html[data-theme='dark']) .bookingCard {
+  background: var(--dk-surface);
+  border-color: rgba(234, 67, 67, 0.22);
+}
+:global(html[data-theme='dark']) .bookingCard:hover { border-color: rgba(234, 67, 67, 0.4); }
+:global(html[data-theme='dark']) .bookingMeta li { background: rgba(234, 67, 67, 0.12); color: #f26b6b; }
+:global(html[data-theme='dark']) .input,
+:global(html[data-theme='dark']) .textarea {
+  background: var(--dk-surface);
+  border-color: var(--dk-border-strong);
+}
+:global(html[data-theme='dark']) .input:focus,
+:global(html[data-theme='dark']) .textarea:focus {
+  border-color: var(--red-primary);
+  box-shadow: 0 0 0 3px rgba(234, 67, 67, 0.18);
+}
+:global(html[data-theme='dark']) .successMsg { background: rgba(22, 163, 74, 0.12); color: #86efac; }
+:global(html[data-theme='dark']) .errorMsg { background: rgba(234, 67, 67, 0.1); color: #fca5a5; }

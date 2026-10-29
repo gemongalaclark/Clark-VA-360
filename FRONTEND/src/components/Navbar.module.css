@@ -295,11 +295,107 @@
   justify-content: center;
 }
 
+/* ── Right-side actions: theme toggle + CTA + hamburger ── */
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+}
+
+.themeToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 9999px;
+  background: rgba(203, 37, 37, 0.06);
+  border: 1px solid rgba(203, 37, 37, 0.12);
+  animation: ctaIn 0.6s calc(0.15s + 5 * 0.07s) cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.themeBtn {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-muted);
+  transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.themeBtn:hover {
+  color: var(--red-primary);
+}
+
+.themeBtnActive,
+.themeBtnActive:hover {
+  background: var(--white);
+  color: var(--red-primary);
+  box-shadow: 0 2px 8px rgba(203, 37, 37, 0.18);
+}
+
+.themeBtn:focus-visible {
+  outline: 2px solid var(--red-primary);
+  outline-offset: 1px;
+}
+
+/* ── Dark theme ── */
+:global(html[data-theme='dark']) .navbar {
+  background: rgba(16, 16, 23, 0.82);
+}
+
+:global(html[data-theme='dark']) .navbar.scrolled {
+  background: rgba(16, 16, 23, 0.95);
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 28px rgba(0, 0, 0, 0.4);
+}
+
+:global(html[data-theme='dark']) .mobileMenu {
+  background: #16161f;
+  border-top-color: rgba(255, 255, 255, 0.06);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+
+:global(html[data-theme='dark']) .navLinkHoverBg,
+:global(html[data-theme='dark']) .hamburger:hover,
+:global(html[data-theme='dark']) .mobileLink:hover,
+:global(html[data-theme='dark']) .mobileLink.active {
+  background: rgba(234, 67, 67, 0.12);
+}
+
+:global(html[data-theme='dark']) .navLink:hover,
+:global(html[data-theme='dark']) .navLink.active,
+:global(html[data-theme='dark']) .mobileLink:hover,
+:global(html[data-theme='dark']) .mobileLink.active {
+  color: var(--red-light);
+}
+
+:global(html[data-theme='dark']) .themeToggle {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+:global(html[data-theme='dark']) .themeBtn:hover,
+:global(html[data-theme='dark']) .themeBtnActive {
+  color: var(--red-light);
+}
+
+:global(html[data-theme='dark']) .themeBtnActive {
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: none;
+}
+
 /* ── Responsive ── */
 @media (max-width: 768px) {
   .navLinks,
   .ctaBtn {
     display: none;
+  }
+
+  .actions {
+    gap: 8px;
   }
 
   .hamburger {

@@ -28,3 +28,6 @@
 @media (hover: none), (pointer: coarse) {
   .cursor { display: none; }
 }
+
+:global(html[data-theme='dark']) .cursor span { background: #f2f2f7; }
+:global(html[data-theme='dark']) .cursor[data-hover='1'] span { background: rgba(234, 67, 67, 0.45); }
