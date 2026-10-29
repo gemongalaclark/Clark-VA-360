@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Plus, Pencil, Trash2, Target, Trophy, PiggyBank, CalendarClock, Hourglass } from 'lucide-react';
 import styles from './Balanse.module.css';
-import { Meter, Money, Modal, Field, PesoInput, AmountModal, ConfirmModal, EmptyState, peso, pct, num } from './ui';
+import { Meter, Money, Modal, ModalForm, Field, PesoInput, AmountModal, ConfirmModal, EmptyState, peso, pct, num } from './ui';
 
 export const goalRemaining = (g) => Math.max(0, num(g.target_amount) - num(g.saved_amount));
 
@@ -51,7 +51,13 @@ function GoalForm({ goal, onSave, onClose }) {
   };
   return (
     <Modal title={goal?.id ? 'Edit goal' : 'Add a goal'} eyebrow="Goals" onClose={onClose}>
-      <form className={styles.form} onSubmit={submit}>
+      <ModalForm
+        onSubmit={submit}
+        actions={<>
+          <button type="button" className={styles.btnGhost} onClick={onClose}>Cancel</button>
+          <button className={styles.btnPrimary} disabled={busy}>{busy ? 'Saving…' : goal?.id ? 'Save changes' : 'Add goal'}</button>
+        </>}
+      >
         <Field label="What are you saving for?">
           <input name="name" required maxLength={80} placeholder="e.g. Montero Sport" defaultValue={goal?.name} />
         </Field>
@@ -69,11 +75,7 @@ function GoalForm({ goal, onSave, onClose }) {
         <Field label="Notes (optional)">
           <textarea name="notes" rows={2} maxLength={500} defaultValue={goal?.notes ?? ''} />
         </Field>
-        <div className={styles.formActions}>
-          <button type="button" className={styles.btnGhost} onClick={onClose}>Cancel</button>
-          <button className={styles.btnPrimary} disabled={busy}>{busy ? 'Saving…' : goal?.id ? 'Save changes' : 'Add goal'}</button>
-        </div>
-      </form>
+      </ModalForm>
     </Modal>
   );
 }

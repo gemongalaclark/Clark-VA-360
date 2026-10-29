@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Plus, Pencil, Trash2, Landmark, CheckCircle2, HandCoins, CalendarDays } from 'lucide-react';
 import styles from './Balanse.module.css';
-import { Meter, Money, Modal, Field, PesoInput, AmountModal, ConfirmModal, EmptyState, peso, pct, num } from './ui';
+import { Meter, Money, Modal, ModalForm, Field, PesoInput, AmountModal, ConfirmModal, EmptyState, peso, pct, num } from './ui';
 
 const ordinal = (n) => {
   const s = ['th', 'st', 'nd', 'rd'], v = n % 100;
@@ -35,7 +35,13 @@ function DebtForm({ debt, onSave, onClose }) {
   };
   return (
     <Modal title={debt?.id ? 'Edit debt' : 'Add a debt'} eyebrow="Debt tracker" onClose={onClose}>
-      <form className={styles.form} onSubmit={submit}>
+      <ModalForm
+        onSubmit={submit}
+        actions={<>
+          <button type="button" className={styles.btnGhost} onClick={onClose}>Cancel</button>
+          <button className={styles.btnPrimary} disabled={busy}>{busy ? 'Saving…' : debt?.id ? 'Save changes' : 'Add debt'}</button>
+        </>}
+      >
         <Field label="What is this debt?">
           <input name="name" required maxLength={80} placeholder="e.g. Credit card, Home Credit, Pag-IBIG loan" defaultValue={debt?.name} />
         </Field>
@@ -44,28 +50,24 @@ function DebtForm({ debt, onSave, onClose }) {
         </Field>
         <div className={styles.formRow}>
           <Field label="Total amount">
-            <PesoInput name="total_amount" min="0.01" required defaultValue={debt?.total_amount} />
+            <PesoInput name="total_amount" min="0.01" required placeholder="50000" defaultValue={debt?.total_amount} />
           </Field>
           <Field label="Already paid">
             <PesoInput name="paid_amount" min="0" defaultValue={debt?.paid_amount ?? 0} />
           </Field>
         </div>
         <div className={styles.formRow}>
-          <Field label="Monthly payment" hint="Optional">
-            <PesoInput name="monthly_payment" min="0" defaultValue={debt?.monthly_payment ?? ''} />
+          <Field label="Monthly payment (optional)">
+            <PesoInput name="monthly_payment" min="0" placeholder="5000" defaultValue={debt?.monthly_payment ?? ''} />
           </Field>
-          <Field label="Due day of month" hint="Optional, 1–31">
-            <input name="due_day" type="number" min="1" max="31" step="1" defaultValue={debt?.due_day ?? ''} />
+          <Field label="Due day (optional)">
+            <input name="due_day" type="number" min="1" max="31" step="1" placeholder="1–31" defaultValue={debt?.due_day ?? ''} />
           </Field>
         </div>
         <Field label="Notes (optional)">
           <textarea name="notes" rows={2} maxLength={500} defaultValue={debt?.notes ?? ''} />
         </Field>
-        <div className={styles.formActions}>
-          <button type="button" className={styles.btnGhost} onClick={onClose}>Cancel</button>
-          <button className={styles.btnPrimary} disabled={busy}>{busy ? 'Saving…' : debt?.id ? 'Save changes' : 'Add debt'}</button>
-        </div>
-      </form>
+      </ModalForm>
     </Modal>
   );
 }

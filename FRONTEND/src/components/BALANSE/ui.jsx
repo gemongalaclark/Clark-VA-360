@@ -82,6 +82,17 @@ export function Modal({ title, eyebrow, onClose, children, tone }) {
   );
 }
 
+/* Every modal form shares one layout: scrolling fields above a fixed action footer,
+   so long forms never push the header or the buttons off-screen. */
+export function ModalForm({ onSubmit, actions, children }) {
+  return (
+    <form className={styles.modalForm} onSubmit={onSubmit}>
+      <div className={styles.modalBody}>{children}</div>
+      <div className={styles.modalActions}>{actions}</div>
+    </form>
+  );
+}
+
 export function Field({ label, hint, children }) {
   return (
     <label className={styles.field}>
@@ -116,7 +127,13 @@ export function AmountModal({ title, eyebrow, label, max, presets = [], onSubmit
   };
   return (
     <Modal title={title} eyebrow={eyebrow} onClose={onClose}>
-      <form onSubmit={submit} className={styles.form}>
+      <ModalForm
+        onSubmit={submit}
+        actions={<>
+          <button type="button" className={styles.btnGhost} onClick={onClose}>Cancel</button>
+          <button className={styles.btnPrimary} disabled={busy}>{busy ? 'Saving…' : 'Save'}</button>
+        </>}
+      >
         <Field label={label} hint={max != null ? `Remaining balance: ${peso(max)}` : undefined}>
           <PesoInput className={styles.bigInput} min="0.01" max={max ?? undefined} required value={amount} onChange={(e) => setAmount(e.target.value)} />
         </Field>
@@ -127,11 +144,7 @@ export function AmountModal({ title, eyebrow, label, max, presets = [], onSubmit
             ))}
           </div>
         )}
-        <div className={styles.formActions}>
-          <button type="button" className={styles.btnGhost} onClick={onClose}>Cancel</button>
-          <button className={styles.btnPrimary} disabled={busy}>{busy ? 'Saving…' : 'Save'}</button>
-        </div>
-      </form>
+      </ModalForm>
     </Modal>
   );
 }
@@ -141,11 +154,13 @@ export function ConfirmModal({ title, text, confirmLabel = 'Delete', onConfirm, 
   const confirm = async () => { setBusy(true); await onConfirm(); setBusy(false); };
   return (
     <Modal title={title} onClose={onClose} tone="danger">
-      <div className={styles.confirmBody}>
-        <span className={styles.confirmIcon}><AlertTriangle size={20} /></span>
-        <p>{text}</p>
+      <div className={styles.modalBody}>
+        <div className={styles.confirmBody}>
+          <span className={styles.confirmIcon}><AlertTriangle size={20} /></span>
+          <p>{text}</p>
+        </div>
       </div>
-      <div className={styles.formActions}>
+      <div className={styles.modalActions}>
         <button type="button" className={styles.btnGhost} onClick={onClose} data-autofocus>Keep it</button>
         <button type="button" className={styles.btnDanger} onClick={confirm} disabled={busy}>{busy ? 'Deleting…' : confirmLabel}</button>
       </div>

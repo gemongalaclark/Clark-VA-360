@@ -253,9 +253,7 @@
 .authFine button:hover { text-decoration: underline; }
 
 /* ── Forms ───────────────────────────────────────────────── */
-.form { display: grid; gap: 16px; }
 .formRow { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.formActions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 6px; }
 .field { display: grid; gap: 7px; align-content: start; }
 .fieldLabel { font-size: 13px; font-weight: 600; color: var(--ink); }
 .fieldHint { font-size: 12px; color: var(--muted); }
@@ -288,17 +286,31 @@
 }
 .modal {
   position: relative;
-  width: min(540px, 100%); max-height: calc(100vh - 32px); overflow-y: auto;
-  background: var(--surface); border-radius: 22px; padding: 26px 28px 28px;
+  display: flex; flex-direction: column;
+  width: min(560px, 100%);
+  max-height: calc(100vh - 32px);
+  max-height: calc(100dvh - 32px);
+  overflow: hidden;
+  background: var(--surface); border-radius: 22px;
   box-shadow: 0 30px 80px rgba(26, 26, 46, 0.35);
   border-top: 4px solid var(--red);
   animation: rise 0.35s var(--ease-spring) both;
 }
 .modalDanger { border-top-color: var(--ink); width: min(440px, 100%); }
-.modalHead { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
+/* Header and footer stay put; only the fields scroll on short screens. */
+.modalHead {
+  flex: none; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+  padding: 22px 28px 18px; border-bottom: 1px solid var(--line);
+}
+.modalForm { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.modalBody { flex: 1; min-height: 0; overflow-y: auto; display: grid; gap: 18px; align-content: start; padding: 22px 28px 24px; }
+.modalActions {
+  flex: none; display: flex; justify-content: flex-end; gap: 10px;
+  padding: 16px 28px; border-top: 1px solid var(--line); background: var(--paper);
+}
 .modalHead h3 { font-size: 21px; }
 .modalHead .eyebrow { margin-bottom: 2px; }
-.confirmBody { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 16px; color: var(--ink-2); }
+.confirmBody { display: flex; gap: 14px; align-items: flex-start; color: var(--ink-2); }
 .confirmIcon { display: grid; place-items: center; flex: none; width: 40px; height: 40px; border-radius: 12px; background: var(--blush); color: var(--red); }
 @keyframes fadeIn { from { opacity: 0; } }
 @keyframes rise { from { opacity: 0; transform: translateY(18px) scale(0.98); } }
@@ -364,7 +376,9 @@
 .mobileBar { display: none; }
 
 .content { padding: 40px clamp(20px, 4vw, 56px) 64px; min-width: 0; }
-.page { max-width: 1140px; margin: 0 auto; display: grid; gap: 24px; animation: pageIn 0.4s ease both; }
+.page { max-width: 1140px; margin: 0 auto; display: grid; gap: 24px; animation: pageIn 0.4s ease backwards; }
+/* `backwards`, not `both`: a transform left on .page after the animation would make it the
+   containing block for the position:fixed modal backdrop and trap the modal inside the page. */
 @keyframes pageIn { from { opacity: 0; transform: translateY(8px); } }
 .pageHead { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 .pageHead h1 { font-size: clamp(28px, 3.2vw, 38px); font-weight: 700; }
@@ -689,7 +703,9 @@
   .formRow { grid-template-columns: 1fr; }
   .band { padding: 24px 22px; }
   .cardGrid { grid-template-columns: 1fr; }
-  .modal { padding: 22px 20px 22px; border-radius: 20px; }
+  .modal { border-radius: 20px; }
+  .modalHead, .modalBody, .modalActions { padding-left: 20px; padding-right: 20px; }
+  .modalActions > * { flex: 1; }
   .pageHead .btnPrimary { width: 100%; }
 }
 
