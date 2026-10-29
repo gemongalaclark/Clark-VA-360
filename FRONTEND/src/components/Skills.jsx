@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { GraduationCap, Briefcase } from 'lucide-react';
+import { GraduationCap, Briefcase, Check } from 'lucide-react';
 import styles from './Skills.module.css';
 
 /* ── Tool data with SVG icons or emoji fallbacks ── */
@@ -138,9 +138,30 @@ const vaTools = [
   },
 ];
 
-function ToolCard({ tool }) {
+/* Accent colour per category — tints icon tiles, dots and hover borders */
+const categoryColors = {
+  'AI Assistants': '#7c3aed',
+  'Productivity': '#2563eb',
+  'Design': '#db2777',
+  'Email & Scheduling': '#0891b2',
+  'Social Media': '#ea580c',
+  'Lead Generation': '#059669',
+};
+
+const allTools = [...bsitTools, ...vaTools];
+const stats = [
+  { value: new Set(allTools.map(t => t.name)).size, label: 'Tools learned' },
+  { value: new Set(allTools.map(t => t.category)).size, label: 'Categories' },
+  { value: 2, label: 'Learning tracks' },
+];
+
+function ToolCard({ tool, dimmed, index }) {
   return (
-    <li className={styles.toolCard} id={`skill-${tool.id}`}>
+    <li
+      className={`${styles.toolCard} ${dimmed ? styles.dimmed : ''}`}
+      id={`skill-${tool.id}`}
+      style={{ '--accent': categoryColors[tool.category], '--delay': `${index * 40}ms` }}
+    >
       <div className={styles.iconBox}>
         {tool.type === 'img' && tool.icon ? (
           <img
@@ -163,48 +184,69 @@ function ToolCard({ tool }) {
       </div>
       <div className={styles.toolText}>
         <span className={styles.toolName}>{tool.name}</span>
-        <span className={styles.toolCategory}>{tool.category}</span>
+        <span className={styles.toolCategory}>
+          <span className={styles.catDot} aria-hidden="true" />
+          {tool.category}
+        </span>
       </div>
     </li>
   );
 }
 
-function ToolGroup({ icon: Icon, title, description, tools, tone }) {
+function ToolGroup({ icon: Icon, track, status, ongoing, title, description, tools, tone }) {
   const [active, setActive] = useState('All');
   const categories = ['All', ...new Set(tools.map(t => t.category))];
-  const visible = active === 'All' ? tools : tools.filter(t => t.category === active);
+  const countFor = c => (c === 'All' ? tools.length : tools.filter(t => t.category === c).length);
 
   return (
-    <div className={styles.toolGroup}>
-      <div className={styles.groupHeader}>
-        <div className={`${styles.groupBadge} ${styles[tone]}`}><Icon size={22} /></div>
+    <article className={`${styles.toolGroup} ${styles[tone]}`}>
+      <header className={styles.groupHeader}>
+        <div className={styles.groupBadge}><Icon size={24} strokeWidth={2} /></div>
         <div className={styles.groupText}>
+          <div className={styles.groupEyebrow}>
+            <span>{track}</span>
+            <span className={`${styles.statusTag} ${ongoing ? styles.statusLive : ''}`}>
+              {ongoing ? <span className={styles.liveDot} aria-hidden="true" /> : <Check size={12} strokeWidth={3} />}
+              {status}
+            </span>
+          </div>
           <h3 className={styles.groupTitle}>{title}</h3>
           <p className={styles.groupDesc}>{description}</p>
         </div>
-        <span className={styles.groupCount}>{tools.length} tools</span>
-      </div>
+        <div className={styles.groupCount}>
+          <span className={styles.countNum}>{String(tools.length).padStart(2, '0')}</span>
+          <span className={styles.countLabel}>tools</span>
+        </div>
+      </header>
 
-      <div className={styles.filterRow} role="tablist" aria-label={`Filter ${title}`}>
+      <div className={styles.filterRow} role="group" aria-label={`Filter ${title}`}>
         {categories.map(c => (
           <button
             key={c}
-            role="tab"
-            aria-selected={active === c}
+            type="button"
+            aria-pressed={active === c}
             className={`${styles.filterPill} ${active === c ? styles.filterActive : ''}`}
+            style={c !== 'All' ? { '--accent': categoryColors[c] } : undefined}
             onClick={() => setActive(c)}
           >
+            {c !== 'All' && <span className={styles.catDot} aria-hidden="true" />}
             {c}
+            <span className={styles.pillCount}>{countFor(c)}</span>
           </button>
         ))}
       </div>
 
       <ul className={styles.toolGrid}>
-        {visible.map(tool => (
-          <ToolCard key={tool.id} tool={tool} />
+        {tools.map((tool, i) => (
+          <ToolCard
+            key={tool.id}
+            tool={tool}
+            index={i}
+            dimmed={active !== 'All' && tool.category !== active}
+          />
         ))}
       </ul>
-    </div>
+    </article>
   );
 }
 
@@ -218,21 +260,37 @@ export default function Skills() {
           The platforms I know, from my IT degree to hands-on virtual assistant training.
         </p>
 
-        <ToolGroup
-          icon={GraduationCap}
-          tone="toneNavy"
-          title="Tools from my BSIT Days"
-          description="Tools and AI platforms I used during my Information Technology degree."
-          tools={bsitTools}
-        />
+        <ul className={styles.statsStrip}>
+          {stats.map(s => (
+            <li key={s.label} className={styles.stat}>
+              <span className={styles.statValue}>{s.value}</span>
+              <span className={styles.statLabel}>{s.label}</span>
+            </li>
+          ))}
+        </ul>
 
-        <ToolGroup
-          icon={Briefcase}
-          tone="toneRed"
-          title="Tools from my VA Training"
-          description="Platforms and tools I'm mastering through intensive training at The VA Bar — training still ongoing!"
-          tools={vaTools}
-        />
+        <div className={styles.tracks}>
+          <ToolGroup
+            icon={GraduationCap}
+            tone="toneNavy"
+            track="Track 01"
+            status="Completed"
+            title="Tools from my BSIT Days"
+            description="Tools and AI platforms I used during my Information Technology degree."
+            tools={bsitTools}
+          />
+
+          <ToolGroup
+            icon={Briefcase}
+            tone="toneRed"
+            track="Track 02"
+            status="In progress"
+            ongoing
+            title="Tools from my VA Training"
+            description="Platforms and tools I'm mastering through intensive training at The VA Bar — training still ongoing!"
+            tools={vaTools}
+          />
+        </div>
       </div>
     </section>
   );
