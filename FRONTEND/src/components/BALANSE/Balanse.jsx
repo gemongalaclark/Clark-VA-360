@@ -17,10 +17,10 @@ const TABS = [
 /* Toast text for a saved row: celebrate the moment something is finished. */
 const debtMsg = (prev, row) =>
   num(row.paid_amount) >= num(row.total_amount) && (!prev || num(prev.paid_amount) < num(prev.total_amount))
-    ? `🎉 “${row.name}” is fully paid off!` : prev ? 'Debt updated.' : 'Debt added.';
+    ? `🎉 “${row.name}” is fully paid off! Moved to Past debts.` : prev ? 'Debt updated.' : 'Debt added.';
 const goalMsg = (prev, row) =>
   num(row.saved_amount) >= num(row.target_amount) && (!prev || num(prev.saved_amount) < num(prev.target_amount))
-    ? `🏆 You reached “${row.name}”!` : prev ? 'Goal updated.' : 'Goal added.';
+    ? `🏆 You reached “${row.name}”! Moved to Past goals.` : prev ? 'Goal updated.' : 'Goal added.';
 
 /* BALANSE root: loading → auth (sign up / sign in) → dashboard.
    Owns the debts/goals lists; pages call onSave/onDelete, which resolve true on success. */

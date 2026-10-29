@@ -46,11 +46,18 @@ create table if not exists public.bl_debts (
   paid_amount     numeric(14,2) not null default 0 check (paid_amount >= 0),
   monthly_payment numeric(14,2) check (monthly_payment >= 0),
   due_day         smallint check (due_day between 1 and 31),
+  start_date      date,   -- when the debt started
+  end_date        date,   -- when it should be fully paid
   notes           text check (char_length(notes) <= 500),
   created_at      timestamptz not null default now(),
   updated_at      timestamptz not null default now()
 );
 create index if not exists bl_debts_user_idx on public.bl_debts (user_id, created_at);
+-- For databases created before the debt dates existed.
+alter table public.bl_debts add column if not exists start_date date;
+alter table public.bl_debts add column if not exists end_date   date;
+-- Set by bl_track_completion(): when the debt was fully paid (it then shows under "Past debts").
+alter table public.bl_debts add column if not exists completed_at timestamptz;
 
 create table if not exists public.bl_goals (
   id            uuid primary key default gen_random_uuid(),
@@ -64,6 +71,8 @@ create table if not exists public.bl_goals (
   updated_at    timestamptz not null default now()
 );
 create index if not exists bl_goals_user_idx on public.bl_goals (user_id, created_at);
+-- Set by bl_track_completion(): when the goal was reached (it then shows under "Past goals").
+alter table public.bl_goals add column if not exists completed_at timestamptz;
 
 alter table public.bl_users    enable row level security;
 alter table public.bl_sessions enable row level security;
@@ -104,6 +113,42 @@ begin
   return v_user;
 end;
 $$;
+
+-- Stamps completed_at the moment a debt is fully paid / a goal is reached, keeps the
+-- original stamp on later edits, and clears it if an edit drops the item below 100%.
+create or replace function public.bl_track_completion()
+returns trigger
+language plpgsql set search_path = public
+as $$
+declare v_done boolean;
+begin
+  if tg_table_name = 'bl_debts' then
+    v_done := new.paid_amount >= new.total_amount;
+  else
+    v_done := new.saved_amount >= new.target_amount;
+  end if;
+
+  if not v_done then
+    new.completed_at := null;
+  elsif tg_op = 'UPDATE' then
+    new.completed_at := coalesce(old.completed_at, new.completed_at, now());
+  else
+    new.completed_at := coalesce(new.completed_at, now());
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists bl_debts_completion on public.bl_debts;
+create trigger bl_debts_completion before insert or update on public.bl_debts
+  for each row execute function public.bl_track_completion();
+drop trigger if exists bl_goals_completion on public.bl_goals;
+create trigger bl_goals_completion before insert or update on public.bl_goals
+  for each row execute function public.bl_track_completion();
+
+-- Backfill items finished before completed_at existed (their last edit is the best guess).
+update public.bl_debts set completed_at = updated_at where completed_at is null and paid_amount >= total_amount;
+update public.bl_goals set completed_at = updated_at where completed_at is null and saved_amount >= target_amount;
 
 -- ── 3. Auth RPCs ──────────────────────────────────────────────
 create or replace function public.bl_sign_up(p_username text, p_password text)
@@ -176,9 +221,14 @@ returns bl_debts
 language plpgsql security definer set search_path = public, extensions
 as $$
 declare
-  v_user uuid := bl_user_from_token(p_token);
-  v_row  bl_debts;
+  v_user  uuid := bl_user_from_token(p_token);
+  v_row   bl_debts;
+  v_start date := nullif(p_debt->>'start_date', '')::date;
+  v_end   date := nullif(p_debt->>'end_date', '')::date;
 begin
+  if v_start is not null and v_end is not null and v_end < v_start then
+    raise exception 'The end date can’t be before the start date.' using errcode = '22023';
+  end if;
   if p_debt ? 'id' and p_debt->>'id' is not null then
     update bl_debts set
       name            = trim(p_debt->>'name'),
@@ -187,13 +237,15 @@ begin
       paid_amount     = coalesce((p_debt->>'paid_amount')::numeric, 0),
       monthly_payment = nullif(p_debt->>'monthly_payment', '')::numeric,
       due_day         = nullif(p_debt->>'due_day', '')::smallint,
+      start_date      = v_start,
+      end_date        = v_end,
       notes           = nullif(trim(p_debt->>'notes'), ''),
       updated_at      = now()
     where id = (p_debt->>'id')::uuid and user_id = v_user
     returning * into v_row;
     if v_row.id is null then raise exception 'Debt not found.'; end if;
   else
-    insert into bl_debts (user_id, name, lender, total_amount, paid_amount, monthly_payment, due_day, notes)
+    insert into bl_debts (user_id, name, lender, total_amount, paid_amount, monthly_payment, due_day, start_date, end_date, notes)
     values (
       v_user,
       trim(p_debt->>'name'),
@@ -202,6 +254,8 @@ begin
       coalesce((p_debt->>'paid_amount')::numeric, 0),
       nullif(p_debt->>'monthly_payment', '')::numeric,
       nullif(p_debt->>'due_day', '')::smallint,
+      v_start,
+      v_end,
       nullif(trim(p_debt->>'notes'), '')
     )
     returning * into v_row;

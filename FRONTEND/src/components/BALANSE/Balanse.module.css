@@ -578,6 +578,10 @@
   flex: none; font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums;
   padding: 4px 10px; border-radius: 999px; background: var(--ink); color: #fff;
 }
+.ticketTerm { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; font-size: 13px; font-weight: 600; color: var(--ink); }
+.ticketTerm > svg { color: var(--red); flex: none; }
+.ticketTerm .factChip { margin-left: auto; }
+.termArrow { margin: 0 6px; color: var(--muted); font-weight: 400; }
 .ticketFacts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .ticketFacts dt { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
 .ticketFacts dd { display: flex; align-items: center; gap: 4px; font-weight: 600; font-size: 14px; font-variant-numeric: tabular-nums; }
@@ -586,6 +590,13 @@
 .itemNotes { font-size: 13px; color: var(--ink-2); background: var(--paper); border-left: 3px solid var(--red-4); border-radius: 6px; padding: 8px 12px; white-space: pre-wrap; }
 .itemActions { display: flex; gap: 8px; }
 .itemActions .btnSoft { margin-right: auto; }
+.editBtn {
+  display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 12px;
+  border-radius: 10px; background: var(--surface); border: 1px solid var(--line-2);
+  color: var(--ink-2); font-size: 13.5px; font-weight: 600;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.editBtn:hover { color: var(--ink); border-color: var(--ink-2); }
 .donePill {
   flex: none; display: inline-flex; align-items: center; gap: 5px;
   font-size: 12px; font-weight: 700; color: var(--red-deep);
@@ -629,6 +640,31 @@
 }
 .factChipRed { background: var(--blush); color: var(--red-deep); }
 .factChipLate { background: var(--ink); color: #fff; }
+
+/* ── Archived ("Past") card with a dated rubber stamp ────── */
+.pastCard {
+  position: relative; overflow: hidden;
+  display: grid; gap: 12px; padding: 20px 22px;
+  border-radius: var(--r); border: 1px dashed var(--line-2);
+  background:
+    repeating-linear-gradient(0deg, transparent 0 27px, rgba(26, 26, 46, 0.03) 27px 28px),
+    #fffdfc;
+}
+.pastHead { display: grid; gap: 2px; padding-right: 112px; }
+.pastHead h3 { font-size: 17px; color: var(--ink-2); word-break: break-word; }
+.pastHead .muted { font-size: 13px; }
+.pastAmount { display: grid; }
+.pastValue { font-family: var(--sans); font-size: 24px; font-weight: 700; color: var(--ink-2); letter-spacing: -0.02em; }
+.stamp {
+  position: absolute; top: 16px; right: 14px;
+  display: grid; justify-items: center; gap: 1px;
+  padding: 6px 10px; border: 2px solid var(--red); border-radius: 8px;
+  color: var(--red); transform: rotate(8deg); opacity: 0.85;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.9), inset 0 0 0 3px rgba(203, 37, 37, 0.35);
+  pointer-events: none;
+}
+.stamp b { font-family: var(--sans); font-size: 12px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; }
+.stamp small { font-size: 10.5px; font-weight: 600; letter-spacing: 0.04em; }
 
 /* ── Empty state ─────────────────────────────────────────── */
 .empty {

@@ -1,35 +1,15 @@
 import { useState } from 'react';
 import { Plus, Pencil, Trash2, Target, Trophy, PiggyBank, CalendarClock, Hourglass } from 'lucide-react';
 import styles from './Balanse.module.css';
-import { Meter, Money, Modal, ModalForm, Field, PesoInput, AmountModal, ConfirmModal, EmptyState, peso, pct, num } from './ui';
+import { Meter, Money, Modal, ModalForm, Field, PesoInput, AmountModal, ConfirmModal, EmptyState, ArchiveTabs, PastCard, completedOn, peso, pct, num, monthsUntil, fmtDate, timeLeft } from './ui';
 
 export const goalRemaining = (g) => Math.max(0, num(g.target_amount) - num(g.saved_amount));
-
-/* Whole months from today to the target date (can be ≤ 0 when it has passed), or null without a date. */
-function monthsUntil(dateStr) {
-  if (!dateStr) return null;
-  const now = new Date();
-  const [y, m, d] = dateStr.split('-').map(Number);
-  return (y - now.getFullYear()) * 12 + (m - 1 - now.getMonth()) - (d < now.getDate() ? 1 : 0);
-}
 
 /* Monthly saving needed to hit the goal on time; null if no date or already reached. */
 export function monthlyNeeded(g) {
   const left = goalRemaining(g);
   const months = monthsUntil(g.target_date);
   return left > 0 && months != null ? left / Math.max(1, months) : null;
-}
-
-const fmtDate = (s) => new Date(`${s}T00:00:00`).toLocaleDateString('en-PH', { month: 'short', year: 'numeric' });
-
-function timeLeft(g) {
-  const m = monthsUntil(g.target_date);
-  if (m == null) return null;
-  if (m < 0) return { text: 'Target date passed', late: true };
-  if (m === 0) return { text: 'Due this month', late: false };
-  if (m < 12) return { text: `${m} month${m > 1 ? 's' : ''} left`, late: false };
-  const y = Math.floor(m / 12), r = m % 12;
-  return { text: `${y} yr${y > 1 ? 's' : ''}${r ? ` ${r} mo` : ''} left`, late: false };
 }
 
 const SUGGESTIONS = [
@@ -83,9 +63,9 @@ function GoalForm({ goal, onSave, onClose }) {
 function GoalCard({ g, onAdd, onEdit, onDelete }) {
   const left = goalRemaining(g);
   const done = left === 0;
-  const p = Math.round(pct(num(g.saved_amount), num(g.target_amount)));
+  const p = Math.floor(pct(num(g.saved_amount), num(g.target_amount)));
   const perMonth = monthlyNeeded(g);
-  const when = !done && timeLeft(g);
+  const when = !done && timeLeft(g.target_date, { passed: 'Target date passed', thisMonth: 'Due this month' });
   return (
     <article className={`${styles.goalCard} ${done ? styles.goalDone : ''}`}>
       <span className={styles.goalPct} aria-hidden="true">{p}<small>%</small></span>
@@ -107,7 +87,7 @@ function GoalCard({ g, onAdd, onEdit, onDelete }) {
       {g.notes && <p className={styles.itemNotes}>{g.notes}</p>}
       <div className={styles.itemActions}>
         {!done && <button className={styles.btnSoft} onClick={() => onAdd(g)}><PiggyBank size={15} /> Add savings</button>}
-        <button className={styles.iconBtn} onClick={() => onEdit(g)} aria-label={`Edit ${g.name}`} title="Edit"><Pencil size={15} /></button>
+        <button className={styles.editBtn} onClick={() => onEdit(g)} aria-label={`Edit ${g.name}`}><Pencil size={14} /> Edit</button>
         <button className={styles.iconBtn} onClick={() => onDelete(g)} aria-label={`Delete ${g.name}`} title="Delete"><Trash2 size={15} /></button>
       </div>
     </article>
@@ -118,17 +98,17 @@ export default function Goals({ goals, onSave, onDelete }) {
   const [editing, setEditing] = useState(null);   // null | goal-like object (no id = new)
   const [adding, setAdding] = useState(null);
   const [deleting, setDeleting] = useState(null);
+  const [view, setView] = useState('active');   // active | past
 
-  const target = goals.reduce((s, g) => s + num(g.target_amount), 0);
-  const saved = goals.reduce((s, g) => s + Math.min(num(g.saved_amount), num(g.target_amount)), 0);
-  const reached = goals.filter(g => goalRemaining(g) === 0).length;
-  const monthly = goals.reduce((s, g) => s + (monthlyNeeded(g) ?? 0), 0);
-  /* Closest to done first: momentum is motivating. Reached goals sink to the end. */
-  const sorted = [...goals].sort((a, b) => {
-    const da = goalRemaining(a) === 0, db = goalRemaining(b) === 0;
-    if (da !== db) return da ? 1 : -1;
-    return pct(num(b.saved_amount), num(b.target_amount)) - pct(num(a.saved_amount), num(a.target_amount));
-  });
+  /* Reached goals are archived under "Past goals" and leave the totals:
+     that money has done its job. Active goals: closest to done first. */
+  const active = goals.filter(g => goalRemaining(g) > 0)
+    .sort((a, b) => pct(num(b.saved_amount), num(b.target_amount)) - pct(num(a.saved_amount), num(a.target_amount)));
+  const past = goals.filter(g => goalRemaining(g) === 0)
+    .sort((a, b) => String(completedOn(b)).localeCompare(String(completedOn(a))));
+  const target = active.reduce((s, g) => s + num(g.target_amount), 0);
+  const saved = active.reduce((s, g) => s + num(g.saved_amount), 0);
+  const monthly = active.reduce((s, g) => s + (monthlyNeeded(g) ?? 0), 0);
 
   const save = async (goal) => { if (await onSave(goal)) setEditing(null); };
   const addSavings = async (amount) => {
@@ -168,18 +148,49 @@ export default function Goals({ goals, onSave, onDelete }) {
               <span className={styles.bandLabel}>Saved so far</span>
               <Money value={saved} className={styles.bandValue} />
               <Meter value={saved} max={target} tone="onDark" size="lg" label="All goals funded" />
-              <span className={styles.bandSub}>{Math.round(pct(saved, target))}% funded · {peso(target - saved)} still to save</span>
+              <span className={styles.bandSub}>{Math.floor(pct(saved, target))}% funded · {peso(target - saved)} still to save</span>
             </div>
             <div className={styles.bandFacts}>
               <div><span>Save each month</span><Money value={Math.ceil(monthly)} /></div>
-              <div><span>Goals</span><strong>{goals.length}</strong></div>
-              <div><span>Reached</span><strong>{reached}</strong></div>
+              <div><span>Active goals</span><strong>{active.length}</strong></div>
+              <div><span>Past goals</span><strong>{past.length}</strong></div>
             </div>
           </section>
 
-          <div className={styles.cardGrid}>
-            {sorted.map(g => <GoalCard key={g.id} g={g} onAdd={setAdding} onEdit={setEditing} onDelete={setDeleting} />)}
+          <div className={styles.toolbar}>
+            <ArchiveTabs value={view} onChange={setView} activeCount={active.length} pastCount={past.length} pastLabel="Past goals" label="Goals" />
+            <span className={styles.muted}>{view === 'active' ? 'Closest to done first' : 'Most recently reached first'}</span>
           </div>
+
+          {view === 'active' && (active.length === 0 ? (
+            <p className={styles.panelEmpty}>Every goal is reached! 🏆 Add a new one, or look back at Past goals.</p>
+          ) : (
+            <div className={styles.cardGrid}>
+              {active.map(g => <GoalCard key={g.id} g={g} onAdd={setAdding} onEdit={setEditing} onDelete={setDeleting} />)}
+            </div>
+          ))}
+
+          {view === 'past' && (past.length === 0 ? (
+            <p className={styles.panelEmpty}>Goals you reach are archived here, like a trophy shelf.</p>
+          ) : (
+            <div className={styles.cardGrid}>
+              {past.map(g => (
+                <PastCard
+                  key={g.id}
+                  title={g.name}
+                  subtitle={g.target_date ? `Target was ${fmtDate(g.target_date)}` : null}
+                  stamp="Reached"
+                  date={completedOn(g)}
+                  amountLabel="Saved"
+                  amount={g.saved_amount}
+                  facts={num(g.saved_amount) > num(g.target_amount) ? [`${peso(num(g.saved_amount) - num(g.target_amount))} over target`] : []}
+                  notes={g.notes}
+                  onEdit={() => setEditing(g)}
+                  onDelete={() => setDeleting(g)}
+                />
+              ))}
+            </div>
+          ))}
         </>
       )}
 

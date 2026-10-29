@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Plus, Pencil, Trash2, Landmark, CheckCircle2, HandCoins, CalendarDays } from 'lucide-react';
+import { Plus, Pencil, Trash2, Landmark, CheckCircle2, HandCoins, CalendarDays, CalendarRange, Hourglass } from 'lucide-react';
 import styles from './Balanse.module.css';
-import { Meter, Money, Modal, ModalForm, Field, PesoInput, AmountModal, ConfirmModal, EmptyState, peso, pct, num } from './ui';
+import { Meter, Money, Modal, ModalForm, Field, PesoInput, AmountModal, ConfirmModal, EmptyState, ArchiveTabs, PastCard, completedOn, peso, pct, num, fmtDate, timeLeft } from './ui';
 
 const ordinal = (n) => {
   const s = ['th', 'st', 'nd', 'rd'], v = n % 100;
@@ -18,14 +18,9 @@ const SUGGESTIONS = [
   { name: 'Family loan' },
 ];
 
-const FILTERS = [
-  { id: 'active', label: 'Active' },
-  { id: 'paid', label: 'Paid off' },
-  { id: 'all', label: 'All' },
-];
-
 function DebtForm({ debt, onSave, onClose }) {
   const [busy, setBusy] = useState(false);
+  const [start, setStart] = useState(debt?.start_date ?? '');
   const submit = async (e) => {
     e.preventDefault();
     const f = Object.fromEntries(new FormData(e.currentTarget));
@@ -64,6 +59,14 @@ function DebtForm({ debt, onSave, onClose }) {
             <input name="due_day" type="number" min="1" max="31" step="1" placeholder="1–31" defaultValue={debt?.due_day ?? ''} />
           </Field>
         </div>
+        <div className={styles.formRow}>
+          <Field label="Started on (optional)">
+            <input name="start_date" type="date" value={start} onChange={(e) => setStart(e.target.value)} />
+          </Field>
+          <Field label="Paid off by (optional)">
+            <input name="end_date" type="date" min={start || undefined} defaultValue={debt?.end_date ?? ''} />
+          </Field>
+        </div>
         <Field label="Notes (optional)">
           <textarea name="notes" rows={2} maxLength={500} defaultValue={debt?.notes ?? ''} />
         </Field>
@@ -75,7 +78,9 @@ function DebtForm({ debt, onSave, onClose }) {
 function DebtCard({ d, onPay, onEdit, onDelete }) {
   const left = debtRemaining(d);
   const done = left === 0;
-  const paidPct = Math.round(pct(num(d.paid_amount), num(d.total_amount)));
+  const paidPct = Math.floor(pct(num(d.paid_amount), num(d.total_amount)));
+  const when = !done && timeLeft(d.end_date, { passed: 'Past end date', thisMonth: 'Ends this month' });
+  const longDate = { month: 'short', day: 'numeric', year: 'numeric' };
   return (
     <article className={`${styles.ticket} ${done ? styles.ticketDone : ''}`}>
       <div className={styles.ticketTop}>
@@ -97,6 +102,17 @@ function DebtCard({ d, onPay, onEdit, onDelete }) {
       </div>
 
       <div className={styles.ticketBottom}>
+        {(d.start_date || d.end_date) && (
+          <div className={styles.ticketTerm}>
+            <CalendarRange size={15} />
+            <span>
+              {d.start_date ? fmtDate(d.start_date, longDate) : 'Start not set'}
+              <span className={styles.termArrow} aria-label="to">→</span>
+              {d.end_date ? fmtDate(d.end_date, longDate) : 'No end date'}
+            </span>
+            {when && <span className={`${styles.factChip} ${when.late ? styles.factChipLate : ''}`}><Hourglass size={12} /> {when.text}</span>}
+          </div>
+        )}
         <dl className={styles.ticketFacts}>
           <div><dt>Monthly</dt><dd>{num(d.monthly_payment) > 0 ? peso(d.monthly_payment) : '—'}</dd></div>
           <div><dt>Due</dt><dd>{d.due_day ? <><CalendarDays size={12} /> {ordinal(d.due_day)}</> : '—'}</dd></div>
@@ -105,7 +121,7 @@ function DebtCard({ d, onPay, onEdit, onDelete }) {
         {d.notes && <p className={styles.itemNotes}>{d.notes}</p>}
         <div className={styles.itemActions}>
           {!done && <button className={styles.btnSoft} onClick={() => onPay(d)}><HandCoins size={15} /> Record payment</button>}
-          <button className={styles.iconBtn} onClick={() => onEdit(d)} aria-label={`Edit ${d.name}`} title="Edit"><Pencil size={15} /></button>
+          <button className={styles.editBtn} onClick={() => onEdit(d)} aria-label={`Edit ${d.name}`}><Pencil size={14} /> Edit</button>
           <button className={styles.iconBtn} onClick={() => onDelete(d)} aria-label={`Delete ${d.name}`} title="Delete"><Trash2 size={15} /></button>
         </div>
       </div>
@@ -117,19 +133,16 @@ export default function Debts({ debts, onSave, onDelete }) {
   const [editing, setEditing] = useState(null);   // null | debt-like object (no id = new)
   const [paying, setPaying] = useState(null);
   const [deleting, setDeleting] = useState(null);
-  const [filter, setFilter] = useState('active');
+  const [view, setView] = useState('active');   // active | past
 
   const total = debts.reduce((s, d) => s + num(d.total_amount), 0);
   const remaining = debts.reduce((s, d) => s + debtRemaining(d), 0);
   const monthly = debts.filter(d => debtRemaining(d) > 0).reduce((s, d) => s + num(d.monthly_payment), 0);
-  const counts = {
-    active: debts.filter(d => debtRemaining(d) > 0).length,
-    paid: debts.filter(d => debtRemaining(d) === 0).length,
-    all: debts.length,
-  };
-  const shown = debts
-    .filter(d => filter === 'all' || (filter === 'paid') === (debtRemaining(d) === 0))
-    .sort((a, b) => debtRemaining(b) - debtRemaining(a));
+  /* Fully paid debts are archived under "Past debts", newest first. */
+  const active = debts.filter(d => debtRemaining(d) > 0).sort((a, b) => debtRemaining(b) - debtRemaining(a));
+  const past = debts.filter(d => debtRemaining(d) === 0)
+    .sort((a, b) => String(completedOn(b)).localeCompare(String(completedOn(a))));
+  const longDate = { month: 'short', day: 'numeric', year: 'numeric' };
 
   const save = async (debt) => { if (await onSave(debt)) setEditing(null); };
   const pay = async (amount) => {
@@ -170,33 +183,52 @@ export default function Debts({ debts, onSave, onDelete }) {
               <span className={styles.bandLabel}>Still owed</span>
               <Money value={remaining} className={styles.bandValue} />
               <Meter value={total - remaining} max={total} tone="onDark" size="lg" label="Overall debt paid off" />
-              <span className={styles.bandSub}>{Math.round(pct(total - remaining, total))}% debt-free · {peso(total - remaining)} of {peso(total)} paid</span>
+              <span className={styles.bandSub}>{Math.floor(pct(total - remaining, total))}% debt-free · {peso(total - remaining)} of {peso(total)} paid</span>
             </div>
             <div className={styles.bandFacts}>
               <div><span>Monthly payments</span><Money value={monthly} /></div>
-              <div><span>Active debts</span><strong>{counts.active}</strong></div>
-              <div><span>Paid off</span><strong>{counts.paid}</strong></div>
+              <div><span>Active debts</span><strong>{active.length}</strong></div>
+              <div><span>Past debts</span><strong>{past.length}</strong></div>
             </div>
           </section>
 
           <div className={styles.toolbar}>
-            <div className={styles.filterTabs} role="tablist" aria-label="Filter debts">
-              {FILTERS.map(f => (
-                <button key={f.id} role="tab" aria-selected={filter === f.id} className={filter === f.id ? styles.filterOn : ''} onClick={() => setFilter(f.id)}>
-                  {f.label} <span>{counts[f.id]}</span>
-                </button>
-              ))}
-            </div>
-            <span className={styles.muted}>Sorted by amount left</span>
+            <ArchiveTabs value={view} onChange={setView} activeCount={active.length} pastCount={past.length} pastLabel="Past debts" label="Debts" />
+            <span className={styles.muted}>{view === 'active' ? 'Sorted by amount left' : 'Most recently paid off first'}</span>
           </div>
 
-          {shown.length === 0 ? (
-            <p className={styles.panelEmpty}>{filter === 'paid' ? 'No debts paid off yet. You’ll get there.' : 'All your debts are paid off. 🎉'}</p>
+          {view === 'active' && (active.length === 0 ? (
+            <p className={styles.panelEmpty}>No active debts. You’re debt-free! 🎉 Paid-off debts are in Past debts.</p>
           ) : (
             <div className={styles.cardGrid}>
-              {shown.map(d => <DebtCard key={d.id} d={d} onPay={setPaying} onEdit={setEditing} onDelete={setDeleting} />)}
+              {active.map(d => <DebtCard key={d.id} d={d} onPay={setPaying} onEdit={setEditing} onDelete={setDeleting} />)}
             </div>
-          )}
+          ))}
+
+          {view === 'past' && (past.length === 0 ? (
+            <p className={styles.panelEmpty}>Debts you fully pay off are archived here. Your first one is coming.</p>
+          ) : (
+            <div className={styles.cardGrid}>
+              {past.map(d => (
+                <PastCard
+                  key={d.id}
+                  title={d.name}
+                  subtitle={d.lender}
+                  stamp="Paid off"
+                  date={completedOn(d)}
+                  amountLabel="Total paid"
+                  amount={d.total_amount}
+                  facts={[
+                    d.start_date && `Started ${fmtDate(d.start_date, longDate)}`,
+                    d.end_date && `Due by ${fmtDate(d.end_date, longDate)}`,
+                  ].filter(Boolean)}
+                  notes={d.notes}
+                  onEdit={() => setEditing(d)}
+                  onDelete={() => setDeleting(d)}
+                />
+              ))}
+            </div>
+          ))}
         </>
       )}
 

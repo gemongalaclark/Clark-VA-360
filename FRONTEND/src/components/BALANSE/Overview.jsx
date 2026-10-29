@@ -59,13 +59,15 @@ function verdict(owed, saved) {
 export default function Overview({ username, debts, goals, onNavigate }) {
   const owed = debts.reduce((s, d) => s + debtRemaining(d), 0);
   const borrowed = debts.reduce((s, d) => s + num(d.total_amount), 0);
-  const saved = goals.reduce((s, g) => s + Math.min(num(g.saved_amount), num(g.target_amount)), 0);
-  const target = goals.reduce((s, g) => s + num(g.target_amount), 0);
+  /* Reached goals live in "Past goals" and no longer count toward savings. */
+  const liveGoals = goals.filter(g => goalRemaining(g) > 0);
+  const saved = liveGoals.reduce((s, g) => s + num(g.saved_amount), 0);
+  const target = liveGoals.reduce((s, g) => s + num(g.target_amount), 0);
   const debtMonthly = debts.filter(d => debtRemaining(d) > 0).reduce((s, d) => s + num(d.monthly_payment), 0);
   const goalMonthly = goals.reduce((s, g) => s + (monthlyNeeded(g) ?? 0), 0);
 
   const activeDebts = debts.filter(d => debtRemaining(d) > 0).sort((a, b) => debtRemaining(b) - debtRemaining(a));
-  const openGoals = [...goals].sort((a, b) => pct(num(b.saved_amount), num(b.target_amount)) - pct(num(a.saved_amount), num(a.target_amount)));
+  const openGoals = [...liveGoals].sort((a, b) => pct(num(b.saved_amount), num(b.target_amount)) - pct(num(a.saved_amount), num(a.target_amount)));
   const upcoming = activeDebts
     .filter(d => d.due_day)
     .map(d => ({ ...d, ...nextDue(d.due_day) }))
@@ -89,7 +91,7 @@ export default function Overview({ username, debts, goals, onNavigate }) {
           <span className={styles.heroLabel}><i className={styles.keyDebt} /> You owe</span>
           <Money value={owed} className={styles.heroValue} />
           <span className={styles.heroSub}>
-            {borrowed > 0 ? `${Math.round(pct(borrowed - owed, borrowed))}% of ${peso(borrowed)} paid off` : 'No debts tracked'}
+            {borrowed > 0 ? `${Math.floor(pct(borrowed - owed, borrowed))}% of ${peso(borrowed)} paid off` : 'No debts tracked'}
           </span>
         </div>
         <div className={styles.heroScale}><Scale owed={owed} saved={saved} /></div>
@@ -97,7 +99,7 @@ export default function Overview({ username, debts, goals, onNavigate }) {
           <span className={styles.heroLabel}><i className={styles.keyGoal} /> You’ve saved</span>
           <Money value={saved} className={styles.heroValue} />
           <span className={styles.heroSub}>
-            {target > 0 ? `${Math.round(pct(saved, target))}% of ${peso(target)} in goals` : 'No goals yet'}
+            {target > 0 ? `${Math.floor(pct(saved, target))}% of ${peso(target)} in goals` : goals.length ? 'All goals reached' : 'No goals yet'}
           </span>
         </div>
         <p className={styles.heroVerdict}>{verdict(owed, saved)}</p>
@@ -107,12 +109,12 @@ export default function Overview({ username, debts, goals, onNavigate }) {
       <div className={styles.kpiGrid}>
         <div className={styles.kpi}>
           <span className={styles.kpiLabel}>Debt-free progress</span>
-          <span className={styles.kpiValue}>{Math.round(pct(borrowed - owed, borrowed))}<small>%</small></span>
+          <span className={styles.kpiValue}>{Math.floor(pct(borrowed - owed, borrowed))}<small>%</small></span>
           <Meter value={borrowed - owed} max={borrowed} tone="debt" label="Debt paid off" />
         </div>
         <div className={styles.kpi}>
           <span className={styles.kpiLabel}>Goals funded</span>
-          <span className={styles.kpiValue}>{Math.round(pct(saved, target))}<small>%</small></span>
+          <span className={styles.kpiValue}>{Math.floor(pct(saved, target))}<small>%</small></span>
           <Meter value={saved} max={target} tone="goal" label="Goals funded" />
         </div>
         <div className={`${styles.kpi} ${styles.kpiInk}`}>
@@ -181,7 +183,7 @@ export default function Overview({ username, debts, goals, onNavigate }) {
           </div>
           {openGoals.length === 0 ? (
             <div className={styles.panelEmpty}>
-              Nothing to save for yet.
+              {goals.length ? 'Every goal reached. They’re in Past goals. 🏆' : 'Nothing to save for yet.'}
               <button className={styles.btnSoft} onClick={() => onNavigate('goals')}><Plus size={14} /> Add a goal</button>
             </div>
           ) : (
@@ -190,7 +192,7 @@ export default function Overview({ username, debts, goals, onNavigate }) {
                 <li key={g.id}>
                   <div className={styles.progressRow}>
                     <span>{g.name}</span>
-                    <span><strong>{Math.round(pct(num(g.saved_amount), num(g.target_amount)))}%</strong> of {peso(g.target_amount)}</span>
+                    <span><strong>{Math.floor(pct(num(g.saved_amount), num(g.target_amount)))}%</strong> of {peso(g.target_amount)}</span>
                   </div>
                   <Meter value={num(g.saved_amount)} max={num(g.target_amount)} tone="goal" done={goalRemaining(g) === 0} label={`${g.name} saved`} />
                 </li>

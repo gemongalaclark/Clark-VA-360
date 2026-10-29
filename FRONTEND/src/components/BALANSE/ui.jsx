@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { X, AlertTriangle } from 'lucide-react';
+import { X, AlertTriangle, Archive, Pencil, Trash2 } from 'lucide-react';
 import styles from './Balanse.module.css';
 
 const pesoFmt = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 2 });
@@ -8,6 +8,28 @@ const pesoWhole = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 
 export const num = (v) => Number(v) || 0;
 export const peso = (v) => (num(v) % 1 ? pesoFmt : pesoWhole).format(num(v));
 export const pct = (part, whole) => (whole > 0 ? Math.min(100, Math.max(0, (part / whole) * 100)) : 0);
+
+/* Whole months from today to a YYYY-MM-DD date (≤ 0 once it has passed), or null without a date. */
+export function monthsUntil(dateStr) {
+  if (!dateStr) return null;
+  const now = new Date();
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return (y - now.getFullYear()) * 12 + (m - 1 - now.getMonth()) - (d < now.getDate() ? 1 : 0);
+}
+
+export const fmtDate = (s, opts = { month: 'short', year: 'numeric' }) =>
+  new Date(`${s}T00:00:00`).toLocaleDateString('en-PH', opts);
+
+/* "8 months left" / "1 yr 2 mo left", with wording for a passed or current-month date. */
+export function timeLeft(dateStr, { passed, thisMonth }) {
+  const m = monthsUntil(dateStr);
+  if (m == null) return null;
+  if (m < 0) return { text: passed, late: true };
+  if (m === 0) return { text: thisMonth, late: false };
+  if (m < 12) return { text: `${m} month${m > 1 ? 's' : ''} left`, late: false };
+  const y = Math.floor(m / 12), r = m % 12;
+  return { text: `${y} yr${y > 1 ? 's' : ''}${r ? ` ${r} mo` : ''} left`, late: false };
+}
 
 /* Amount with a de-emphasised ₱ sign and centavos, so the whole-peso figure reads first. */
 export function Money({ value, className = '' }) {
@@ -187,5 +209,51 @@ export function EmptyState({ icon: Icon, title, text, suggestions = [], onPick, 
       )}
       {action}
     </div>
+  );
+}
+
+/* When an item was finished. completed_at is stamped by the database; updated_at covers
+   rows saved before that column existed. */
+export const completedOn = (item) => item.completed_at || item.updated_at || null;
+
+/* Active / Past switch shared by Debts and Goals. */
+export function ArchiveTabs({ value, onChange, activeCount, pastCount, pastLabel, label }) {
+  return (
+    <div className={styles.filterTabs} role="tablist" aria-label={label}>
+      <button role="tab" aria-selected={value === 'active'} className={value === 'active' ? styles.filterOn : ''} onClick={() => onChange('active')}>
+        Active <span>{activeCount}</span>
+      </button>
+      <button role="tab" aria-selected={value === 'past'} className={value === 'past' ? styles.filterOn : ''} onClick={() => onChange('past')}>
+        <Archive size={14} /> {pastLabel} <span>{pastCount}</span>
+      </button>
+    </div>
+  );
+}
+
+/* Archived debt or goal: a filed-away card with a dated stamp. */
+export function PastCard({ title, subtitle, stamp, date, amountLabel, amount, facts = [], notes, onEdit, onDelete }) {
+  return (
+    <article className={styles.pastCard}>
+      <span className={styles.stamp}>
+        <b>{stamp}</b>
+        {date && <small>{new Date(date).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })}</small>}
+      </span>
+      <div className={styles.pastHead}>
+        <h3>{title}</h3>
+        {subtitle && <span className={styles.muted}>{subtitle}</span>}
+      </div>
+      <div className={styles.pastAmount}>
+        <span className={styles.ticketCaption}>{amountLabel}</span>
+        <Money value={amount} className={styles.pastValue} />
+      </div>
+      {facts.length > 0 && (
+        <div className={styles.chipRow}>{facts.map(f => <span key={f} className={styles.factChip}>{f}</span>)}</div>
+      )}
+      {notes && <p className={styles.itemNotes}>{notes}</p>}
+      <div className={styles.itemActions}>
+        <button className={styles.editBtn} onClick={onEdit} aria-label={`Edit ${title}`}><Pencil size={14} /> Edit</button>
+        <button className={styles.iconBtn} onClick={onDelete} aria-label={`Delete ${title}`} title="Delete"><Trash2 size={15} /></button>
+      </div>
+    </article>
   );
 }
