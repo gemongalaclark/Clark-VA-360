@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Plus, Pencil, Trash2, Landmark, CheckCircle2, HandCoins } from 'lucide-react';
+import { Plus, Pencil, Trash2, Landmark, CheckCircle2, HandCoins, CalendarDays } from 'lucide-react';
 import styles from './Balanse.module.css';
-import { Meter, Modal, Field, AmountModal, EmptyState, peso, pct, num } from './ui';
+import { Meter, Money, Modal, Field, PesoInput, AmountModal, ConfirmModal, EmptyState, peso, pct, num } from './ui';
 
 const ordinal = (n) => {
   const s = ['th', 'st', 'nd', 'rd'], v = n % 100;
@@ -10,14 +10,31 @@ const ordinal = (n) => {
 
 export const debtRemaining = (d) => Math.max(0, num(d.total_amount) - num(d.paid_amount));
 
+const SUGGESTIONS = [
+  { name: 'Credit card' },
+  { name: 'Home Credit' },
+  { name: 'SSS salary loan' },
+  { name: 'Pag-IBIG loan' },
+  { name: 'Family loan' },
+];
+
+const FILTERS = [
+  { id: 'active', label: 'Active' },
+  { id: 'paid', label: 'Paid off' },
+  { id: 'all', label: 'All' },
+];
+
 function DebtForm({ debt, onSave, onClose }) {
+  const [busy, setBusy] = useState(false);
   const submit = async (e) => {
     e.preventDefault();
     const f = Object.fromEntries(new FormData(e.currentTarget));
+    setBusy(true);
     await onSave({ ...(debt?.id && { id: debt.id }), ...f, paid_amount: f.paid_amount || 0 });
+    setBusy(false);
   };
   return (
-    <Modal title={debt ? 'Edit debt' : 'Add a debt'} onClose={onClose}>
+    <Modal title={debt?.id ? 'Edit debt' : 'Add a debt'} eyebrow="Debt tracker" onClose={onClose}>
       <form className={styles.form} onSubmit={submit}>
         <Field label="What is this debt?">
           <input name="name" required maxLength={80} placeholder="e.g. Credit card, Home Credit, Pag-IBIG loan" defaultValue={debt?.name} />
@@ -26,18 +43,18 @@ function DebtForm({ debt, onSave, onClose }) {
           <input name="lender" maxLength={80} placeholder="e.g. BPI, Tito Ramon" defaultValue={debt?.lender ?? ''} />
         </Field>
         <div className={styles.formRow}>
-          <Field label="Total amount (₱)">
-            <input name="total_amount" type="number" min="0.01" step="0.01" required inputMode="decimal" defaultValue={debt?.total_amount} />
+          <Field label="Total amount">
+            <PesoInput name="total_amount" min="0.01" required defaultValue={debt?.total_amount} />
           </Field>
-          <Field label="Already paid (₱)">
-            <input name="paid_amount" type="number" min="0" step="0.01" inputMode="decimal" defaultValue={debt?.paid_amount ?? 0} />
+          <Field label="Already paid">
+            <PesoInput name="paid_amount" min="0" defaultValue={debt?.paid_amount ?? 0} />
           </Field>
         </div>
         <div className={styles.formRow}>
-          <Field label="Monthly payment (₱, optional)">
-            <input name="monthly_payment" type="number" min="0" step="0.01" inputMode="decimal" defaultValue={debt?.monthly_payment ?? ''} />
+          <Field label="Monthly payment" hint="Optional">
+            <PesoInput name="monthly_payment" min="0" defaultValue={debt?.monthly_payment ?? ''} />
           </Field>
-          <Field label="Due day of month (optional)">
+          <Field label="Due day of month" hint="Optional, 1–31">
             <input name="due_day" type="number" min="1" max="31" step="1" defaultValue={debt?.due_day ?? ''} />
           </Field>
         </div>
@@ -46,97 +63,159 @@ function DebtForm({ debt, onSave, onClose }) {
         </Field>
         <div className={styles.formActions}>
           <button type="button" className={styles.btnGhost} onClick={onClose}>Cancel</button>
-          <button className={styles.btnPrimary}>{debt ? 'Save changes' : 'Add debt'}</button>
+          <button className={styles.btnPrimary} disabled={busy}>{busy ? 'Saving…' : debt?.id ? 'Save changes' : 'Add debt'}</button>
         </div>
       </form>
     </Modal>
   );
 }
 
+function DebtCard({ d, onPay, onEdit, onDelete }) {
+  const left = debtRemaining(d);
+  const done = left === 0;
+  const paidPct = Math.round(pct(num(d.paid_amount), num(d.total_amount)));
+  return (
+    <article className={`${styles.ticket} ${done ? styles.ticketDone : ''}`}>
+      <div className={styles.ticketTop}>
+        <div className={styles.itemHead}>
+          <div>
+            <h3>{d.name}</h3>
+            {d.lender && <span className={styles.muted}>{d.lender}</span>}
+          </div>
+          {done
+            ? <span className={styles.donePill}><CheckCircle2 size={13} /> Paid off</span>
+            : <span className={styles.pctBadge}>{paidPct}% paid</span>}
+        </div>
+        <div className={styles.ticketAmount}>
+          <span className={styles.ticketCaption}>{done ? 'Fully paid' : 'Remaining'}</span>
+          <Money value={done ? d.total_amount : left} className={styles.ticketValue} />
+          <span className={styles.muted}>{done ? 'cleared' : `of ${peso(d.total_amount)}`}</span>
+        </div>
+        <Meter value={num(d.paid_amount)} max={num(d.total_amount)} tone="debt" done={done} label={`${d.name} paid`} />
+      </div>
+
+      <div className={styles.ticketBottom}>
+        <dl className={styles.ticketFacts}>
+          <div><dt>Monthly</dt><dd>{num(d.monthly_payment) > 0 ? peso(d.monthly_payment) : '—'}</dd></div>
+          <div><dt>Due</dt><dd>{d.due_day ? <><CalendarDays size={12} /> {ordinal(d.due_day)}</> : '—'}</dd></div>
+          <div><dt>Paid</dt><dd>{peso(d.paid_amount)}</dd></div>
+        </dl>
+        {d.notes && <p className={styles.itemNotes}>{d.notes}</p>}
+        <div className={styles.itemActions}>
+          {!done && <button className={styles.btnSoft} onClick={() => onPay(d)}><HandCoins size={15} /> Record payment</button>}
+          <button className={styles.iconBtn} onClick={() => onEdit(d)} aria-label={`Edit ${d.name}`} title="Edit"><Pencil size={15} /></button>
+          <button className={styles.iconBtn} onClick={() => onDelete(d)} aria-label={`Delete ${d.name}`} title="Delete"><Trash2 size={15} /></button>
+        </div>
+      </div>
+    </article>
+  );
+}
+
 export default function Debts({ debts, onSave, onDelete }) {
-  const [editing, setEditing] = useState(null);   // null | 'new' | debt
+  const [editing, setEditing] = useState(null);   // null | debt-like object (no id = new)
   const [paying, setPaying] = useState(null);
+  const [deleting, setDeleting] = useState(null);
+  const [filter, setFilter] = useState('active');
 
   const total = debts.reduce((s, d) => s + num(d.total_amount), 0);
   const remaining = debts.reduce((s, d) => s + debtRemaining(d), 0);
   const monthly = debts.filter(d => debtRemaining(d) > 0).reduce((s, d) => s + num(d.monthly_payment), 0);
+  const counts = {
+    active: debts.filter(d => debtRemaining(d) > 0).length,
+    paid: debts.filter(d => debtRemaining(d) === 0).length,
+    all: debts.length,
+  };
+  const shown = debts
+    .filter(d => filter === 'all' || (filter === 'paid') === (debtRemaining(d) === 0))
+    .sort((a, b) => debtRemaining(b) - debtRemaining(a));
 
   const save = async (debt) => { if (await onSave(debt)) setEditing(null); };
   const pay = async (amount) => {
     const paid = Math.min(num(paying.total_amount), num(paying.paid_amount) + amount);
     if (await onSave({ ...paying, paid_amount: paid })) setPaying(null);
   };
-  const remove = (d) => { if (window.confirm(`Delete “${d.name}”? This can’t be undone.`)) onDelete(d.id); };
+  const remove = async () => { if (await onDelete(deleting.id)) setDeleting(null); };
+
+  const payPresets = paying ? [
+    ...(num(paying.monthly_payment) > 0 && num(paying.monthly_payment) < debtRemaining(paying)
+      ? [{ label: `Monthly · ${peso(paying.monthly_payment)}`, value: num(paying.monthly_payment) }] : []),
+    { label: `Pay in full · ${peso(debtRemaining(paying))}`, value: debtRemaining(paying) },
+  ] : [];
 
   return (
     <div className={styles.page}>
       <header className={styles.pageHead}>
         <div>
-          <h1>Debt tracker</h1>
-          <p className={styles.muted}>Every loan, card and utang in one place.</p>
+          <span className={styles.eyebrow}>Debt tracker</span>
+          <h1>What you <em>owe</em></h1>
         </div>
-        <button className={styles.btnPrimary} onClick={() => setEditing('new')}><Plus size={16} /> Add debt</button>
+        {debts.length > 0 && <button className={styles.btnPrimary} onClick={() => setEditing({})}><Plus size={16} /> Add debt</button>}
       </header>
 
       {debts.length === 0 ? (
         <EmptyState
           icon={Landmark}
-          title="No debts yet"
-          text="Add your first debt to start tracking what you owe and how fast it’s going down."
-          action={<button className={styles.btnPrimary} onClick={() => setEditing('new')}><Plus size={16} /> Add debt</button>}
+          title="Nothing on this side of the scale yet"
+          text="Add each loan, card or utang with what you’ve already paid. BALANSE tracks it down to zero."
+          suggestions={SUGGESTIONS}
+          onPick={(s) => setEditing({ name: s.name })}
+          action={<button className={styles.btnPrimary} onClick={() => setEditing({})}><Plus size={16} /> Add your first debt</button>}
         />
       ) : (
         <>
-          <div className={styles.statRow}>
-            <div className={styles.stat}><span>Still owed</span><strong>{peso(remaining)}</strong></div>
-            <div className={styles.stat}><span>Paid off</span><strong>{peso(total - remaining)}</strong><small>{Math.round(pct(total - remaining, total))}% of {peso(total)}</small></div>
-            <div className={styles.stat}><span>Monthly payments</span><strong>{peso(monthly)}</strong></div>
+          <section className={`${styles.band} ${styles.bandInk}`}>
+            <div className={styles.bandMain}>
+              <span className={styles.bandLabel}>Still owed</span>
+              <Money value={remaining} className={styles.bandValue} />
+              <Meter value={total - remaining} max={total} tone="onDark" size="lg" label="Overall debt paid off" />
+              <span className={styles.bandSub}>{Math.round(pct(total - remaining, total))}% debt-free · {peso(total - remaining)} of {peso(total)} paid</span>
+            </div>
+            <div className={styles.bandFacts}>
+              <div><span>Monthly payments</span><Money value={monthly} /></div>
+              <div><span>Active debts</span><strong>{counts.active}</strong></div>
+              <div><span>Paid off</span><strong>{counts.paid}</strong></div>
+            </div>
+          </section>
+
+          <div className={styles.toolbar}>
+            <div className={styles.filterTabs} role="tablist" aria-label="Filter debts">
+              {FILTERS.map(f => (
+                <button key={f.id} role="tab" aria-selected={filter === f.id} className={filter === f.id ? styles.filterOn : ''} onClick={() => setFilter(f.id)}>
+                  {f.label} <span>{counts[f.id]}</span>
+                </button>
+              ))}
+            </div>
+            <span className={styles.muted}>Sorted by amount left</span>
           </div>
 
-          <div className={styles.cardGrid}>
-            {debts.map(d => {
-              const left = debtRemaining(d);
-              const done = left === 0;
-              return (
-                <article key={d.id} className={styles.itemCard}>
-                  <div className={styles.itemHead}>
-                    <div>
-                      <h3>{d.name}</h3>
-                      {d.lender && <span className={styles.muted}>{d.lender}</span>}
-                    </div>
-                    {done && <span className={styles.donePill}><CheckCircle2 size={13} /> Paid off</span>}
-                  </div>
-                  <div className={styles.itemAmount}>
-                    <strong>{peso(left)}</strong>
-                    <span className={styles.muted}> left of {peso(d.total_amount)}</span>
-                  </div>
-                  <Meter value={num(d.paid_amount)} max={num(d.total_amount)} done={done} label={`${d.name} paid`} />
-                  <div className={styles.itemMeta}>
-                    <span>{Math.round(pct(num(d.paid_amount), num(d.total_amount)))}% paid</span>
-                    {num(d.monthly_payment) > 0 && <span>{peso(d.monthly_payment)}/mo</span>}
-                    {d.due_day && <span>Due every {ordinal(d.due_day)}</span>}
-                  </div>
-                  {d.notes && <p className={styles.itemNotes}>{d.notes}</p>}
-                  <div className={styles.itemActions}>
-                    {!done && <button className={styles.btnSoft} onClick={() => setPaying(d)}><HandCoins size={15} /> Record payment</button>}
-                    <button className={styles.iconBtn} onClick={() => setEditing(d)} aria-label={`Edit ${d.name}`}><Pencil size={15} /></button>
-                    <button className={styles.iconBtn} onClick={() => remove(d)} aria-label={`Delete ${d.name}`}><Trash2 size={15} /></button>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
+          {shown.length === 0 ? (
+            <p className={styles.panelEmpty}>{filter === 'paid' ? 'No debts paid off yet. You’ll get there.' : 'All your debts are paid off. 🎉'}</p>
+          ) : (
+            <div className={styles.cardGrid}>
+              {shown.map(d => <DebtCard key={d.id} d={d} onPay={setPaying} onEdit={setEditing} onDelete={setDeleting} />)}
+            </div>
+          )}
         </>
       )}
 
-      {editing && <DebtForm debt={editing === 'new' ? null : editing} onSave={save} onClose={() => setEditing(null)} />}
+      {editing && <DebtForm debt={editing} onSave={save} onClose={() => setEditing(null)} />}
       {paying && (
         <AmountModal
-          title={`Record payment · ${paying.name}`}
-          label="Amount paid (₱)"
+          eyebrow={paying.name}
+          title="Record a payment"
+          label="Amount paid"
           max={debtRemaining(paying)}
+          presets={payPresets}
           onSubmit={pay}
           onClose={() => setPaying(null)}
+        />
+      )}
+      {deleting && (
+        <ConfirmModal
+          title={`Delete “${deleting.name}”?`}
+          text="This permanently removes the debt from BALANSE. This can’t be undone."
+          onConfirm={remove}
+          onClose={() => setDeleting(null)}
         />
       )}
     </div>

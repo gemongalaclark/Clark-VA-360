@@ -1,23 +1,60 @@
-import { ArrowRight, Landmark, Target, CalendarClock } from 'lucide-react';
+import { ArrowRight, Landmark, Target, CalendarClock, Plus } from 'lucide-react';
 import styles from './Balanse.module.css';
-import { Meter, peso, pct, num } from './ui';
+import { Meter, Money, peso, pct, num } from './ui';
 import { debtRemaining } from './Debts';
 import { goalRemaining, monthlyNeeded } from './Goals';
 
-/* Days until the next occurrence of a monthly due day (a 31st in a short month falls on its last day). */
-function daysUntilDue(day) {
+/* Next occurrence of a monthly due day (a 31st in a short month falls on its last day). */
+function nextDue(day) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const onDay = (y, m) => new Date(y, m, Math.min(day, new Date(y, m + 1, 0).getDate()));
   let next = onDay(today.getFullYear(), today.getMonth());
   if (next < today) next = onDay(today.getFullYear(), today.getMonth() + 1);
-  return Math.round((next - today) / 86_400_000);
+  return { date: next, inDays: Math.round((next - today) / 86_400_000) };
 }
 
 const greeting = () => {
   const h = new Date().getHours();
   return h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
 };
+
+const MAX_TILT = 9; // degrees
+
+/* The signature visual: a beam that tips toward whichever side is heavier.
+   Left pan = what you owe (ink), right pan = what you've saved (red). */
+function Scale({ owed, saved }) {
+  const heavier = Math.max(owed, saved);
+  const tilt = heavier > 0 ? ((saved - owed) / heavier) * MAX_TILT : 0;
+  const drop = Math.sin((tilt * Math.PI) / 180) * 150; // vertical travel of each beam end
+  return (
+    <svg className={styles.scaleSvg} viewBox="0 0 400 210" aria-hidden="true">
+      <path d="M200 40 L200 182" className={styles.scalePost} />
+      <path d="M150 196 Q200 172 250 196 Z" className={styles.scaleBase} />
+      <g className={styles.scaleBeam} style={{ transform: `rotate(${tilt}deg)` }}>
+        <path d="M50 40 H350" />
+      </g>
+      <circle cx="200" cy="40" r="9" className={styles.scalePivot} />
+      <g className={styles.scalePan} style={{ transform: `translateY(${-drop}px)` }}>
+        <path d="M50 40 L22 112 M50 40 L78 112" className={styles.scaleString} />
+        <path d="M14 112 H86 Q50 146 14 112 Z" className={styles.panDebt} />
+      </g>
+      <g className={styles.scalePan} style={{ transform: `translateY(${drop}px)` }}>
+        <path d="M350 40 L322 112 M350 40 L378 112" className={styles.scaleString} />
+        <path d="M314 112 H386 Q350 146 314 112 Z" className={styles.panGoal} />
+      </g>
+    </svg>
+  );
+}
+
+function verdict(owed, saved) {
+  if (!owed && !saved) return 'Add a debt or a goal to put your money on the scale.';
+  const diff = Math.abs(saved - owed);
+  if (diff < 1) return 'Perfectly in balanse. Your savings exactly match what you owe.';
+  return saved > owed
+    ? <>Your savings outweigh your debts by <strong>{peso(diff)}</strong>.</>
+    : <>Your debts outweigh your savings by <strong>{peso(diff)}</strong>.</>;
+}
 
 export default function Overview({ username, debts, goals, onNavigate }) {
   const owed = debts.reduce((s, d) => s + debtRemaining(d), 0);
@@ -28,57 +65,100 @@ export default function Overview({ username, debts, goals, onNavigate }) {
   const goalMonthly = goals.reduce((s, g) => s + (monthlyNeeded(g) ?? 0), 0);
 
   const activeDebts = debts.filter(d => debtRemaining(d) > 0).sort((a, b) => debtRemaining(b) - debtRemaining(a));
-  const activeGoals = [...goals].sort((a, b) => goalRemaining(a) - goalRemaining(b));
+  const openGoals = [...goals].sort((a, b) => pct(num(b.saved_amount), num(b.target_amount)) - pct(num(a.saved_amount), num(a.target_amount)));
   const upcoming = activeDebts
     .filter(d => d.due_day)
-    .map(d => ({ ...d, inDays: daysUntilDue(d.due_day) }))
+    .map(d => ({ ...d, ...nextDue(d.due_day) }))
     .sort((a, b) => a.inDays - b.inDays)
-    .slice(0, 5);
+    .slice(0, 6);
+
+  const today = new Date().toLocaleDateString('en-PH', { weekday: 'long', month: 'long', day: 'numeric' });
 
   return (
     <div className={styles.page}>
       <header className={styles.pageHead}>
         <div>
-          <h1>{greeting()}, {username}</h1>
-          <p className={styles.muted}>Here’s where your money stands today.</p>
+          <span className={styles.eyebrow}>{today}</span>
+          <h1>{greeting()}, <em>{username}</em></h1>
         </div>
       </header>
 
-      <div className={styles.kpiGrid}>
-        <div className={styles.kpi}>
-          <span className={styles.kpiLabel}>Total still owed</span>
-          <strong className={styles.kpiValue}>{peso(owed)}</strong>
-          <span className={styles.kpiSub}>
+      {/* Hero: the balance scale */}
+      <section className={styles.hero} aria-label="Your balance">
+        <div className={`${styles.heroSide} ${styles.heroDebt}`}>
+          <span className={styles.heroLabel}><i className={styles.keyDebt} /> You owe</span>
+          <Money value={owed} className={styles.heroValue} />
+          <span className={styles.heroSub}>
             {borrowed > 0 ? `${Math.round(pct(borrowed - owed, borrowed))}% of ${peso(borrowed)} paid off` : 'No debts tracked'}
           </span>
         </div>
-        <div className={styles.kpi}>
-          <span className={styles.kpiLabel}>Saved toward goals</span>
-          <strong className={styles.kpiValue}>{peso(saved)}</strong>
-          <span className={styles.kpiSub}>
-            {target > 0 ? `${Math.round(pct(saved, target))}% of ${peso(target)}` : 'No goals yet'}
+        <div className={styles.heroScale}><Scale owed={owed} saved={saved} /></div>
+        <div className={`${styles.heroSide} ${styles.heroGoal}`}>
+          <span className={styles.heroLabel}><i className={styles.keyGoal} /> You’ve saved</span>
+          <Money value={saved} className={styles.heroValue} />
+          <span className={styles.heroSub}>
+            {target > 0 ? `${Math.round(pct(saved, target))}% of ${peso(target)} in goals` : 'No goals yet'}
           </span>
         </div>
+        <p className={styles.heroVerdict}>{verdict(owed, saved)}</p>
+      </section>
+
+      {/* Supporting figures */}
+      <div className={styles.kpiGrid}>
         <div className={styles.kpi}>
-          <span className={styles.kpiLabel}>Monthly commitments</span>
-          <strong className={styles.kpiValue}>{peso(Math.ceil(debtMonthly + goalMonthly))}</strong>
-          <span className={styles.kpiSub}>{peso(debtMonthly)} debts · {peso(Math.ceil(goalMonthly))} goals</span>
+          <span className={styles.kpiLabel}>Debt-free progress</span>
+          <span className={styles.kpiValue}>{Math.round(pct(borrowed - owed, borrowed))}<small>%</small></span>
+          <Meter value={borrowed - owed} max={borrowed} tone="debt" label="Debt paid off" />
         </div>
         <div className={styles.kpi}>
-          <span className={styles.kpiLabel}>Net position</span>
-          <strong className={styles.kpiValue}>{saved - owed < 0 ? '−' : ''}{peso(Math.abs(saved - owed))}</strong>
-          <span className={styles.kpiSub}>Goal savings minus what you owe</span>
+          <span className={styles.kpiLabel}>Goals funded</span>
+          <span className={styles.kpiValue}>{Math.round(pct(saved, target))}<small>%</small></span>
+          <Meter value={saved} max={target} tone="goal" label="Goals funded" />
+        </div>
+        <div className={`${styles.kpi} ${styles.kpiInk}`}>
+          <span className={styles.kpiLabel}>Monthly commitments</span>
+          <Money value={Math.ceil(debtMonthly + goalMonthly)} className={styles.kpiValue} />
+          <span className={styles.kpiSplit}>
+            <span><i className={styles.keyDebtLight} /> {peso(debtMonthly)} debts</span>
+            <span><i className={styles.keyGoal} /> {peso(Math.ceil(goalMonthly))} goals</span>
+          </span>
         </div>
       </div>
+
+      {/* Tear-off calendar of upcoming payments */}
+      <section className={styles.panel}>
+        <div className={styles.panelHead}>
+          <h2><CalendarClock size={17} /> Coming up</h2>
+          {upcoming.length > 0 && <span className={styles.muted}>Next {upcoming.length} payment{upcoming.length > 1 ? 's' : ''}</span>}
+        </div>
+        {upcoming.length === 0 ? (
+          <p className={styles.panelEmpty}>Give a debt a due day and it will show up here as a reminder.</p>
+        ) : (
+          <ul className={styles.calStrip}>
+            {upcoming.map(d => (
+              <li key={d.id} className={d.inDays <= 3 ? styles.calSoon : ''}>
+                <span className={styles.calMonth}>{d.date.toLocaleDateString('en-PH', { month: 'short' })}</span>
+                <span className={styles.calDay}>{d.date.getDate()}</span>
+                <span className={styles.calName}>{d.name}</span>
+                <span className={styles.calAmt}>{num(d.monthly_payment) > 0 ? peso(d.monthly_payment) : '—'}</span>
+                <span className={styles.calWhen}>{d.inDays === 0 ? 'Today' : d.inDays === 1 ? 'Tomorrow' : `in ${d.inDays} days`}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       <div className={styles.panelGrid}>
         <section className={styles.panel}>
           <div className={styles.panelHead}>
-            <h2><Landmark size={17} /> Debts</h2>
-            <button className={styles.linkBtn} onClick={() => onNavigate('debts')}>Manage <ArrowRight size={14} /></button>
+            <h2><Landmark size={17} /> Biggest debts</h2>
+            <button className={styles.linkBtn} onClick={() => onNavigate('debts')}>Debt tracker <ArrowRight size={14} /></button>
           </div>
           {activeDebts.length === 0 ? (
-            <p className={styles.muted}>{debts.length ? 'Every debt is paid off. 🎉' : 'No debts added yet.'}</p>
+            <div className={styles.panelEmpty}>
+              {debts.length ? 'Every debt is paid off. Beautiful.' : 'Nothing owed yet.'}
+              {!debts.length && <button className={styles.btnSoft} onClick={() => onNavigate('debts')}><Plus size={14} /> Add a debt</button>}
+            </div>
           ) : (
             <ul className={styles.progressList}>
               {activeDebts.slice(0, 5).map(d => (
@@ -87,7 +167,7 @@ export default function Overview({ username, debts, goals, onNavigate }) {
                     <span>{d.name}</span>
                     <span><strong>{peso(debtRemaining(d))}</strong> left</span>
                   </div>
-                  <Meter value={num(d.paid_amount)} max={num(d.total_amount)} label={`${d.name} paid`} />
+                  <Meter value={num(d.paid_amount)} max={num(d.total_amount)} tone="debt" label={`${d.name} paid`} />
                 </li>
               ))}
             </ul>
@@ -97,38 +177,22 @@ export default function Overview({ username, debts, goals, onNavigate }) {
         <section className={styles.panel}>
           <div className={styles.panelHead}>
             <h2><Target size={17} /> Goals</h2>
-            <button className={styles.linkBtn} onClick={() => onNavigate('goals')}>Manage <ArrowRight size={14} /></button>
+            <button className={styles.linkBtn} onClick={() => onNavigate('goals')}>All goals <ArrowRight size={14} /></button>
           </div>
-          {activeGoals.length === 0 ? (
-            <p className={styles.muted}>No goals added yet.</p>
+          {openGoals.length === 0 ? (
+            <div className={styles.panelEmpty}>
+              Nothing to save for yet.
+              <button className={styles.btnSoft} onClick={() => onNavigate('goals')}><Plus size={14} /> Add a goal</button>
+            </div>
           ) : (
             <ul className={styles.progressList}>
-              {activeGoals.slice(0, 5).map(g => (
+              {openGoals.slice(0, 5).map(g => (
                 <li key={g.id}>
                   <div className={styles.progressRow}>
                     <span>{g.name}</span>
                     <span><strong>{Math.round(pct(num(g.saved_amount), num(g.target_amount)))}%</strong> of {peso(g.target_amount)}</span>
                   </div>
-                  <Meter value={num(g.saved_amount)} max={num(g.target_amount)} done={goalRemaining(g) === 0} label={`${g.name} saved`} />
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-
-        <section className={styles.panel}>
-          <div className={styles.panelHead}>
-            <h2><CalendarClock size={17} /> Upcoming payments</h2>
-          </div>
-          {upcoming.length === 0 ? (
-            <p className={styles.muted}>Add a due day to a debt to see it here.</p>
-          ) : (
-            <ul className={styles.dueList}>
-              {upcoming.map(d => (
-                <li key={d.id}>
-                  <span className={styles.dueWhen}>{d.inDays === 0 ? 'Today' : d.inDays === 1 ? 'Tomorrow' : `In ${d.inDays} days`}</span>
-                  <span className={styles.dueName}>{d.name}</span>
-                  <strong>{num(d.monthly_payment) > 0 ? peso(d.monthly_payment) : '—'}</strong>
+                  <Meter value={num(g.saved_amount)} max={num(g.target_amount)} tone="goal" done={goalRemaining(g) === 0} label={`${g.name} saved`} />
                 </li>
               ))}
             </ul>
