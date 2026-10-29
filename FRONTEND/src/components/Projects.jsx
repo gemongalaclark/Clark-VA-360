@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight, ExternalLink, Sparkles, Calendar, ArrowUpRight, ArrowRight, Zap, Rocket, ClipboardCheck, ShieldCheck, BookOpen, X, Briefcase } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ExternalLink, Sparkles, Calendar, ArrowUpRight, ArrowRight, Zap, Rocket, ClipboardCheck, ShieldCheck, BookOpen, X, Briefcase, Wallet, Target } from 'lucide-react';
 import styles from './Projects.module.css';
 
 /* Projects data */
@@ -56,6 +56,18 @@ const projects = [
   },
   {
     id: 5,
+    category: 'Personal Finance',
+    title: 'BALANSE',
+    description: 'Personal finance dashboard with a money overview, a debt tracker that shows each loan getting paid down, and savings goals that work out how much to set aside every month.',
+    tags: ['React', 'Supabase', 'PostgreSQL RPC', 'Custom Auth'],
+    image: null,
+    liveUrl: '/balanse',
+    githubUrl: null,
+    placeholder: false,
+    featured: false,
+  },
+  {
+    id: 6,
     category: 'In the pipeline',
     title: 'Coming Soon',
     description: 'Building out my portfolio one project at a time.',
@@ -138,6 +150,23 @@ const docs = {
       'Proposals that mention your real projects, not generic filler.',
       'One board shows every job you applied to and where it stands.',
       'Try it with the demo button. No account needed.',
+    ],
+  },
+  5: {
+    what: 'BALANSE is a money notebook that does the math for you. It shows how much you still owe, how much you have saved, and how close you are to the things you want to buy, like a new car.',
+    use: [
+      'Sign up with just a username and password. No email needed.',
+      'Open the Debt tracker and add each debt: what it is, the total, and how much you have already paid.',
+      'Each time you pay, press “Record payment” and watch the bar fill up.',
+      'Open Goals and add what you are saving for, like a Montero Sport for ₱600,000, plus a target date if you have one.',
+      'Check the Overview to see everything at once: what you owe, what you saved, and what is due next.',
+    ],
+    purpose: 'It is easy to lose track of money when debts and savings live in different apps, notebooks and chats. BALANSE puts them side by side, so you always know where you stand.',
+    help: [
+      'See every debt shrink as you pay it down.',
+      'Know exactly how much to save each month to hit a goal on time.',
+      'Never miss a payment: upcoming due dates show on the Overview.',
+      'Private: each account only ever sees its own numbers.',
     ],
   },
 };
@@ -294,6 +323,20 @@ function ProjectCard({ project, onDocs }) {
               <div className={styles.graphicBadgeRow}>
                 <span className={styles.graphicAiPill}><Sparkles size={11} /> Gemini AI</span>
                 <span className={styles.teamsyncRolePill}>Fit score + CRM</span>
+              </div>
+            </div>
+          </div>
+        ) : project.id === 5 ? (
+          <div className={styles.teamsyncGraphic}>
+            <div className={styles.teamsyncGlow} />
+            <div className={styles.teamsyncGraphicInner}>
+              <div className={styles.teamsyncIconWrap}>
+                <Wallet size={30} className={styles.teamsyncIcon} />
+              </div>
+              <span className={styles.teamsyncTitle}>BALANSE</span>
+              <div className={styles.graphicBadgeRow}>
+                <span className={styles.graphicAiPill}><Target size={11} /> Goals</span>
+                <span className={styles.teamsyncRolePill}>Debt tracker</span>
               </div>
             </div>
           </div>

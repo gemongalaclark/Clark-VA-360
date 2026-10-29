@@ -12,6 +12,7 @@ import GoogleCalendarAutoScheduler from './components/GOOGLE CALENDAR AUTO SCHED
 import TeamSyncWorkspace from './components/TEAMSYNC WORKSPACE/TeamSyncWorkspace';
 import OnboardBase from './components/ONBOARDBASE/OnboardBase';
 import BuhayvaCopilot from './components/BUHAYVA COPILOT/BuhayvaCopilot';
+import Balanse from './components/BALANSE/Balanse';
 import './App.css';
 
 function checkRoute() {
@@ -32,6 +33,7 @@ function checkRoute() {
     hash.includes('teamsync')
   ) return 'teamsync';
   if (path.startsWith('/onboardbase') || hash.includes('onboardbase')) return 'onboardbase';
+  if (path.startsWith('/balanse') || hash.includes('balanse')) return 'balanse';
   return 'portfolio';
 }
 
@@ -91,6 +93,12 @@ export default function App() {
   if (route === 'copilot') {
     return (
       <BuhayvaCopilot onBackToPortfolio={goToPortfolio} />
+    );
+  }
+
+  if (route === 'balanse') {
+    return (
+      <Balanse onBackToPortfolio={goToPortfolio} />
     );
   }
 
