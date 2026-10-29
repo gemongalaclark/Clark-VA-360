@@ -35,29 +35,23 @@
 }
 
 /* ── Track panels ── */
-.tracks { display: flex; flex-direction: column; gap: 32px; }
+.tracks { display: flex; flex-direction: column; gap: 64px; }
 
+/* Open (box-less) track: a hairline rule with a short accent in the track colour */
 .toolGroup {
   --tone: #1a1a2e; --tone-2: #3a3a7a; --tone-rgb: 26,26,46;
-  position: relative; isolation: isolate; overflow: hidden;
-  padding: 32px;
-  background: #fff;
-  border: 1px solid #f1e6e6; border-radius: 28px;
-  box-shadow: 0 1px 2px rgba(26,26,46,0.04), 0 20px 50px rgba(26,26,46,0.05);
+  --rule: rgba(26,26,46,0.12);
+  position: relative;
+  padding-top: 32px;
 }
 .toneRed { --tone: #cb2525; --tone-2: #f05252; --tone-rgb: 203,37,37; }
 
-/* accent bar + soft corner glow */
-.toolGroup::before {
-  content: ''; position: absolute; inset: 0 0 auto 0; height: 4px;
-  background: linear-gradient(90deg, var(--tone), var(--tone-2), transparent);
-}
+.toolGroup::before,
 .toolGroup::after {
-  content: ''; position: absolute; z-index: -1; top: -140px; right: -120px;
-  width: 380px; height: 380px; border-radius: 50%;
-  background: radial-gradient(circle, rgba(var(--tone-rgb),0.09), transparent 70%);
-  pointer-events: none;
+  content: ''; position: absolute; top: 0; left: 0;
 }
+.toolGroup::before { right: 0; height: 1px; background: var(--rule); }
+.toolGroup::after  { width: 56px; height: 3px; top: -1px; border-radius: 9999px; background: var(--tone); }
 
 /* Header */
 .groupHeader {
@@ -214,7 +208,7 @@
 
 /* ── Responsive ── */
 @media (max-width: 768px) {
-  .toolGroup { padding: 24px 20px; border-radius: 22px; }
+  .toolGroup { padding-top: 24px; }
   .groupHeader { flex-wrap: wrap; gap: 16px; }
   .groupText { flex-basis: calc(100% - 80px); }
   .groupCount { flex-direction: row; gap: 8px; align-items: baseline; padding: 8px 14px; order: 3; }
@@ -229,7 +223,7 @@
   .statValue { font-size: 1.3rem; }
   .statLabel { font-size: 0.6rem; }
   .groupBadge { width: 52px; height: 52px; border-radius: 16px; }
-  .filterRow { flex-wrap: nowrap; overflow-x: auto; margin: 0 -20px 18px; padding: 2px 20px 6px; scrollbar-width: none; }
+  .filterRow { flex-wrap: nowrap; overflow-x: auto; margin: 0 -16px 18px; padding: 2px 16px 6px; scrollbar-width: none; }
   .filterRow::-webkit-scrollbar { display: none; }
   .filterPill { flex-shrink: 0; }
   .toolGrid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
@@ -247,12 +241,12 @@
 }
 
 /* ── Dark theme ── */
-:global(html[data-theme='dark']) .statsStrip,
-:global(html[data-theme='dark']) .toolGroup {
+:global(html[data-theme='dark']) .statsStrip {
   background: var(--dk-surface);
   border-color: var(--dk-border);
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
 }
+:global(html[data-theme='dark']) .toolGroup { --rule: var(--dk-border-strong); }
 :global(html[data-theme='dark']) .stat + .stat::before { background: var(--dk-border-strong); }
 :global(html[data-theme='dark']) .statValue { background-image: linear-gradient(135deg, #f26b6b, #f2f2f7); }
 /* the navy "VA" track tone is invisible on dark – lift it to a soft indigo */
