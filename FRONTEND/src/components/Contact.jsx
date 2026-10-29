@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Mail, MapPin, Send, CheckCircle, AlertCircle } from 'lucide-react';
+import { Mail, MapPin, Send, CheckCircle, AlertCircle, CalendarCheck, Clock, Video, ArrowUpRight } from 'lucide-react';
 import emailjs from '@emailjs/browser';
 import { supabase } from '../lib/supabase';
 import styles from './Contact.module.css';
@@ -118,6 +118,33 @@ export default function Contact() {
                 <span className={styles.contactIcon}><MapPin size={18} /></span>
                 Philippines
               </div>
+            </div>
+
+            <div className={styles.bookingCard}>
+              <div className={styles.bookingHead}>
+                <span className={styles.bookingIcon}><CalendarCheck size={22} /></span>
+                <div>
+                  <h4 className={styles.bookingTitle}>Book a Free Discovery Call</h4>
+                  <p className={styles.bookingDesc}>
+                    Prefer to talk? Pick a time that works for you and let&apos;s chat about your needs.
+                  </p>
+                </div>
+              </div>
+              <ul className={styles.bookingMeta}>
+                <li><Clock size={14} /> 30 minutes</li>
+                <li><Video size={14} /> Google Meet</li>
+                <li><CalendarCheck size={14} /> Weekdays</li>
+              </ul>
+              <a
+                id="contact-booking-link"
+                href="https://calendar.app.google/8hXXbSj8T3NpqtAy6"
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`btn-primary ${styles.bookingBtn}`}
+              >
+                Schedule a Call
+                <ArrowUpRight size={16} />
+              </a>
             </div>
 
             <div className={styles.socialRow}>

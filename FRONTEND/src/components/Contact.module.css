@@ -68,6 +68,82 @@ a.contactItem:hover {
   gap: 12px;
 }
 
+/* Booking card */
+.bookingCard {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 22px;
+  background: var(--white);
+  border: 1.5px solid rgba(203,37,37,0.15);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--transition-normal), border-color var(--transition-normal);
+}
+
+.bookingCard:hover {
+  border-color: rgba(203,37,37,0.3);
+  box-shadow: var(--shadow-md);
+}
+
+.bookingHead {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.bookingIcon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--gradient-red);
+  color: var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.bookingTitle {
+  font-family: var(--font-heading);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin-bottom: 4px;
+}
+
+.bookingDesc {
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--text-body);
+}
+
+.bookingMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.bookingMeta li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  background: rgba(203,37,37,0.06);
+  border-radius: var(--radius-full);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--red-primary);
+}
+
+.bookingBtn {
+  justify-content: center;
+  text-decoration: none;
+}
+
 /* Form */
 .form {
   display: flex;
