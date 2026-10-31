@@ -164,6 +164,67 @@
 
 .automationTrack { max-width: 800px; }
 
+/* ── Comparison table ── */
+.compareScroll {
+  overflow-x: auto;
+  background: #fff; border: 1px solid #f0e6e6; border-radius: 24px;
+  box-shadow: 0 10px 30px rgba(203,37,37,0.06);
+}
+.compareScroll:focus-visible { outline: 2px solid var(--red-primary); outline-offset: 2px; }
+
+.compare {
+  --compare-bg: #fff;
+  --compare-rule: #f4eaea;
+  width: 100%; min-width: 900px;
+  border-collapse: separate; border-spacing: 0;
+  font-size: 0.86rem;
+}
+.compare th, .compare td { padding: 12px 10px; text-align: center; vertical-align: middle; }
+.compare tbody td, .compare tbody th { border-top: 1px solid var(--compare-rule); }
+
+/* The first column stays put while the plans scroll underneath it */
+.compareCorner, .compareFeature {
+  position: sticky; left: 0; z-index: 1;
+  width: 208px; background: var(--compare-bg);
+}
+.compare .compareFeature {
+  padding-left: 24px; text-align: left; font-weight: 500; color: var(--text-body);
+}
+
+.compare .compareTrack {
+  padding: 20px 10px 4px;
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.compare .comparePlan { padding: 8px 10px 18px; vertical-align: top; }
+.comparePlanName {
+  display: flex; align-items: center; justify-content: center; min-height: 2.7em;
+  font-family: var(--font-heading); font-size: 0.86rem; font-weight: 700; line-height: 1.3;
+  color: var(--text-dark);
+}
+.compareUsd {
+  display: block; margin-top: 4px;
+  font-family: var(--font-heading); font-size: 1.35rem; font-weight: 800; line-height: 1.2;
+  letter-spacing: -0.02em; color: var(--text-dark);
+}
+.comparePhp { display: block; font-size: 0.8rem; font-weight: 600; color: var(--red-primary); }
+
+/* Premium columns carry a faint wash, echoing the dark passes above */
+.comparePremium { background: rgba(203,37,37,0.045); }
+
+.compare .compareGroup {
+  padding: 0; text-align: left;
+  background: var(--bg-section);
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--red-primary);
+}
+/* Stays in view while the row scrolls sideways */
+.compareGroup > span { position: sticky; left: 0; display: inline-block; padding: 10px 24px; }
+
+.compareYes { display: block; margin: 0 auto; color: var(--red-primary); }
+.compareNo { display: block; margin: 0 auto; color: var(--gray-400); }
+
 /* Narrow four-up passes wrap taglines to three lines; reserve it so tear lines stay level */
 @media (max-width: 1200px) {
   .passTagline { min-height: 4.5em; }
@@ -189,6 +250,13 @@
   .level { gap: 12px; margin: 0 0 14px -46px; }
   .levelLabel { padding: 0; background: none; }
   .passTagline { min-height: 0; }
+  .compareBlock .trackHead { max-width: none; }
+}
+
+@media (max-width: 640px) {
+  .compareCorner, .compareFeature { width: 148px; }
+  .compare .compareFeature { padding-left: 16px; font-size: 0.8rem; }
+  .compareGroup > span { padding-left: 16px; }
 }
 
 @media (max-width: 480px) {
@@ -230,6 +298,16 @@
   border-bottom-color: var(--dk-border);
 }
 :global(html[data-theme='dark']) .backBtn:hover { color: var(--red-light); background: rgba(234,67,67,0.12); }
+:global(html[data-theme='dark']) .compareScroll {
+  background: var(--dk-raised);
+  border-color: var(--dk-border);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.35);
+}
+:global(html[data-theme='dark']) .compare {
+  --compare-bg: var(--dk-raised);
+  --compare-rule: var(--dk-border);
+}
+:global(html[data-theme='dark']) .comparePremium { background: rgba(234,67,67,0.08); }
 
 @media (max-width: 1040px) {
   :global(html[data-theme='dark']) .tierPremium::before { background: linear-gradient(180deg, var(--red-primary), var(--red-pastel)); }

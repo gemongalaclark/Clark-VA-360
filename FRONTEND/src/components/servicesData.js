@@ -20,7 +20,7 @@ export const websitePlans = [
     php: '40k',
     premium: true,
     popular: true,
-    features: ['Everything in Basic Website', 'AI chatbot', 'Automated lead capture', 'Automated follow-ups'],
+    features: ['Everything in Basic Website', 'AI assistant trained on your business', 'Lead capture', 'Automated email follow-ups', 'Slack or Discord alerts'],
   },
   {
     id: 'website-full',
@@ -29,7 +29,7 @@ export const websitePlans = [
     tagline: 'A complete web system without AI or automations.',
     usd: 700,
     php: '43k',
-    features: ['Everything in Basic Website', 'User logins', 'Database', 'Admin dashboard'],
+    features: ['Everything in Basic Website', 'User logins and roles', 'Database', 'Admin dashboard', 'File uploads', 'Live updates'],
   },
   {
     id: 'website-full-ai',
@@ -39,7 +39,7 @@ export const websitePlans = [
     usd: 750,
     php: '46k',
     premium: true,
-    features: ['Everything in Full System', 'AI features', 'Workflow automations'],
+    features: ['Everything in Full System', 'Everything in Advanced Website', 'AI document reading', 'AI writing and scoring tools', 'Automated reminders'],
   },
 ];
 
@@ -51,7 +51,7 @@ export const automationPlans = [
     tagline: 'Hands-off funnels for your everyday workflows.',
     usd: 500,
     php: '30k',
-    features: ['Up to 4 funnels', 'Tool integrations', 'Testing and handover'],
+    features: ['Up to 4 funnels', 'Email notifications', 'Google Calendar sync', 'Slack or Discord alerts', 'Testing and handover'],
   },
   {
     id: 'automation-advanced',
@@ -61,6 +61,35 @@ export const automationPlans = [
     usd: 600,
     php: '37k',
     premium: true,
-    features: ['Multi-step workflows', 'Branching logic', 'AI steps', 'Custom integrations'],
+    features: ['Everything in Basic Automation', 'Multi-step Make.com workflows', 'Branching logic', 'AI review and scoring', 'Custom integrations'],
   },
 ];
+
+/* Comparison table rows. Each label must match a feature string above: the ticks are
+   worked out from the plans, so the table can't disagree with the pass cards. */
+export const comparisonGroups = [
+  {
+    label: 'Website foundation',
+    features: ['Custom responsive design', 'Up to 5 pages', 'Contact form', 'Basic SEO', 'Deployment'],
+  },
+  {
+    label: 'Full system',
+    features: ['User logins and roles', 'Database', 'Admin dashboard', 'File uploads', 'Live updates'],
+  },
+  {
+    label: 'AI on your website',
+    features: ['AI assistant trained on your business', 'Lead capture', 'Automated email follow-ups', 'AI document reading', 'AI writing and scoring tools', 'Automated reminders'],
+  },
+  {
+    label: 'Automation',
+    features: ['Up to 4 funnels', 'Email notifications', 'Google Calendar sync', 'Slack or Discord alerts', 'Testing and handover', 'Multi-step Make.com workflows', 'Branching logic', 'AI review and scoring', 'Custom integrations'],
+  },
+];
+
+/* Expands "Everything in <plan>" so inherited features count for the higher tiers */
+export function planFeatures(plan) {
+  return plan.features.flatMap((feature) => {
+    const base = [...websitePlans, ...automationPlans].find(p => feature === `Everything in ${p.name}`);
+    return base ? planFeatures(base) : [feature];
+  });
+}
