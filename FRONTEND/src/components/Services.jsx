@@ -1,4 +1,4 @@
-import { ArrowRight, Check } from 'lucide-react';
+import { ArrowRight, Check, Crown, Flame, Shield, Zap } from 'lucide-react';
 import { websitePlans } from './servicesData';
 import styles from './Services.module.css';
 
@@ -8,10 +8,37 @@ const navigate = (url) => {
   window.dispatchEvent(new PopStateEvent('popstate'));
 };
 
+/* The higher the rank, the flashier the pass. The look itself lives in .rank1 to .rank4. */
+const RANKS = {
+  1: { name: 'Starter', Icon: Shield },
+  2: { name: 'Pro', Icon: Zap },
+  3: { name: 'Elite', Icon: Flame },
+  4: { name: 'Legendary', Icon: Crown },
+};
+const SPARKS = [0, 1, 2, 3, 4, 5, 6, 7];
+
+/* Feeds the cursor position to the glare in CSS */
+const trackGlare = (e) => {
+  const box = e.currentTarget.getBoundingClientRect();
+  e.currentTarget.style.setProperty('--mx', `${e.clientX - box.left}px`);
+  e.currentTarget.style.setProperty('--my', `${e.clientY - box.top}px`);
+};
+
 function PassCard({ plan }) {
+  const { name: rankName, Icon } = RANKS[plan.rank];
+
   return (
-    <article className={`${styles.pass} ${plan.premium ? styles.premium : ''}`}>
+    <article className={`${styles.pass} ${styles[`rank${plan.rank}`]}`} onMouseMove={trackGlare}>
+      <div className={styles.fx} aria-hidden="true">
+        <span className={styles.ghostTier}>{plan.tier}</span>
+        {plan.rank === 4 && SPARKS.map(i => <i key={i} className={styles.spark} style={{ '--i': i }} />)}
+      </div>
+
       <div className={styles.passHead}>
+        <span className={styles.rankChip}>
+          <Icon size={12} strokeWidth={2.5} aria-hidden="true" />
+          {rankName}
+        </span>
         <h3 className={styles.passName}>{plan.name}</h3>
         <p className={styles.passTagline}>{plan.tagline}</p>
         <p className={styles.price}>
@@ -34,7 +61,7 @@ function PassCard({ plan }) {
         </ul>
         <button
           type="button"
-          className={`${plan.premium ? 'btn-primary' : 'btn-secondary'} ${styles.passCta}`}
+          className={`${plan.rank > 1 ? 'btn-primary' : 'btn-secondary'} ${styles.passCta}`}
           aria-label={`Get the ${plan.name} pass`}
           onClick={() => navigate(`/?inquiry=${encodeURIComponent(plan.name)}#contact`)}
         >
@@ -51,7 +78,7 @@ export function PassTrack({ plans }) {
   return (
     <ol className={styles.track} style={{ '--cols': plans.length }}>
       {plans.map(plan => (
-        <li key={plan.id} className={`${styles.tier} ${plan.premium ? styles.tierPremium : ''}`}>
+        <li key={plan.id} className={`${styles.tier} ${styles[`tierRank${plan.rank}`]}`}>
           <div className={styles.level}>
             <span className={styles.levelNode} aria-hidden="true"><span>{plan.tier}</span></span>
             <span className={styles.levelLabel}>Tier {plan.tier}</span>

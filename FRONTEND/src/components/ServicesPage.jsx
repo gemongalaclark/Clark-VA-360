@@ -9,7 +9,7 @@ const allPlans = [...websitePlans, ...automationPlans];
 
 function ComparisonTable() {
   const included = new Map(allPlans.map(plan => [plan.id, new Set(planFeatures(plan))]));
-  const premiumClass = plan => (plan.premium ? styles.comparePremium : '');
+  const premiumClass = plan => (plan.rank === 4 ? styles.compareLegendary : plan.rank === 3 ? styles.comparePremium : '');
 
   return (
     /* Scrolls sideways on small screens, so it has to be focusable for keyboard users */
