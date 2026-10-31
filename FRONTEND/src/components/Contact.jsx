@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Mail, MapPin, Send, CheckCircle, AlertCircle, CalendarCheck, Clock, Video, ArrowUpRight } from 'lucide-react';
 import emailjs from '@emailjs/browser';
 import { supabase } from '../lib/supabase';
@@ -13,6 +13,20 @@ export default function Contact() {
   });
   const [status, setStatus] = useState(null); // 'sending' | 'success' | 'error'
   const [errorMessage, setErrorMessage] = useState('');
+
+  /* A pass's "Get this pass" button links here with ?inquiry=<plan name> */
+  useEffect(() => {
+    const applyInquiry = () => {
+      const plan = new URLSearchParams(window.location.search).get('inquiry');
+      if (!plan) return;
+      setForm(prev => ({ ...prev, subject: `Inquiry: ${plan}` }));
+      const el = document.getElementById('contact');
+      if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 72, behavior: 'smooth' });
+    };
+    applyInquiry();
+    window.addEventListener('popstate', applyInquiry);
+    return () => window.removeEventListener('popstate', applyInquiry);
+  }, []);
 
   const handleChange = (e) => {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));

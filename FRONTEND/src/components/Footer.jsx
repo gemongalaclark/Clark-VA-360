@@ -25,7 +25,7 @@ export default function Footer() {
 
         {/* Nav links */}
         <div className={styles.links}>
-          {['home', 'about', 'skills', 'projects', 'contact'].map(id => (
+          {['home', 'about', 'skills', 'projects', 'services', 'contact'].map(id => (
             <button key={id} className={styles.link} onClick={() => scrollTo(id)}>
               {id.charAt(0).toUpperCase() + id.slice(1)}
             </button>

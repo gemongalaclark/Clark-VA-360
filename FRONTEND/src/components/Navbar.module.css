@@ -388,6 +388,12 @@
 }
 
 /* ── Responsive ── */
+@media (max-width: 900px) {
+  .navLink {
+    padding: 8px 12px;
+  }
+}
+
 @media (max-width: 768px) {
   .navLinks,
   .ctaBtn {
