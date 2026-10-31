@@ -1,8 +1,10 @@
-import { ArrowRight, Landmark, Target, CalendarClock, Plus } from 'lucide-react';
+import { ArrowRight, Landmark, Target, CalendarClock, Plus, Repeat } from 'lucide-react';
 import styles from './Balanse.module.css';
 import { Meter, Money, peso, pct, num } from './ui';
 import { debtRemaining } from './Debts';
 import { goalRemaining, monthlyNeeded } from './Goals';
+import { renewText } from './Subscriptions';
+import { billingCycle, subscriptionTotals } from './blCycle';
 
 /* Next occurrence of a monthly due day (a 31st in a short month falls on its last day). */
 function nextDue(day) {
@@ -56,7 +58,7 @@ function verdict(owed, saved) {
     : <>Your debts outweigh your savings by <strong>{peso(diff)}</strong>.</>;
 }
 
-export default function Overview({ username, debts, goals, onNavigate }) {
+export default function Overview({ username, debts, goals, subscriptions, onNavigate }) {
   const owed = debts.reduce((s, d) => s + debtRemaining(d), 0);
   const borrowed = debts.reduce((s, d) => s + num(d.total_amount), 0);
   /* Reached goals live in "Past goals" and no longer count toward savings. */
@@ -65,14 +67,23 @@ export default function Overview({ username, debts, goals, onNavigate }) {
   const target = liveGoals.reduce((s, g) => s + num(g.target_amount), 0);
   const debtMonthly = debts.filter(d => debtRemaining(d) > 0).reduce((s, d) => s + num(d.monthly_payment), 0);
   const goalMonthly = goals.reduce((s, g) => s + (monthlyNeeded(g) ?? 0), 0);
+  const { perMonth: subMonthly, perYear: subYearly } = subscriptionTotals(subscriptions);
 
   const activeDebts = debts.filter(d => debtRemaining(d) > 0).sort((a, b) => debtRemaining(b) - debtRemaining(a));
   const openGoals = [...liveGoals].sort((a, b) => pct(num(b.saved_amount), num(b.target_amount)) - pct(num(a.saved_amount), num(a.target_amount)));
-  const upcoming = activeDebts
-    .filter(d => d.due_day)
-    .map(d => ({ ...d, ...nextDue(d.due_day) }))
-    .sort((a, b) => a.inDays - b.inDays)
-    .slice(0, 6);
+  const renewals = subscriptions
+    .map(s => ({ ...s, cycle: billingCycle(s) }))
+    .sort((a, b) => a.cycle.daysLeft - b.cycle.daysLeft);
+  /* Debts and subscriptions share one calendar, soonest first. */
+  const upcoming = [
+    ...activeDebts.filter(d => d.due_day).map(d => {
+      const { date, inDays } = nextDue(d.due_day);
+      return { key: `debt-${d.id}`, kind: 'Debt', name: d.name, amount: num(d.monthly_payment), date, inDays };
+    }),
+    ...renewals.map(s => ({
+      key: `sub-${s.id}`, kind: 'Subscription', name: s.title, amount: num(s.amount), date: s.cycle.next, inDays: s.cycle.daysLeft,
+    })),
+  ].sort((a, b) => a.inDays - b.inDays).slice(0, 6);
 
   const today = new Date().toLocaleDateString('en-PH', { weekday: 'long', month: 'long', day: 'numeric' });
 
@@ -119,10 +130,11 @@ export default function Overview({ username, debts, goals, onNavigate }) {
         </div>
         <div className={`${styles.kpi} ${styles.kpiInk}`}>
           <span className={styles.kpiLabel}>Monthly commitments</span>
-          <Money value={Math.ceil(debtMonthly + goalMonthly)} className={styles.kpiValue} />
+          <Money value={Math.ceil(debtMonthly + goalMonthly + subMonthly)} className={styles.kpiValue} />
           <span className={styles.kpiSplit}>
             <span><i className={styles.keyDebtLight} /> {peso(debtMonthly)} debts</span>
             <span><i className={styles.keyGoal} /> {peso(Math.ceil(goalMonthly))} goals</span>
+            <span><i className={styles.keySubLight} /> {peso(subMonthly)} subscriptions</span>
           </span>
         </div>
       </div>
@@ -134,15 +146,16 @@ export default function Overview({ username, debts, goals, onNavigate }) {
           {upcoming.length > 0 && <span className={styles.muted}>Next {upcoming.length} payment{upcoming.length > 1 ? 's' : ''}</span>}
         </div>
         {upcoming.length === 0 ? (
-          <p className={styles.panelEmpty}>Give a debt a due day and it will show up here as a reminder.</p>
+          <p className={styles.panelEmpty}>Give a debt a due day or add a subscription and it will show up here as a reminder.</p>
         ) : (
           <ul className={styles.calStrip}>
             {upcoming.map(d => (
-              <li key={d.id} className={d.inDays <= 3 ? styles.calSoon : ''}>
+              <li key={d.key} className={d.inDays <= 3 ? styles.calSoon : ''}>
                 <span className={styles.calMonth}>{d.date.toLocaleDateString('en-PH', { month: 'short' })}</span>
                 <span className={styles.calDay}>{d.date.getDate()}</span>
                 <span className={styles.calName}>{d.name}</span>
-                <span className={styles.calAmt}>{num(d.monthly_payment) > 0 ? peso(d.monthly_payment) : '—'}</span>
+                <span className={styles.calKind}>{d.kind}</span>
+                <span className={styles.calAmt}>{d.amount > 0 ? peso(d.amount) : '—'}</span>
                 <span className={styles.calWhen}>{d.inDays === 0 ? 'Today' : d.inDays === 1 ? 'Tomorrow' : `in ${d.inDays} days`}</span>
               </li>
             ))}
@@ -198,6 +211,45 @@ export default function Overview({ username, debts, goals, onNavigate }) {
                 </li>
               ))}
             </ul>
+          )}
+        </section>
+
+        <section className={`${styles.panel} ${styles.panelWide}`}>
+          <div className={styles.panelHead}>
+            <h2><Repeat size={17} /> Subscriptions</h2>
+            <button className={styles.linkBtn} onClick={() => onNavigate('subscriptions')}>All subscriptions <ArrowRight size={14} /></button>
+          </div>
+          {renewals.length === 0 ? (
+            <div className={styles.panelEmpty}>
+              Nothing renewing yet.
+              <button className={styles.btnSoft} onClick={() => onNavigate('subscriptions')}><Plus size={14} /> Add a subscription</button>
+            </div>
+          ) : (
+            <div className={styles.subOverview}>
+              <div className={styles.subTotals}>
+                <div>
+                  <span>Total per month</span>
+                  <Money value={subMonthly} className={styles.subTotalValue} />
+                  <small>Yearly plans spread over 12 months</small>
+                </div>
+                <div>
+                  <span>Total per year</span>
+                  <Money value={subYearly} className={styles.subTotalValue} />
+                  <small>{renewals.length} subscription{renewals.length > 1 ? 's' : ''}</small>
+                </div>
+              </div>
+              <ul className={styles.progressList}>
+                {renewals.slice(0, 4).map(s => (
+                  <li key={s.id}>
+                    <div className={styles.progressRow}>
+                      <span>{s.title}</span>
+                      <span><strong>{renewText(s.cycle.daysLeft)}</strong></span>
+                    </div>
+                    <Meter value={s.cycle.daysUsed} max={s.cycle.totalDays} tone={s.cycle.nearing ? 'subSoon' : 'sub'} label={`${s.title} billing cycle used`} />
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
         </section>
       </div>

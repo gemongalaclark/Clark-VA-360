@@ -11,6 +11,7 @@
 --   bl_sessions   sha256 of each session token (the raw token lives only in the browser)
 --   bl_debts      debts per user
 --   bl_goals      savings goals per user
+--   bl_subscriptions  recurring monthly / yearly subscriptions per user
 --
 -- Security model: RLS is ON with NO policies, so the anon key cannot read or
 -- write any bl_ table directly. The browser only calls the SECURITY DEFINER
@@ -74,11 +75,30 @@ create index if not exists bl_goals_user_idx on public.bl_goals (user_id, create
 -- Set by bl_track_completion(): when the goal was reached (it then shows under "Past goals").
 alter table public.bl_goals add column if not exists completed_at timestamptz;
 
+-- Renews on renew_day each month, or on renew_month + renew_day each year.
+create table if not exists public.bl_subscriptions (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null references public.bl_users(id) on delete cascade,
+  title       text not null check (char_length(title) between 1 and 80),
+  paid_via    text not null check (char_length(paid_via) between 1 and 40),
+  billing     text not null check (billing in ('monthly', 'yearly')),
+  renew_day   smallint not null check (renew_day between 1 and 31),
+  renew_month smallint check (renew_month between 1 and 12),
+  amount      numeric(14,2) not null check (amount > 0),
+  notes       text check (char_length(notes) <= 500),
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now(),
+  constraint bl_subscriptions_month_matches_billing
+    check ((billing = 'yearly') = (renew_month is not null))
+);
+create index if not exists bl_subscriptions_user_idx on public.bl_subscriptions (user_id, created_at);
+
 alter table public.bl_users    enable row level security;
 alter table public.bl_sessions enable row level security;
 alter table public.bl_debts    enable row level security;
 alter table public.bl_goals    enable row level security;
-revoke all on public.bl_users, public.bl_sessions, public.bl_debts, public.bl_goals from anon, authenticated;
+alter table public.bl_subscriptions enable row level security;
+revoke all on public.bl_users, public.bl_sessions, public.bl_debts, public.bl_goals, public.bl_subscriptions from anon, authenticated;
 
 -- ── 2. Internal helpers ───────────────────────────────────────
 create or replace function public.bl_hash_token(p_token text)
@@ -210,7 +230,8 @@ declare v_user uuid := bl_user_from_token(p_token);
 begin
   return json_build_object(
     'debts', coalesce((select json_agg(d order by d.created_at) from bl_debts d where d.user_id = v_user), '[]'::json),
-    'goals', coalesce((select json_agg(g order by g.created_at) from bl_goals g where g.user_id = v_user), '[]'::json)
+    'goals', coalesce((select json_agg(g order by g.created_at) from bl_goals g where g.user_id = v_user), '[]'::json),
+    'subscriptions', coalesce((select json_agg(s order by s.created_at) from bl_subscriptions s where s.user_id = v_user), '[]'::json)
   );
 end;
 $$;
@@ -309,6 +330,53 @@ returns void
 language sql security definer set search_path = public, extensions
 as $$ delete from bl_goals where id = p_id and user_id = bl_user_from_token(p_token); $$;
 
+create or replace function public.bl_save_subscription(p_token text, p_sub jsonb)
+returns bl_subscriptions
+language plpgsql security definer set search_path = public, extensions
+as $$
+declare
+  v_user    uuid := bl_user_from_token(p_token);
+  v_row     bl_subscriptions;
+  v_billing text := p_sub->>'billing';
+  -- Monthly subscriptions have no month, whatever the client sent.
+  v_month   smallint := case when v_billing = 'yearly' then nullif(p_sub->>'renew_month', '')::smallint end;
+begin
+  if p_sub ? 'id' and p_sub->>'id' is not null then
+    update bl_subscriptions set
+      title       = trim(p_sub->>'title'),
+      paid_via    = trim(p_sub->>'paid_via'),
+      billing     = v_billing,
+      renew_day   = (p_sub->>'renew_day')::smallint,
+      renew_month = v_month,
+      amount      = (p_sub->>'amount')::numeric,
+      notes       = nullif(trim(p_sub->>'notes'), ''),
+      updated_at  = now()
+    where id = (p_sub->>'id')::uuid and user_id = v_user
+    returning * into v_row;
+    if v_row.id is null then raise exception 'Subscription not found.'; end if;
+  else
+    insert into bl_subscriptions (user_id, title, paid_via, billing, renew_day, renew_month, amount, notes)
+    values (
+      v_user,
+      trim(p_sub->>'title'),
+      trim(p_sub->>'paid_via'),
+      v_billing,
+      (p_sub->>'renew_day')::smallint,
+      v_month,
+      (p_sub->>'amount')::numeric,
+      nullif(trim(p_sub->>'notes'), '')
+    )
+    returning * into v_row;
+  end if;
+  return v_row;
+end;
+$$;
+
+create or replace function public.bl_delete_subscription(p_token text, p_id uuid)
+returns void
+language sql security definer set search_path = public, extensions
+as $$ delete from bl_subscriptions where id = p_id and user_id = bl_user_from_token(p_token); $$;
+
 -- ── 5. Grants: the browser may call only the public RPCs ─────
 revoke all on function public.bl_new_session(uuid)        from public, anon, authenticated;
 revoke all on function public.bl_user_from_token(text)    from public, anon, authenticated;
@@ -321,5 +389,7 @@ grant execute on function
   public.bl_save_debt(text, jsonb),
   public.bl_delete_debt(text, uuid),
   public.bl_save_goal(text, jsonb),
-  public.bl_delete_goal(text, uuid)
+  public.bl_delete_goal(text, uuid),
+  public.bl_save_subscription(text, jsonb),
+  public.bl_delete_subscription(text, uuid)
 to anon, authenticated;

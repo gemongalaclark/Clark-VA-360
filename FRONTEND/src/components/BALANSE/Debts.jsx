@@ -3,7 +3,7 @@ import { Plus, Pencil, Trash2, Landmark, CheckCircle2, HandCoins, CalendarDays, 
 import styles from './Balanse.module.css';
 import { Meter, Money, Modal, ModalForm, Field, PesoInput, AmountModal, ConfirmModal, EmptyState, ArchiveTabs, PastCard, completedOn, peso, pct, num, fmtDate, timeLeft } from './ui';
 
-const ordinal = (n) => {
+export const ordinal = (n) => {
   const s = ['th', 'st', 'nd', 'rd'], v = n % 100;
   return n + (s[(v - 20) % 10] || s[v] || s[0]);
 };

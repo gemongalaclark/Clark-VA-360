@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ArrowLeft, LogOut, LayoutDashboard, Landmark, Target, X, CheckCircle2, AlertCircle } from 'lucide-react';
+import { ArrowLeft, LogOut, LayoutDashboard, Landmark, Target, Repeat, X, CheckCircle2, AlertCircle } from 'lucide-react';
 import styles from './Balanse.module.css';
 import { api, getToken, SessionExpiredError } from './blApi';
 import { Logo, num } from './ui';
@@ -7,11 +7,13 @@ import AuthScreen from './AuthScreen';
 import Overview from './Overview';
 import Debts from './Debts';
 import Goals from './Goals';
+import Subscriptions from './Subscriptions';
 
 const TABS = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
   { id: 'debts', label: 'Debts', icon: Landmark },
   { id: 'goals', label: 'Goals', icon: Target },
+  { id: 'subscriptions', label: 'Subscriptions', icon: Repeat },
 ];
 
 /* Toast text for a saved row: celebrate the moment something is finished. */
@@ -22,14 +24,17 @@ const goalMsg = (prev, row) =>
   num(row.saved_amount) >= num(row.target_amount) && (!prev || num(prev.saved_amount) < num(prev.target_amount))
     ? `🏆 You reached “${row.name}”! Moved to Past goals.` : prev ? 'Goal updated.' : 'Goal added.';
 
+const subMsg = (prev) => (prev ? 'Subscription updated.' : 'Subscription added.');
+
 /* BALANSE root: loading → auth (sign up / sign in) → dashboard.
-   Owns the debts/goals lists; pages call onSave/onDelete, which resolve true on success. */
+   Owns the debts/goals/subscriptions lists; pages call onSave/onDelete, which resolve true on success. */
 export default function Balanse({ onBackToPortfolio }) {
   const [phase, setPhase] = useState('loading');   // loading | auth | app
   const [username, setUsername] = useState(null);
   const [tab, setTab] = useState('overview');
   const [debts, setDebts] = useState([]);
   const [goals, setGoals] = useState([]);
+  const [subscriptions, setSubscriptions] = useState([]);
   const [toast, setToast] = useState(null);        // { kind: 'ok' | 'error', text }
 
   const notify = useCallback((kind, text) => setToast({ kind, text, at: Date.now() }), []);
@@ -42,7 +47,7 @@ export default function Balanse({ onBackToPortfolio }) {
   }, [toast]);
 
   const toAuth = useCallback(() => {
-    setUsername(null); setDebts([]); setGoals([]); setTab('overview'); setPhase('auth');
+    setUsername(null); setDebts([]); setGoals([]); setSubscriptions([]); setTab('overview'); setPhase('auth');
   }, []);
 
   const fail = useCallback((err) => {
@@ -56,6 +61,7 @@ export default function Balanse({ onBackToPortfolio }) {
       const data = await api.load();
       setDebts(data.debts);
       setGoals(data.goals);
+      setSubscriptions(data.subscriptions ?? []);
       setUsername(name);
       setPhase('app');
     } catch (err) {
@@ -153,12 +159,19 @@ export default function Balanse({ onBackToPortfolio }) {
           </header>
 
           <main className={styles.content}>
-            {tab === 'overview' && <Overview username={username} debts={debts} goals={goals} onNavigate={go} />}
+            {tab === 'overview' && <Overview username={username} debts={debts} goals={goals} subscriptions={subscriptions} onNavigate={go} />}
             {tab === 'debts' && (
               <Debts debts={debts} onSave={saver(api.saveDebt, debts, setDebts, debtMsg)} onDelete={deleter(api.deleteDebt, setDebts, 'Debt')} />
             )}
             {tab === 'goals' && (
               <Goals goals={goals} onSave={saver(api.saveGoal, goals, setGoals, goalMsg)} onDelete={deleter(api.deleteGoal, setGoals, 'Goal')} />
+            )}
+            {tab === 'subscriptions' && (
+              <Subscriptions
+                subscriptions={subscriptions}
+                onSave={saver(api.saveSubscription, subscriptions, setSubscriptions, subMsg)}
+                onDelete={deleter(api.deleteSubscription, setSubscriptions, 'Subscription')}
+              />
             )}
           </main>
         </div>

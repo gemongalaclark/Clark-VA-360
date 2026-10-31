@@ -50,4 +50,6 @@ export const api = {
   deleteDebt: (id) => authed('bl_delete_debt', { p_id: id }),
   saveGoal: (goal) => authed('bl_save_goal', { p_goal: goal }),
   deleteGoal: (id) => authed('bl_delete_goal', { p_id: id }),
+  saveSubscription: (sub) => authed('bl_save_subscription', { p_sub: sub }),
+  deleteSubscription: (id) => authed('bl_delete_subscription', { p_id: id }),
 };

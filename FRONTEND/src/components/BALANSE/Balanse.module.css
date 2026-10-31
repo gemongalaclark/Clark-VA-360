@@ -49,7 +49,7 @@
 }
 .root p { color: inherit; }
 .root button { font: inherit; cursor: pointer; }
-.root input, .root textarea { font: inherit; color: inherit; }
+.root input, .root textarea, .root select { font: inherit; color: inherit; }
 .root :focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
 .root ::selection { background: var(--red-4); color: var(--ink); }
 
@@ -257,15 +257,15 @@
 .field { display: grid; gap: 7px; align-content: start; }
 .fieldLabel { font-size: 13px; font-weight: 600; color: var(--ink); }
 .fieldHint { font-size: 12px; color: var(--muted); }
-.field input, .field textarea {
+.field input, .field textarea, .field select {
   width: 100%; padding: 12px 14px; border-radius: 12px;
   border: 1px solid var(--line-2); background: var(--surface);
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 .field input::placeholder, .field textarea::placeholder { color: #a8a3b3; }
 .field textarea { resize: vertical; }
-.field input:hover, .field textarea:hover { border-color: var(--red-3); }
-.field input:focus, .field textarea:focus { outline: none; border-color: var(--red); box-shadow: 0 0 0 4px rgba(203, 37, 37, 0.12); }
+.field input:hover, .field textarea:hover, .field select:hover { border-color: var(--red-3); }
+.field input:focus, .field textarea:focus, .field select:focus { outline: none; border-color: var(--red); box-shadow: 0 0 0 4px rgba(203, 37, 37, 0.12); }
 
 .pesoInput { position: relative; display: block; }
 .pesoInput > span {
@@ -402,9 +402,10 @@
 .heroSide { display: grid; gap: 6px; }
 .heroGoal { text-align: right; justify-items: end; }
 .heroLabel { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
-.keyDebt, .keyGoal, .keyDebtLight { display: inline-block; width: 10px; height: 10px; border-radius: 3px; flex: none; }
+.keyDebt, .keyGoal, .keyDebtLight, .keySubLight { display: inline-block; width: 10px; height: 10px; border-radius: 3px; flex: none; }
 .keyDebt { background: var(--ink); }
 .keyDebtLight { background: #fff; }
+.keySubLight { background: #9a9ab8; }
 .keyGoal { background: var(--red); }
 .heroValue { font-family: var(--sans); font-size: clamp(30px, 3.4vw, 44px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; }
 .heroDebt .heroValue { color: var(--ink); }
@@ -450,6 +451,13 @@
   display: grid; gap: 16px; padding: 22px 24px;
   background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--shadow);
 }
+.panelWide { grid-column: 1 / -1; }
+.subOverview { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); gap: 20px 28px; align-items: center; }
+.subTotals { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.subTotals > div { display: grid; gap: 2px; align-content: start; padding: 14px 16px; border-radius: 14px; background: var(--ink); color: #fff; }
+.subTotals span:first-child { font-size: 12.5px; font-weight: 600; color: rgba(255, 255, 255, 0.65); }
+.subTotalValue { font-family: var(--sans); font-size: 24px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.25; }
+.subTotals small { font-size: 11.5px; color: rgba(255, 255, 255, 0.6); }
 .panelHead { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .panelHead h2 { display: flex; align-items: center; gap: 9px; font-size: 17px; }
 .panelHead h2 svg { color: var(--red); }
@@ -484,6 +492,7 @@
 .calDay { font-family: var(--serif); font-style: italic; font-weight: 700; font-size: 36px; line-height: 1; color: var(--ink); }
 .calSoon .calDay { color: var(--red); }
 .calName { margin-top: 6px; font-weight: 600; font-size: 14px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.calKind { font-size: 11px; font-weight: 600; color: var(--muted); }
 .calAmt { font-size: 13px; font-variant-numeric: tabular-nums; color: var(--ink-2); }
 .calWhen { font-size: 12px; color: var(--muted); }
 .calSoon .calWhen { color: var(--red); font-weight: 600; }
@@ -494,6 +503,8 @@
 .meterFill { position: relative; display: block; height: 100%; border-radius: 4px; transition: width 0.9s var(--ease-spring); }
 .meter_debt .meterFill { background: var(--ink); }
 .meter_goal .meterFill { background: linear-gradient(90deg, var(--red-2), var(--red)); }
+.meter_sub .meterFill { background: var(--ink-2); }
+.meter_subSoon .meterFill { background: linear-gradient(90deg, var(--red-2), var(--red)); }
 .meter_onDark { background: rgba(255, 255, 255, 0.16); }
 .meter_onDark .meterFill { background: #fff; }
 /* Finished: a soft sheen, always paired with a "Paid off"/"Reached" label */
@@ -643,6 +654,39 @@
 .factChipRed { background: var(--blush); color: var(--red-deep); }
 .factChipLate { background: var(--ink); color: #fff; }
 
+/* ── Subscription card: tear-off renewal date + billing-cycle meter ── */
+.subCard {
+  display: grid; gap: 14px; padding: 20px 22px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--shadow);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.subCard:hover { transform: translateY(-3px); box-shadow: var(--shadow-lift); }
+.subSoon { border-color: var(--red-4); background: linear-gradient(170deg, #fff 55%, var(--blush)); }
+.subHead { display: flex; align-items: flex-start; gap: 12px; }
+.subDate {
+  flex: none; display: grid; width: 52px; overflow: hidden; text-align: center;
+  border-radius: 10px; border: 1px solid var(--line); background: var(--paper);
+}
+.subDate b {
+  padding: 2px 0; background: var(--ink); color: #fff;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+}
+.subDate span { padding: 3px 0 4px; font-family: var(--serif); font-style: italic; font-weight: 700; font-size: 22px; line-height: 1.1; }
+.subSoon .subDate b { background: var(--red); }
+.subSoon .subDate span { color: var(--red); }
+.subTitle { display: grid; gap: 1px; flex: 1; min-width: 0; }
+.subTitle h3 { font-size: 17px; word-break: break-word; }
+.subTitle .muted { font-size: 13px; }
+.subHead .factChip { flex: none; }
+.subAmount { display: flex; align-items: baseline; gap: 4px; }
+.subAmount .muted { font-size: 13px; }
+.subValue { font-family: var(--sans); font-size: 26px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; }
+.subCycle { display: grid; gap: 7px; }
+.subCycleRow { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-size: 13.5px; font-weight: 500; }
+.subCycleRow .muted { font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.subStatus { display: inline-flex; align-items: center; gap: 5px; color: var(--red-deep); font-weight: 700; }
+.subSchedule { font-size: 12.5px; color: var(--muted); }
+
 /* ── Archived ("Past") card with a dated rubber stamp ────── */
 .pastCard {
   position: relative; overflow: hidden;
@@ -723,13 +767,14 @@
     margin-bottom: env(safe-area-inset-bottom);
   }
   .sidebar > .sideBrand, .sideFoot { display: none; }
-  .nav { grid-template-columns: repeat(3, 1fr); }
-  .navItem { flex-direction: column; gap: 3px; font-size: 12px; padding: 9px 4px; justify-content: center; text-align: center; }
+  .nav { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .sidebar .navItem { flex-direction: column; gap: 3px; font-size: 11px; letter-spacing: -0.01em; padding: 9px 1px; justify-content: center; text-align: center; min-width: 0; }
   .navActive::before { display: none; }
   .content { padding: 24px 16px 112px; }
   .kpiGrid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .kpiInk { grid-column: 1 / -1; }
   .panelGrid { grid-template-columns: minmax(0, 1fr); }
+  .subOverview { grid-template-columns: minmax(0, 1fr); }
 }
 
 @media (max-width: 560px) {
@@ -738,6 +783,7 @@
   .heroScale { grid-row: auto; }
   .heroVerdict { margin: 0 -20px; padding: 14px 20px; }
   .kpiGrid { grid-template-columns: minmax(0, 1fr); }
+  .calStrip { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
   .formRow { grid-template-columns: minmax(0, 1fr); }
   .band { padding: 24px 22px; }
   .cardGrid { grid-template-columns: minmax(0, 1fr); }
@@ -750,7 +796,7 @@
 /* Touch devices: iOS Safari zooms the page into any field under 16px, and fingers need
    bigger targets than a mouse pointer. */
 @media (pointer: coarse), (max-width: 560px) {
-  .field input, .field textarea, .pwWrap input { font-size: 16px; }
+  .field input, .field textarea, .field select, .pwWrap input { font-size: 16px; }
   .iconBtn { width: 42px; height: 42px; }
   .editBtn { height: 42px; padding: 0 14px; }
   .chip { padding: 9px 14px; }
