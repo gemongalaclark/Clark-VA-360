@@ -31,7 +31,7 @@
 }
 .tierRank1 { --rail: #eedede; --node-border: #e5d3d3; }
 .tierRank2 { --rail: linear-gradient(var(--rail-dir), var(--red-primary), var(--red-pastel)); --node-border: var(--red-primary); }
-.tierRank3 { --rail: linear-gradient(var(--rail-dir), #ea4343, #cb2525); --node-border: #ea4343; }
+.tierRank3 { --rail: linear-gradient(var(--rail-dir), #1f2140, #4a4f9c); --node-border: #1f2140; }
 .tierRank4 { --rail: linear-gradient(var(--rail-dir), #e0962a, #f5c451, #ea4343); --node-border: #e0a12e; }
 .tier:last-child::before { width: 100%; }
 
@@ -50,7 +50,8 @@
 .levelNode > span { transform: rotate(-45deg) scale(1.25); }
 .tier:not(.tierRank1) .levelNode { background: var(--node-border); color: #fff; }
 .tierRank2 .levelNode { box-shadow: 0 0 0 5px rgba(203,37,37,0.12); }
-.tierRank3 .levelNode { box-shadow: 0 0 0 5px rgba(234,67,67,0.18), 0 0 18px rgba(234,67,67,0.6); }
+.tierRank3 .levelNode { box-shadow: 0 0 0 5px rgba(31,33,64,0.14), 0 0 18px rgba(31,33,64,0.5); }
+.tierRank3 .levelLabel { color: var(--text-dark); }
 .tierRank4 .levelNode {
   background: linear-gradient(135deg, #ffe08a, #e0962a); color: #2a1a00;
   box-shadow: 0 0 0 5px rgba(245,196,81,0.22), 0 0 22px rgba(245,196,81,0.75);
@@ -105,16 +106,29 @@
   --pass-glare: rgba(255,255,255,0.09);
 }
 
-/* Pro: dark card, red edge and a glow rising from the corner */
+/* Each rank owns a colour, so they read apart at a glance:
+   Starter white, Pro crimson, Elite navy, Legendary black and gold */
+
+/* Pro: full crimson card with white ink and a white button.
+   The surface stops at #b81f28 so the white text keeps its contrast */
 .rank2 {
-  --pass-border: rgba(234,67,67,0.4);
-  --pass-surface: radial-gradient(90% 60% at 100% 100%, rgba(234,67,67,0.26), transparent 70%),
-                  linear-gradient(160deg, #1a1a2e 0%, #231729 100%);
-  --pass-shadow: 0 18px 44px rgba(203,37,37,0.24);
-  --pass-shadow-hover: 0 26px 60px rgba(203,37,37,0.34);
-  --chip-bg: rgba(234,67,67,0.18);
-  --chip-text: #ff9c9c;
+  --pass-accent: #fff;
+  --pass-body: #fff;
+  --pass-muted: #ffdede;
+  --pass-rule: rgba(255,255,255,0.4);
+  --pass-glare: rgba(255,255,255,0.14);
+  --pass-border: rgba(255,255,255,0.22);
+  --pass-surface: linear-gradient(160deg, #b81f28 0%, #a11822 50%, #6d0e1b 100%);
+  --pass-shadow: 0 18px 44px rgba(203,37,37,0.34);
+  --pass-shadow-hover: 0 26px 60px rgba(203,37,37,0.46);
+  --chip-bg: #fff;
+  --chip-text: #a11822;
 }
+.rank2 .passCta {
+  background: #fff; color: #a11822; font-weight: 700;
+  box-shadow: 0 10px 28px rgba(60,0,8,0.4);
+}
+.rank2 .passCta:hover { box-shadow: 0 14px 36px rgba(60,0,8,0.55); }
 
 /* Elite and Legendary: the card's own background is a spinning gradient, and a ::before surface
    sits 1px inside it, so only a thin animated ring shows around the edge */
@@ -128,17 +142,16 @@
 }
 @keyframes passSpin { to { --pass-angle: 360deg; } }
 
-/* Elite: spinning red ring over a tech grid */
+/* Elite: dark navy card over a tech grid, with a spinning red and ice-blue ring */
 .rank3 {
-  --pass-accent: #ff6b6b;
-  --pass-surface: radial-gradient(120% 60% at 90% -10%, rgba(234,67,67,0.4), transparent 62%),
-                  radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px) 0 0 / 14px 14px,
-                  linear-gradient(165deg, #15111e 0%, #2a0f1b 100%);
-  --pass-shadow: 0 22px 54px rgba(203,37,37,0.36);
-  --pass-shadow-hover: 0 32px 72px rgba(234,67,67,0.5);
+  --pass-surface: radial-gradient(100% 50% at 100% 106%, rgba(234,67,67,0.3), transparent 65%),
+                  radial-gradient(rgba(255,255,255,0.07) 1px, transparent 1px) 0 0 / 14px 14px,
+                  linear-gradient(160deg, #1f2140 0%, #12132a 100%);
+  --pass-shadow: 0 22px 54px rgba(26,26,46,0.45);
+  --pass-shadow-hover: 0 32px 72px rgba(26,26,46,0.6);
   --chip-bg: linear-gradient(135deg, #cb2525, #ff6b6b);
   --chip-text: #fff;
-  background: conic-gradient(from var(--pass-angle), #4a1320, #ff5252, #4a1320 35%, #ff9c9c 55%, #4a1320 75%, #ff5252);
+  background: conic-gradient(from var(--pass-angle), #2a2d5c, #ff5252, #2a2d5c 35%, #c9ccff 55%, #2a2d5c 75%, #ff5252);
 }
 .rank3 .priceUsd {
   background: linear-gradient(120deg, #fff 30%, #ff9c9c);
@@ -199,7 +212,8 @@
   font-family: var(--font-heading); font-size: 3.6rem; font-weight: 800; line-height: 1;
   letter-spacing: -0.04em; color: var(--pass-ghost);
 }
-.rank3 .ghostTier { color: transparent; -webkit-text-stroke: 1px rgba(255,107,107,0.3); }
+.rank2 .ghostTier { color: rgba(255,255,255,0.14); }
+.rank3 .ghostTier { color: transparent; -webkit-text-stroke: 1px rgba(201,204,255,0.4); }
 .rank4 .ghostTier { color: transparent; -webkit-text-stroke: 1px rgba(245,196,81,0.42); }
 
 /* Legendary sheen: a band of light crossing the card */
@@ -355,7 +369,7 @@
 .comparePhp { display: block; font-size: 0.8rem; font-weight: 600; color: var(--red-primary); }
 
 /* The top ranks carry a faint wash, echoing their passes above */
-.comparePremium { background: rgba(203,37,37,0.045); }
+.comparePremium { background: rgba(31,33,64,0.05); }
 .compareLegendary { background: rgba(245,196,81,0.13); }
 
 .compare .compareGroup {
@@ -431,9 +445,13 @@
   --pass-ghost: rgba(255,255,255,0.04);
   --chip-bg: rgba(255,255,255,0.08);
 }
-:global(html[data-theme='dark']) .pass.rank2 {
-  --pass-surface: radial-gradient(90% 60% at 100% 100%, rgba(234,67,67,0.3), transparent 70%),
-                  linear-gradient(160deg, #2a1a26 0%, #2c1720 100%);
+/* Lifted so Elite doesn't sink into the dark page or match Starter's grey */
+:global(html[data-theme='dark']) .pass.rank3 {
+  --pass-surface: radial-gradient(100% 50% at 100% 106%, rgba(234,67,67,0.3), transparent 65%),
+                  radial-gradient(rgba(255,255,255,0.07) 1px, transparent 1px) 0 0 / 14px 14px,
+                  linear-gradient(160deg, #2b2e63 0%, #1d1f45 100%);
+  --pass-shadow: 0 20px 50px rgba(0,0,0,0.4);
+  --pass-shadow-hover: 0 28px 64px rgba(70,80,190,0.3);
 }
 :global(html[data-theme='dark']) .pageBar {
   background: rgba(16,16,23,0.92);
@@ -449,5 +467,10 @@
   --compare-bg: var(--dk-raised);
   --compare-rule: var(--dk-border);
 }
-:global(html[data-theme='dark']) .comparePremium { background: rgba(234,67,67,0.08); }
+:global(html[data-theme='dark']) .comparePremium { background: rgba(150,160,255,0.08); }
+:global(html[data-theme='dark']) .tierRank3 {
+  --rail: linear-gradient(var(--rail-dir), #6f73d9, #a5a8f0);
+  --node-border: #6f73d9;
+}
+:global(html[data-theme='dark']) .tierRank3 .levelNode { box-shadow: 0 0 0 5px rgba(111,115,217,0.2), 0 0 18px rgba(111,115,217,0.6); }
 
