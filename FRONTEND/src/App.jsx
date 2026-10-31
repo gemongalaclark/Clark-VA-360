@@ -1,4 +1,4 @@
-import { useState, useEffect, useLayoutEffect, useRef } from 'react';
+import { lazy, Suspense, useState, useEffect, useLayoutEffect, useRef } from 'react';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import Preloader from './components/Preloader';
@@ -8,12 +8,17 @@ import Skills from './components/Skills';
 import Projects from './components/Projects';
 import Contact from './components/Contact';
 import Footer from './components/Footer';
-import GoogleCalendarAutoScheduler from './components/GOOGLE CALENDAR AUTO SCHEDULER/GoogleCalendarAutoScheduler';
-import TeamSyncWorkspace from './components/TEAMSYNC WORKSPACE/TeamSyncWorkspace';
-import OnboardBase from './components/ONBOARDBASE/OnboardBase';
-import BuhayvaCopilot from './components/BUHAYVA COPILOT/BuhayvaCopilot';
-import Balanse from './components/BALANSE/Balanse';
 import './App.css';
+
+/* Each project app is its own download, fetched only when it is opened,
+   so portfolio visitors don't load all five. */
+const PROJECT_APPS = {
+  scheduler: lazy(() => import('./components/GOOGLE CALENDAR AUTO SCHEDULER/GoogleCalendarAutoScheduler')),
+  teamsync: lazy(() => import('./components/TEAMSYNC WORKSPACE/TeamSyncWorkspace')),
+  onboardbase: lazy(() => import('./components/ONBOARDBASE/OnboardBase')),
+  copilot: lazy(() => import('./components/BUHAYVA COPILOT/BuhayvaCopilot')),
+  balanse: lazy(() => import('./components/BALANSE/Balanse')),
+};
 
 function checkRoute() {
   if (typeof window === 'undefined') return 'portfolio';
@@ -72,33 +77,12 @@ export default function App() {
     setRoute('portfolio');
   };
 
-  if (route === 'scheduler') {
+  const ProjectApp = PROJECT_APPS[route];
+  if (ProjectApp) {
     return (
-      <GoogleCalendarAutoScheduler onBackToPortfolio={goToPortfolio} />
-    );
-  }
-
-  if (route === 'teamsync') {
-    return (
-      <TeamSyncWorkspace onBackToPortfolio={goToPortfolio} />
-    );
-  }
-
-  if (route === 'onboardbase') {
-    return (
-      <OnboardBase onBackToPortfolio={goToPortfolio} />
-    );
-  }
-
-  if (route === 'copilot') {
-    return (
-      <BuhayvaCopilot onBackToPortfolio={goToPortfolio} />
-    );
-  }
-
-  if (route === 'balanse') {
-    return (
-      <Balanse onBackToPortfolio={goToPortfolio} />
+      <Suspense fallback={null}>
+        <ProjectApp onBackToPortfolio={goToPortfolio} />
+      </Suspense>
     );
   }
 
