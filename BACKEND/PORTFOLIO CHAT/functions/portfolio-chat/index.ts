@@ -21,8 +21,10 @@ const ALLOWED_ORIGINS = [
 const isAllowedOrigin = (origin: string) =>
   ALLOWED_ORIGINS.includes(origin) || /^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin);
 
-// gemini-flash-latest only runs if Google ever retires the pinned model (404)
-const MODELS = ['gemini-3.8-flash', 'gemini-flash-latest'];
+// Tried in order. Gemini models regularly overload (503) or hang, so each gets a short turn
+// and any failure moves on to the next: a visitor shouldn't wait on one busy model.
+const MODELS = ['gemini-3.6-flash', 'gemini-3.5-flash-lite', 'gemini-3.1-flash-lite'];
+const ATTEMPT_TIMEOUT = 12_000;
 
 const HOURLY_LIMIT = 20;   // messages per visitor
 const DAILY_LIMIT = 500;   // messages across the whole site
@@ -160,12 +162,11 @@ Deno.serve(async (req: Request) => {
   if (slot !== 'ok') return json({ error: `The assistant has reached its daily limit. ${REACH_CLARK}` }, 429);
 
   // 3. Ask Gemini. Google's error details stay in the logs because this endpoint is public.
-  const signal = AbortSignal.timeout(30_000);
   const ask = (model: string) =>
     fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-      signal,
+      signal: AbortSignal.timeout(ATTEMPT_TIMEOUT),
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
         contents: messages.map(m => ({ role: m.role, parts: [{ text: m.text }] })),
@@ -176,32 +177,26 @@ Deno.serve(async (req: Request) => {
       }),
     });
 
-  let res!: Response;
-  try {
-    for (const model of MODELS) {
-      res = await ask(model);
-      if (res.ok) break;
-      console.error('Gemini error', model, res.status, await res.text());
-      if (res.status !== 404) break;
+  let reply = '';
+  for (const model of MODELS) {
+    try {
+      const res = await ask(model);
+      if (!res.ok) {
+        console.error('Gemini error', model, res.status, await res.text());
+        continue;
+      }
+      const data = await res.json();
+      reply = (data.candidates?.[0]?.content?.parts ?? [])
+        .map((p: { text?: string }) => p.text ?? '').join('').trim()
+        .replace(/\*\*/g, '')            // strip stray markdown bold
+        .replace(/^#+\s*/gm, '');
+      if (reply) break;
+      console.error('Gemini empty reply', model, JSON.stringify(data).slice(0, 1000));
+    } catch (err) {
+      console.error('Gemini fetch failed', model, err);
     }
-  } catch (err) {
-    console.error('Gemini fetch failed', err);
-    return json({ error: `The assistant couldn't answer in time. Try again in a moment. ${REACH_CLARK}` }, 504);
   }
-  if (!res.ok) {
-    const busy = res.status === 429 ? 'is busy right now' : 'ran into a problem';
-    return json({ error: `The assistant ${busy}. Try again in a moment. ${REACH_CLARK}` }, 502);
-  }
-
-  const data = await res.json();
-  const reply: string = (data.candidates?.[0]?.content?.parts ?? [])
-    .map((p: { text?: string }) => p.text ?? '').join('').trim()
-    .replace(/\*\*/g, '')            // strip stray markdown bold
-    .replace(/^#+\s*/gm, '');
-  if (!reply) {
-    console.error('Gemini empty reply', JSON.stringify(data).slice(0, 1000));
-    return json({ error: `The assistant couldn't answer that. Try rephrasing it. ${REACH_CLARK}` }, 502);
-  }
+  if (!reply) return json({ error: `The assistant is busy right now. Try again in a moment. ${REACH_CLARK}` }, 502);
 
   return json({ reply: reply.slice(0, REPLY_MAX) });
 });
