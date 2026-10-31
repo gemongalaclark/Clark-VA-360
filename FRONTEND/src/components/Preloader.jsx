@@ -1,11 +1,20 @@
-import { useState, useEffect, useLayoutEffect, useMemo } from 'react';
+import { useState, useEffect, useLayoutEffect } from 'react';
 import styles from './Preloader.module.css';
 
 const KEY = 'clarkva-intro-seen';
-const COLS = 14;
-const ROWS = 8;
-const COUNT_MS = 1900;
-const WIPE_MS = 1100;
+const COUNT_MS = 2200;
+const CLOSE_MS = 340;
+const SWEEP_MS = 900;
+
+const CENTER = 240;
+const RING_R = 196;
+const TICKS = Array.from({ length: 72 }, (_, i) => i * 5);
+const LABELS = [
+  { text: 'Admin', angle: 0 },
+  { text: 'Social', angle: 90 },
+  { text: 'Leads', angle: 180 },
+  { text: 'AI', angle: 270 },
+];
 
 const shouldPlay = () => {
   if (typeof window === 'undefined') return false;
@@ -13,23 +22,20 @@ const shouldPlay = () => {
   try { return !sessionStorage.getItem(KEY); } catch { return true; }
 };
 
-/* Intro splash: logo + 000→100 counter, then a stepped block wipe that reveals the hero.
-   While it runs, <html> carries `intro-hold` so the hero's entrance animations wait for the wipe. */
+/* Animating the sweep's conic mask needs a registered --sweep; older browsers fade out instead. */
+const canSweep = () => typeof CSS !== 'undefined' && 'registerProperty' in CSS;
+
+/* Bottom label sits below the ring unrotated so it stays upright; the others are tangent to it. */
+const labelTransform = (angle) => (angle === 180 ? undefined : `rotate(${angle} ${CENTER} ${CENTER})`);
+const labelY = (angle) => (angle === 180 ? CENTER + RING_R + 32 : CENTER - RING_R - 22);
+
+/* Intro splash: a 360° dial sweeps around the logo (000° → 360°), then the screen opens with a
+   clockwise radial sweep that reveals the hero.
+   While it runs, <html> carries `intro-hold` so the hero's entrance animations wait for the sweep. */
 export default function Preloader() {
   const [play] = useState(shouldPlay);
-  const [phase, setPhase] = useState(play ? 'count' : 'gone'); // count | wipe | gone
-  const [n, setN] = useState(0);
-
-  const blocks = useMemo(() => {
-    const out = [];
-    for (let r = 0; r < ROWS; r++) {
-      for (let c = 0; c < COLS; c++) {
-        const delay = ((c * 7 + r * 5) % COLS) * 0.045 + c * 0.018;
-        out.push({ key: `${r}-${c}`, delay });
-      }
-    }
-    return out;
-  }, []);
+  const [phase, setPhase] = useState(play ? 'count' : 'gone'); // count | close | sweep | gone
+  const [deg, setDeg] = useState(0);
 
   useLayoutEffect(() => {
     if (!play) return undefined;
@@ -52,20 +58,21 @@ export default function Preloader() {
     const start = performance.now();
     const tick = (now) => {
       const p = Math.min(1, (now - start) / COUNT_MS);
-      const eased = 1 - Math.pow(1 - p, 2.2);
-      setN(Math.round(eased * 100));
+      const eased = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+      setDeg(Math.round(eased * 360));
       if (p < 1) {
         raf = requestAnimationFrame(tick);
       } else {
+        setPhase('close');
         t1 = setTimeout(() => {
-          setPhase('wipe');
+          setPhase('sweep');
           document.documentElement.classList.remove('intro-hold');
           t2 = setTimeout(() => {
             document.body.style.overflow = '';
             try { sessionStorage.setItem(KEY, '1'); } catch { /* storage blocked – replay next load */ }
             setPhase('gone');
-          }, WIPE_MS + 450);
-        }, 280);
+          }, SWEEP_MS + 100);
+        }, CLOSE_MS);
       }
     };
     raf = requestAnimationFrame(tick);
@@ -74,26 +81,72 @@ export default function Preloader() {
 
   if (phase === 'gone') return null;
 
+  const exit = canSweep() ? styles.sweep : styles.fade;
+
   return (
     <div
-      className={`${styles.root} ${phase === 'wipe' ? styles.wipe : ''}`}
+      className={`${styles.root} ${phase !== 'count' ? styles.closed : ''} ${phase === 'sweep' ? exit : ''}`}
+      style={{ '--deg': `${deg}deg` }}
       role="status"
       aria-label="Loading portfolio"
     >
-      <div className={styles.grid} aria-hidden="true" style={{ '--cols': COLS, '--rows': ROWS }}>
-        {blocks.map(b => (
-          <span key={b.key} className={styles.block} style={{ '--d': `${b.delay}s` }} />
-        ))}
-      </div>
-
-      <div className={styles.center} aria-hidden="true">
-        <img className={styles.logo} src="/images/logo-preloader.webp" alt="" width="900" height="805" />
-        <span className={styles.rule} />
-        <div className={styles.meta}>
-          <span className={styles.label}>Clark Gemongala</span>
-          <span className={styles.count}>{String(n).padStart(3, '0')}</span>
+      <div className={styles.veil} aria-hidden="true">
+        <div className={styles.center}>
+          <div className={styles.dial}>
+            <svg className={styles.svg} viewBox="0 0 480 480">
+              <circle className={styles.track} cx={CENTER} cy={CENTER} r={RING_R} pathLength="360" />
+              {TICKS.map((a, i) => (
+                <line
+                  key={a}
+                  className={`${styles.tick} ${a % 90 === 0 ? styles.major : ''} ${a <= deg ? styles.tickLit : ''}`}
+                  style={{ '--i': i }}
+                  x1={CENTER}
+                  x2={CENTER}
+                  y1={CENTER - RING_R + 6}
+                  y2={CENTER - RING_R + (a % 90 === 0 ? 20 : 12)}
+                  transform={`rotate(${a} ${CENTER} ${CENTER})`}
+                />
+              ))}
+              <circle
+                className={styles.arc}
+                cx={CENTER}
+                cy={CENTER}
+                r={RING_R}
+                pathLength="360"
+                strokeDasharray={`${deg} 360`}
+                transform={`rotate(-90 ${CENTER} ${CENTER})`}
+              />
+              <circle className={styles.pulse} cx={CENTER} cy={CENTER} r={RING_R} />
+              <circle
+                className={styles.head}
+                cx={CENTER}
+                cy={CENTER - RING_R}
+                r="5"
+                transform={`rotate(${deg} ${CENTER} ${CENTER})`}
+              />
+              {LABELS.map(l => (
+                <text
+                  key={l.text}
+                  className={`${styles.compass} ${deg > l.angle ? styles.compassLit : ''}`}
+                  x={CENTER}
+                  y={labelY(l.angle)}
+                  textAnchor="middle"
+                  transform={labelTransform(l.angle)}
+                >
+                  {l.text}
+                </text>
+              ))}
+            </svg>
+            <img className={styles.logoDim} src="/images/logo-preloader.webp" alt="" width="900" height="805" />
+            <img className={styles.logo} src="/images/logo-preloader.webp" alt="" width="900" height="805" />
+          </div>
+          <div className={styles.readout}>
+            <span className={styles.count}>{String(deg).padStart(3, '0')}°</span>
+            <span className={styles.label}>Clark Gemongala</span>
+          </div>
         </div>
       </div>
+      <span className={styles.hand} aria-hidden="true" />
     </div>
   );
 }

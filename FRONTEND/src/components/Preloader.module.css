@@ -1,98 +1,237 @@
+@property --sweep {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
 .root {
+  --ease-sweep: cubic-bezier(0.65, 0, 0.35, 1);
+  --sweep-ms: 0.9s;
+
   position: fixed;
   inset: 0;
   z-index: 10000;
+  overflow: hidden;
   pointer-events: all;
   color: #fff;
 }
 
-.grid {
+.veil {
   position: absolute;
   inset: 0;
   display: grid;
-  grid-template-columns: repeat(var(--cols), 1fr);
-  grid-template-rows: repeat(var(--rows), 1fr);
+  place-items: center;
+  background:
+    radial-gradient(circle at 50% 46%, rgba(203, 37, 37, 0.13), transparent min(58vmin, 520px)),
+    #111118;
 }
 
-.block {
-  background: #111118;
-  /* overlap by a hair so subpixel seams never show while the screen is solid */
-  margin: -0.5px;
+/* ── Exit: the veil is cut away clockwise, the hand rides its leading edge ── */
+.sweep .veil {
+  -webkit-mask-image: conic-gradient(transparent var(--sweep), #000 calc(var(--sweep) + 1.5deg));
+  mask-image: conic-gradient(transparent var(--sweep), #000 calc(var(--sweep) + 1.5deg));
+  animation: sweepOut var(--sweep-ms) var(--ease-sweep) forwards;
+}
+
+@keyframes sweepOut {
+  to { --sweep: 361.5deg; }
+}
+
+.hand {
+  position: absolute;
+  left: 50%;
+  bottom: 50%;
+  width: 2px;
+  height: 150vmax;
+  margin-left: -1px;
+  background: linear-gradient(0deg, var(--red-light, #ea4343), var(--red-primary, #cb2525));
+  box-shadow: 0 0 14px rgba(234, 67, 67, 0.7);
+  transform-origin: 50% 100%;
+  opacity: 0;
+}
+
+.sweep .hand {
+  animation:
+    handTurn var(--sweep-ms) var(--ease-sweep) forwards,
+    handFade var(--sweep-ms) linear forwards;
+}
+
+@keyframes handTurn {
+  to { transform: rotate(361.5deg); }
+}
+
+@keyframes handFade {
+  0%, 92% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Browsers that can't animate the conic mask */
+.fade .veil {
+  animation: veilFade var(--sweep-ms) ease forwards;
+}
+
+@keyframes veilFade {
+  to { opacity: 0; }
+}
+
+/* ── Dial: dead centre of the screen, so the exit sweep pivots on it ── */
+.center {
+  position: relative;
+}
+
+.dial {
+  position: relative;
+  width: min(440px, 88vw, 62vh);
+  aspect-ratio: 1;
+}
+
+.svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.track {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.16);
+  stroke-width: 1;
+  stroke-dasharray: 360;
+  animation: trackDraw 0.8s cubic-bezier(0.7, 0, 0.2, 1) both;
+  transform: rotate(-90deg);
   transform-origin: center;
 }
 
-.wipe .block {
-  animation: blockOut 0.55s cubic-bezier(0.7, 0, 0.3, 1) var(--d) forwards;
+@keyframes trackDraw {
+  from { stroke-dashoffset: 360; }
+  to   { stroke-dashoffset: 0; }
 }
 
-@keyframes blockOut {
-  to { transform: scale(0); opacity: 0; }
+.tick {
+  stroke: rgba(255, 255, 255, 0.24);
+  stroke-width: 1;
+  transition: stroke 0.25s ease;
+  animation: fadeIn 0.3s ease calc(var(--i) * 6ms) both;
 }
 
-.center {
+.major { stroke-width: 2; }
+
+.tickLit { stroke: var(--red-light, #ea4343); }
+
+.arc {
+  fill: none;
+  stroke: var(--red-primary, #cb2525);
+  stroke-width: 3;
+}
+
+.head {
+  fill: #fff;
+  filter: drop-shadow(0 0 6px var(--red-light, #ea4343));
+  animation: fadeIn 0.3s ease both;
+}
+
+/* One red pulse as the arc closes at 360° */
+.pulse {
+  fill: none;
+  stroke: var(--red-light, #ea4343);
+  stroke-width: 2;
+  opacity: 0;
+  transform-origin: center;
+}
+
+.closed .pulse {
+  animation: pulse var(--sweep-ms) cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+
+@keyframes pulse {
+  from { opacity: 0.9; transform: scale(1); }
+  to   { opacity: 0; transform: scale(1.14); }
+}
+
+.closed .head { opacity: 0; transition: opacity 0.2s ease; animation: none; }
+
+.compass {
+  fill: rgba(255, 255, 255, 0.34);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  transition: fill 0.3s ease;
+  animation: fadeIn 0.5s ease 0.4s both;
+}
+
+.compassLit { fill: #fff; }
+
+/* ── Logo: dim plate underneath, colour painted on by the arc ── */
+.logoDim,
+.logo {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: min(440px, 78vw);
+  width: 50%;
+  height: auto;
   transform: translate(-50%, -50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 18px;
-  transition: opacity 0.3s ease, transform 0.5s ease;
+  animation: fadeIn 0.6s ease both;
 }
 
-.wipe .center {
-  opacity: 0;
-  transform: translate(-50%, -56%);
+.logoDim {
+  filter: grayscale(1);
+  opacity: 0.2;
+  animation-name: dimIn;
+}
+
+@keyframes dimIn {
+  from { opacity: 0; }
+  to   { opacity: 0.2; }
 }
 
 .logo {
-  width: clamp(170px, 40vw, 250px);
-  height: auto;
-  margin-bottom: 6px;
-  animation: kanaIn 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) 0.1s both;
+  -webkit-mask-image: conic-gradient(#000 var(--deg), transparent var(--deg));
+  mask-image: conic-gradient(#000 var(--deg), transparent var(--deg));
 }
 
-@keyframes kanaIn {
-  from { opacity: 0; transform: translateY(14px); filter: blur(6px); }
-  to   { opacity: 1; transform: none; filter: blur(0); }
+@keyframes fadeIn {
+  from { opacity: 0; }
 }
 
-.rule {
-  width: 100%;
-  height: 1px;
-  background: rgba(255, 255, 255, 0.85);
-  transform-origin: left;
-  animation: ruleIn 0.9s cubic-bezier(0.7, 0, 0.2, 1) 0.3s both;
-}
-
-@keyframes ruleIn {
-  from { transform: scaleX(0); }
-  to   { transform: scaleX(1); }
-}
-
-.meta {
-  width: 100%;
+/* ── Readout ── */
+.readout {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
   display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  font-family: var(--font-body);
-  font-size: 0.72rem;
-  font-weight: 500;
-  letter-spacing: 0.28em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.8);
-  animation: kanaIn 0.8s ease 0.5s both;
+  flex-direction: column;
+  align-items: center;
+  padding-top: clamp(2px, 1.5vh, 14px);
 }
 
 .count {
+  font-family: var(--font-heading);
+  font-size: clamp(1.9rem, 5.5vh, 2.6rem);
+  font-weight: 600;
+  line-height: 1;
   font-variant-numeric: tabular-nums;
-  letter-spacing: 0.12em;
-  color: #fff;
+  animation: fadeIn 0.6s ease 0.2s both;
+}
+
+.label {
+  margin-top: 10px;
+  padding-left: 0.32em;
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.62);
+  animation: fadeIn 0.6s ease 0.3s both;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .logo, .rule, .meta { animation: none; }
-  .wipe .block { animation-duration: 0.01s; animation-delay: 0s; }
+  .track, .tick, .head, .compass, .logoDim, .logo, .count, .label { animation: none; }
+  .logoDim { opacity: 0.2; }
+  .sweep .veil, .fade .veil { animation: veilFade 0.01s forwards; }
+  .sweep .hand { animation: none; }
 }
