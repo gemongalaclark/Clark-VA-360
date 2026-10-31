@@ -22,6 +22,10 @@ const PROJECT_APPS = {
   services: lazy(() => import('./components/ServicesPage')),
 };
 
+/* The portfolio pages share one chat bot; project apps have their own layouts. */
+const ChatBot = lazy(() => import('./components/ChatBot'));
+const CHAT_ROUTES = ['portfolio', 'services'];
+
 function checkRoute() {
   if (typeof window === 'undefined') return 'portfolio';
   const path = window.location.pathname.toLowerCase();
@@ -81,28 +85,35 @@ export default function App() {
   };
 
   const ProjectApp = PROJECT_APPS[route];
-  if (ProjectApp) {
-    return (
-      <Suspense fallback={null}>
-        <ProjectApp onBackToPortfolio={goToPortfolio} />
-      </Suspense>
-    );
-  }
 
   return (
     <>
-      <Preloader />
-      <Cursor />
-      <Navbar />
-      <main>
-        <Hero />
-        <About />
-        <Skills />
-        <Projects />
-        <Services />
-        <Contact />
-      </main>
-      <Footer />
+      {ProjectApp ? (
+        <Suspense fallback={null}>
+          <ProjectApp onBackToPortfolio={goToPortfolio} />
+        </Suspense>
+      ) : (
+        <>
+          <Preloader />
+          <Cursor />
+          <Navbar />
+          <main>
+            <Hero />
+            <About />
+            <Skills />
+            <Projects />
+            <Services />
+            <Contact />
+          </main>
+          <Footer />
+        </>
+      )}
+      {/* Rendered here so a conversation survives moving between the homepage and /services */}
+      {CHAT_ROUTES.includes(route) && (
+        <Suspense fallback={null}>
+          <ChatBot />
+        </Suspense>
+      )}
     </>
   );
 }
