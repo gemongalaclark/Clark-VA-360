@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ArrowLeft, LogOut, LayoutDashboard, Landmark, Target, Repeat, X, CheckCircle2, AlertCircle } from 'lucide-react';
+import { ArrowLeft, LogOut, LayoutDashboard, CalendarDays, Landmark, Target, Repeat, X, CheckCircle2, AlertCircle } from 'lucide-react';
 import styles from './Balanse.module.css';
 import { api, getToken, SessionExpiredError } from './blApi';
 import { Logo, num } from './ui';
@@ -8,9 +8,11 @@ import Overview from './Overview';
 import Debts from './Debts';
 import Goals from './Goals';
 import Subscriptions from './Subscriptions';
+import Calendar from './Calendar';
 
 const TABS = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+  { id: 'calendar', label: 'Calendar', icon: CalendarDays },
   { id: 'debts', label: 'Debts', icon: Landmark },
   { id: 'goals', label: 'Goals', icon: Target },
   { id: 'subscriptions', label: 'Subscriptions', icon: Repeat },
@@ -160,6 +162,7 @@ export default function Balanse({ onBackToPortfolio }) {
 
           <main className={styles.content}>
             {tab === 'overview' && <Overview username={username} debts={debts} goals={goals} subscriptions={subscriptions} onNavigate={go} />}
+            {tab === 'calendar' && <Calendar debts={debts} goals={goals} subscriptions={subscriptions} />}
             {tab === 'debts' && (
               <Debts debts={debts} onSave={saver(api.saveDebt, debts, setDebts, debtMsg)} onDelete={deleter(api.deleteDebt, setDebts, 'Debt')} />
             )}

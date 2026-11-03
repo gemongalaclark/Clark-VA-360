@@ -497,6 +497,110 @@
 .calWhen { font-size: 12px; color: var(--muted); }
 .calSoon .calWhen { color: var(--red); font-weight: 600; }
 
+/* Month calendar page: month grid with a weekly-total column, agenda beside it */
+.calLayout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 20px; align-items: start; }
+.calPanel { gap: 18px; }
+.calHead { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.root .calTitle { font-size: clamp(26px, 2.6vw, 34px); font-weight: 700; letter-spacing: -0.02em; }
+.calNav { display: flex; align-items: center; gap: 8px; }
+
+.calStats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.calStats > div {
+  display: grid; gap: 2px; align-content: start; min-width: 0;
+  padding: 12px 16px; border-radius: 14px; background: var(--paper); border: 1px solid var(--line);
+}
+.calStats > div > span:first-child { font-size: 12px; font-weight: 600; color: var(--muted); }
+.calStatValue { font-family: var(--sans); font-size: 24px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.25; color: var(--ink); }
+.calStats small { font-size: 11.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.calStats > .calStatNext { background: var(--ink); border-color: var(--ink); color: #fff; }
+.calStats > .calStatNext > span:first-child { color: rgba(255, 255, 255, 0.6); }
+.calStatNext strong { font-family: var(--sans); font-size: 17px; line-height: 1.45; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.calStats .calStatNext small { color: var(--red-4); font-weight: 600; }
+
+.calFilters { display: flex; flex-wrap: wrap; gap: 8px; }
+.calFilters button {
+  display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border-radius: 999px;
+  border: 1px solid var(--line-2); background: var(--surface); color: var(--ink-2); font-size: 12.5px; font-weight: 600;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+.calFilters button:hover { border-color: var(--ink-2); }
+.calFilters .calFilterOff { background: var(--track); border-color: transparent; color: var(--muted); text-decoration: line-through; }
+.calFilterOff i { opacity: 0.3; }
+
+.calGrid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)) 78px; gap: 6px; animation: calIn 0.3s ease backwards; }
+@keyframes calIn { from { opacity: 0; transform: translateY(6px); } }
+.calWeekday { padding: 0 6px 2px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.calWeekHead { text-align: right; }
+.calBlank { min-height: 96px; border-radius: 12px; background: repeating-linear-gradient(135deg, transparent 0 6px, var(--track) 6px 7px); opacity: 0.45; }
+.calCell {
+  display: flex; flex-direction: column; align-items: stretch; gap: 5px; min-width: 0; min-height: 96px;
+  padding: 7px; border-radius: 12px; text-align: left;
+  background: var(--surface); border: 1px solid var(--line); color: var(--ink);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
+}
+.calWeekend { background: var(--paper); }
+.calCell:hover { border-color: var(--line-2); box-shadow: var(--shadow-lift); transform: translateY(-1px); }
+.calPast { opacity: 0.5; }
+.calPast:hover { opacity: 0.9; }
+.calCellTop { display: flex; align-items: center; gap: 5px; min-width: 0; }
+.calNum { min-width: 22px; font-family: var(--sans); font-size: 13px; font-weight: 700; line-height: 22px; font-variant-numeric: tabular-nums; }
+.calToday { border-color: var(--red-4); background: linear-gradient(180deg, var(--blush), var(--surface) 75%); }
+.calToday .calNum { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--red); color: #fff; font-size: 12px; }
+.calTodayTag { font-size: 9.5px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--red); }
+.calSelected, .calSelected:hover { border-color: var(--ink); box-shadow: 0 0 0 1.5px var(--ink), var(--shadow-lift); opacity: 1; }
+.calChips { display: grid; gap: 3px; min-width: 0; }
+.calChip { display: flex; align-items: center; gap: 4px; min-width: 0; padding: 2px 6px; border-radius: 6px; font-size: 11px; font-weight: 600; line-height: 1.45; }
+.calChip > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.calChip svg { flex: none; }
+.chipDebt { background: var(--ink); color: #fff; }
+.chipDebtEnd { background: var(--surface); color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--ink); }
+.chipGoal { background: var(--red); color: #fff; }
+.chipSub { background: #ecebf4; color: var(--ink-2); }
+.calMore { font-size: 10.5px; font-weight: 600; color: var(--muted); padding-left: 2px; }
+.calDayTotal { margin-top: auto; align-self: flex-end; font-size: 11px; font-weight: 700; color: var(--ink-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.calWeekCell {
+  display: grid; align-content: center; justify-items: end; gap: 1px;
+  padding: 8px 4px 8px 10px; border-left: 1px dashed var(--line-2); text-align: right;
+}
+.calWeekCell strong { font-family: var(--serif); font-style: italic; font-weight: 700; font-size: 16px; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.calWeekCell small { font-size: 11px; color: var(--muted); }
+.calWeekNow { border-left: 2px solid var(--red); }
+.calWeekNow strong { color: var(--red); }
+
+.calAgenda { position: sticky; top: 24px; max-height: calc(100vh - 48px); overflow-y: auto; align-content: start; }
+.calAgendaHead { display: flex; align-items: center; gap: 12px; padding-bottom: 14px; border-bottom: 1px dashed var(--line-2); }
+.calAgendaHead > span:last-child { display: grid; min-width: 0; }
+.calAgendaHead strong { font-family: var(--sans); font-size: 16px; }
+.calAgendaHead small { font-size: 12.5px; color: var(--muted); }
+.calAgendaDay { min-width: 48px; font-family: var(--serif); font-style: italic; font-weight: 700; font-size: 44px; line-height: 1; color: var(--red); }
+.calAgendaIcon { display: grid; place-items: center; flex: none; width: 44px; height: 44px; border-radius: 12px; background: var(--blush); color: var(--red); }
+.calAgendaList { display: grid; gap: 14px; }
+.calAgendaGroup { display: grid; gap: 6px; }
+.calAgendaDate {
+  justify-self: start; padding: 0; background: none; border: none;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted);
+}
+.calAgendaDate:hover { color: var(--red); }
+.calList { list-style: none; display: grid; gap: 6px; }
+.calList li {
+  display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+  border-radius: 12px; background: var(--paper); border: 1px solid var(--line); border-left: 4px solid var(--line-2);
+}
+.calList .calItem_debt { border-left-color: var(--ink); }
+.calList .calItem_goal { border-left-color: var(--red); }
+.calList .calItem_sub { border-left-color: #9a9ab8; }
+.calListText { display: grid; flex: 1; min-width: 0; }
+.calListText strong { font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.calListText small { font-size: 11.5px; color: var(--muted); }
+.calListAmt { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--ink-2); white-space: nowrap; }
+.calAgendaTotal {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+  padding: 12px 14px; border-radius: 12px; background: var(--ink); color: rgba(255, 255, 255, 0.7); font-size: 13px;
+}
+.calAgendaTotal .money { font-family: var(--sans); font-size: 20px; font-weight: 700; color: #fff; }
+.calAgenda > .linkBtn { justify-self: start; }
+
 /* ── Meters: thin, 4px rounded ends, quarter ticks ───────── */
 .meter { position: relative; height: 8px; border-radius: 4px; background: var(--track); overflow: hidden; }
 .meterLg { height: 10px; }
@@ -734,6 +838,11 @@
 /* ════════════════════════════════════════════════════════════
    RESPONSIVE
    ════════════════════════════════════════════════════════════ */
+@media (max-width: 1280px) {
+  .calLayout { grid-template-columns: minmax(0, 1fr); }
+  .calAgenda { position: static; max-height: none; }
+}
+
 @media (max-width: 1100px) {
   .hero { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); padding: 28px 28px 0; }
   .heroScale { grid-column: 1 / -1; grid-row: 2; max-width: 380px; justify-self: center; width: 100%; }
@@ -767,7 +876,7 @@
     margin-bottom: env(safe-area-inset-bottom);
   }
   .sidebar > .sideBrand, .sideFoot { display: none; }
-  .nav { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .nav { grid-template-columns: repeat(5, minmax(0, 1fr)); }
   .sidebar .navItem { flex-direction: column; gap: 3px; font-size: 11px; letter-spacing: -0.01em; padding: 9px 1px; justify-content: center; text-align: center; min-width: 0; }
   .navActive::before { display: none; }
   .content { padding: 24px 16px 112px; }
@@ -784,6 +893,20 @@
   .heroVerdict { margin: 0 -20px; padding: 14px 20px; }
   .kpiGrid { grid-template-columns: minmax(0, 1fr); }
   .calStrip { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  /* Month grid: no week column, chips shrink to coloured dots; the agenda carries the details */
+  .calStats { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .calStats > .calStatNext { grid-column: 1 / -1; }
+  .calGrid { grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+  .calWeekHead, .calWeekCell, .calTodayTag, .calDayTotal, .calMore { display: none; }
+  .calWeekday { padding: 0; text-align: center; font-size: 10px; letter-spacing: 0.04em; }
+  .calCell, .calBlank { min-height: 52px; }
+  .calCell { align-items: center; gap: 4px; padding: 6px 2px; }
+  .calCell:hover { transform: none; }
+  .calCellTop { justify-content: center; }
+  .calChips { display: flex; flex-wrap: wrap; justify-content: center; gap: 3px; }
+  .calChip { width: 7px; height: 7px; padding: 0; border-radius: 50%; }
+  .calChip > span, .calChip svg { display: none; }
+  .chipSub.calChip { background: #9a9ab8; }
   .formRow { grid-template-columns: minmax(0, 1fr); }
   .band { padding: 24px 22px; }
   .cardGrid { grid-template-columns: minmax(0, 1fr); }

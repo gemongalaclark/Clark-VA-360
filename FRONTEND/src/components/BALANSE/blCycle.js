@@ -7,7 +7,7 @@ const DAY_MS = 86_400_000;
 export const NEARING_DAYS = { monthly: 7, yearly: 30 };
 
 /* A renewal on the 31st (or Feb 29) lands on the last day of shorter months. */
-const onDay = (year, month, day) =>
+export const onDay = (year, month, day) =>
   new Date(year, month, Math.min(day, new Date(year, month + 1, 0).getDate()));
 
 const daysBetween = (from, to) => Math.round((to - from) / DAY_MS);
