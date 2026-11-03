@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight, ExternalLink, Sparkles, Calendar, ArrowUpRight, ArrowRight, Zap, Rocket, ClipboardCheck, ShieldCheck, BookOpen, X, Briefcase, Wallet, Target } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ExternalLink, Sparkles, Calendar, ArrowUpRight, ArrowRight, Zap, Rocket, ClipboardCheck, ShieldCheck, BookOpen, X, Briefcase, Wallet, Target, Gamepad2 } from 'lucide-react';
 import styles from './Projects.module.css';
 
 /* Projects data */
@@ -68,6 +68,18 @@ const projects = [
   },
   {
     id: 6,
+    category: 'Marketplace',
+    title: 'KalakalGG',
+    description: 'Buy-and-sell marketplace for CODM and MLBB accounts in pesos, with ID-verified sellers, live trade chat, official middlemen, badges earned from completed deals and a public Scammer Wall.',
+    tags: ['React', 'Supabase', 'Realtime', 'Row Level Security'],
+    image: null,
+    liveUrl: 'https://kalakalgg.clarkva360.site',
+    githubUrl: null,
+    placeholder: false,
+    featured: false,
+  },
+  {
+    id: 7,
     category: 'In the pipeline',
     title: 'Coming Soon',
     description: 'Building out my portfolio one project at a time.',
@@ -171,6 +183,25 @@ const docs = {
       'Private: each account only ever sees its own numbers.',
     ],
   },
+  6: {
+    what: 'KalakalGG is an online shop where gamers in the Philippines buy and sell game accounts, like Call of Duty: Mobile and Mobile Legends accounts. Every price is in pesos, and the site has rules and helpers to stop scammers.',
+    use: [
+      'Sign up with just a username and password.',
+      'To sell, verify your real name with a valid ID first. An admin checks it, and then you can post your account with its level, skins and bind details.',
+      'To buy, browse the marketplace, open an account you like and tap “Buy / Chat with Seller”.',
+      'Chat live with the seller and pick how to trade: pay first, account first, or with an official middleman who holds the money until both sides are happy.',
+      'When the deal is done, both of you confirm and your badges level up, from Bronze Seller up to Mythic Seller.',
+      'If someone scams you, press “Report Scammer”. Admins can ban them and post them on the public Scammer Wall.',
+    ],
+    purpose: 'Buying game accounts on Facebook groups is risky: sellers disappear, take the account back, or fake their screenshots. KalakalGG makes every seller prove who they are and keeps the whole deal in one chat that admins can check.',
+    help: [
+      'Buyers see verified sellers and their trade history before paying.',
+      'Middlemen protect big trades by holding the payment until the account is handed over.',
+      'Badges come from real completed deals, so they cannot be faked.',
+      'Scammers get banned and shown publicly, so others stay safe.',
+      'Try it with Demo Mode on the site. No account needed.',
+    ],
+  },
 };
 
 function DocsModal({ project, onClose }) {
@@ -237,6 +268,8 @@ function usePerView() {
 }
 
 const openProject = (url) => {
+  /* Projects hosted on their own domain (e.g. KalakalGG) open in a new tab */
+  if (!url.startsWith('/')) return window.open(url, '_blank', 'noopener,noreferrer');
   window.history.pushState({}, '', url);
   window.dispatchEvent(new PopStateEvent('popstate'));
 };
@@ -339,6 +372,20 @@ function ProjectCard({ project, onDocs }) {
               <div className={styles.graphicBadgeRow}>
                 <span className={styles.graphicAiPill}><Target size={11} /> Goals</span>
                 <span className={styles.teamsyncRolePill}>Debt tracker</span>
+              </div>
+            </div>
+          </div>
+        ) : project.id === 6 ? (
+          <div className={styles.teamsyncGraphic}>
+            <div className={styles.teamsyncGlow} />
+            <div className={styles.teamsyncGraphicInner}>
+              <div className={styles.teamsyncIconWrap}>
+                <Gamepad2 size={30} className={styles.teamsyncIcon} />
+              </div>
+              <span className={styles.teamsyncTitle}>KalakalGG</span>
+              <div className={styles.graphicBadgeRow}>
+                <span className={styles.graphicAiPill}><ShieldCheck size={11} /> KYC sellers</span>
+                <span className={styles.teamsyncRolePill}>Middleman trades</span>
               </div>
             </div>
           </div>
