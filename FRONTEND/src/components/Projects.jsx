@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight, ExternalLink, Sparkles, Calendar, ArrowUpRight, ArrowRight, Zap, Rocket, ClipboardCheck, ShieldCheck, BookOpen, X, Briefcase, Wallet, Target, Gamepad2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ExternalLink, Sparkles, Calendar, ArrowUpRight, ArrowRight, Zap, Rocket, ClipboardCheck, ShieldCheck, BookOpen, X, Briefcase, Wallet, Target, Gamepad2, Send, Bookmark } from 'lucide-react';
 import styles from './Projects.module.css';
 
 /* Projects data */
@@ -80,6 +80,18 @@ const projects = [
   },
   {
     id: 7,
+    category: 'Career Tools',
+    title: 'Clark VA 360 Job Tracker',
+    description: 'Job hunt tracker that logs every application with its link, date applied and source, bookmarks jobs to apply to later with their requirements, and shows weekly activity and where your best leads come from.',
+    tags: ['React', 'Supabase', 'PostgreSQL RPC', 'Custom Auth'],
+    image: null,
+    liveUrl: '/job-tracker',
+    githubUrl: null,
+    placeholder: false,
+    featured: false,
+  },
+  {
+    id: 8,
     category: 'In the pipeline',
     title: 'Coming Soon',
     description: 'Building out my portfolio one project at a time.',
@@ -200,6 +212,24 @@ const docs = {
       'Badges come from real completed deals, so they cannot be faked.',
       'Scammers get banned and shown publicly, so others stay safe.',
       'Try it with Demo Mode on the site. No account needed.',
+    ],
+  },
+  7: {
+    what: 'The Job Tracker is a notebook for your job hunt. It remembers every job you applied to, when you applied, and where you found it, like LinkedIn, OnlineJobs.ph or Upwork. It also keeps a list of jobs you want to apply to later.',
+    use: [
+      'Sign up with just a username and password. No email needed.',
+      'Open Job Tracker and press “Log application”. Paste the job link, type the job title, pick the date you applied and where you found it.',
+      'Found a job on another site? Pick “Other” and type the site’s name, like Indeed or a Facebook group.',
+      'Not ready to apply yet? Open Bookmarks and save the job with the things it asks for, like a resume, a Loom video or a portfolio link, one per line.',
+      'Check the Overview to see how many jobs you applied to this week and this month, and which site gives you the most leads.',
+    ],
+    purpose: 'When you apply to many jobs, it is easy to forget which ones you already sent, when you sent them, or what a job asked for. The Job Tracker keeps all of that in one place, so nothing slips.',
+    help: [
+      'Never apply to the same job twice by accident.',
+      'See your weekly progress and keep your momentum going.',
+      'Know which job sites actually work for you.',
+      'Prepare the right files before applying, because each bookmark lists its requirements.',
+      'Private: each account only ever sees its own jobs.',
     ],
   },
 };
@@ -386,6 +416,20 @@ function ProjectCard({ project, onDocs }) {
               <div className={styles.graphicBadgeRow}>
                 <span className={styles.graphicAiPill}><ShieldCheck size={11} /> KYC sellers</span>
                 <span className={styles.teamsyncRolePill}>Middleman trades</span>
+              </div>
+            </div>
+          </div>
+        ) : project.id === 7 ? (
+          <div className={styles.teamsyncGraphic}>
+            <div className={styles.teamsyncGlow} />
+            <div className={styles.teamsyncGraphicInner}>
+              <div className={styles.teamsyncIconWrap}>
+                <Send size={30} className={styles.teamsyncIcon} />
+              </div>
+              <span className={styles.teamsyncTitle}>Job Tracker</span>
+              <div className={styles.graphicBadgeRow}>
+                <span className={styles.graphicAiPill}><Bookmark size={11} /> Bookmarks</span>
+                <span className={styles.teamsyncRolePill}>Source insights</span>
               </div>
             </div>
           </div>

@@ -19,6 +19,7 @@ const PROJECT_APPS = {
   onboardbase: lazy(() => import('./components/ONBOARDBASE/OnboardBase')),
   copilot: lazy(() => import('./components/BUHAYVA COPILOT/BuhayvaCopilot')),
   balanse: lazy(() => import('./components/BALANSE/Balanse')),
+  jobtracker: lazy(() => import('./components/Clark VA 360 Job Tracker/JobTracker')),
   services: lazy(() => import('./components/ServicesPage')),
 };
 
@@ -45,6 +46,7 @@ function checkRoute() {
   ) return 'teamsync';
   if (path.startsWith('/onboardbase') || hash.includes('onboardbase')) return 'onboardbase';
   if (path.startsWith('/balanse') || hash.includes('balanse')) return 'balanse';
+  if (path.startsWith('/job-tracker') || hash.includes('job-tracker')) return 'jobtracker';
   if (path.startsWith('/services')) return 'services';
   return 'portfolio';
 }
