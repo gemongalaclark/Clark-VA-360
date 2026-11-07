@@ -1,15 +1,27 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Plus, Send, ArrowUpRight, Pencil, Trash2, SearchX } from 'lucide-react';
 import styles from './JobTracker.module.css';
-import { ConfirmModal, EmptyState, SourceBadge, Toolbar, domainOf, matches, parseDay } from './ui';
+import { ConfirmModal, EmptyState, SourceBadge, StatusPicker, STATUSES, Toolbar, domainOf, matches, parseDay } from './ui';
 import JobModal from './JobModal';
+import { GoalBar } from './Goal';
 
 /* Job Tracker page: every job applied to, grouped by month, newest first. */
-export default function Applications({ applications, onSave, onDelete }) {
+export default function Applications({ applications, memberSince, openNewAt, onOpenedNew, onSave, onDelete }) {
   const [editing, setEditing] = useState(null);     // null | 'new' | application
   const [deleting, setDeleting] = useState(null);
   const [query, setQuery] = useState('');
   const [source, setSource] = useState('all');
+  const [updating, setUpdating] = useState(null);   // id whose status is being saved
+
+  /* The reminder's "Log application" button opens the form straight away. */
+  useEffect(() => { if (openNewAt) { setEditing('new'); onOpenedNew(); } }, [openNewAt, onOpenedNew]);
+
+  const setStatus = async (a, status) => {
+    setUpdating(a.id);
+    const label = STATUSES.find(s => s.id === status).label;
+    await onSave({ ...a, status }, status === 'hired' ? `🎉 Congrats! “${a.title}” marked as ${label}.` : `“${a.title}” marked as ${label}.`);
+    setUpdating(null);
+  };
 
   const groups = useMemo(() => {
     const out = [];
@@ -37,6 +49,8 @@ export default function Applications({ applications, onSave, onDelete }) {
           <button className={styles.btnPrimary} onClick={() => setEditing('new')}><Plus size={16} /> Log application</button>
         </div>
       </header>
+
+      <GoalBar applications={applications} memberSince={memberSince} />
 
       {applications.length === 0 ? (
         <EmptyState
@@ -67,7 +81,10 @@ export default function Applications({ applications, onSave, onDelete }) {
                         <strong>{a.title}</strong>
                         <a href={a.url} target="_blank" rel="noopener noreferrer" className={styles.rowLink}>{domainOf(a.url)} <ArrowUpRight size={12} /></a>
                       </span>
-                      <SourceBadge job={a} />
+                      <span className={styles.rowMeta}>
+                        <SourceBadge job={a} />
+                        <StatusPicker value={a.status} title={a.title} disabled={updating === a.id} onChange={(s) => setStatus(a, s)} />
+                      </span>
                       <span className={styles.rowActions}>
                         <a className={styles.iconBtn} href={a.url} target="_blank" rel="noopener noreferrer" aria-label={`Open ${a.title}`} title="Open job post"><ArrowUpRight size={16} /></a>
                         <button className={styles.iconBtn} onClick={() => setEditing(a)} aria-label={`Edit ${a.title}`} title="Edit"><Pencil size={15} /></button>

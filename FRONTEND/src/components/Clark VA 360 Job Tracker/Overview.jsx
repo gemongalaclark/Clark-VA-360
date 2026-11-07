@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { ArrowUpRight, ArrowRight, Send, Bookmark } from 'lucide-react';
 import styles from './JobTracker.module.css';
+import { GoalCard } from './Goal';
 import { SOURCES, SourceBadge, domainOf, fmtDate, isoDay, parseDay, relDay, reqList, sourceName } from './ui';
 
 const WEEKS = 12;
@@ -75,6 +76,8 @@ export default function Overview({ username, memberSince, applications, bookmark
           <button className={styles.btnPrimary} onClick={() => onNavigate('tracker')}><Send size={16} /> Log application</button>
         </div>
       </header>
+
+      <GoalCard applications={applications} memberSince={memberSince} />
 
       {/* Account summary */}
       <section className={styles.statGrid} aria-label="Account summary">

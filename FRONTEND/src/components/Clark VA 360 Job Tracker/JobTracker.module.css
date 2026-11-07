@@ -310,6 +310,110 @@
 .cardMeta b { font-family: var(--mono); color: var(--ink); }
 .cardEmpty { padding: 18px 0 6px; color: var(--faint); font-size: 14px; }
 
+/* ── Daily goal ──────────────────────────────────────────── */
+.goalCard {
+  display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.5fr) auto;
+  align-items: center; gap: 28px; padding: 22px 24px;
+}
+.goalToday { display: flex; align-items: center; gap: 18px; min-width: 0; }
+.goalToday h2 { font-size: 21px; font-weight: 700; }
+.goalToday p { font-size: 13.5px; margin-top: 4px; }
+.goalToday .eyebrow { margin-bottom: 4px; font-size: 10.5px; }
+
+.ring { position: relative; flex: none; width: 92px; height: 92px; }
+.ring > svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.ringTrack { fill: none; stroke: var(--blush-2); stroke-width: 9; }
+.ringFill {
+  fill: none; stroke: var(--red); stroke-width: 9; stroke-linecap: round;
+  transition: stroke-dashoffset 0.7s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.ringCenter { position: absolute; inset: 0; display: grid; place-items: center; place-content: center; grid-auto-flow: column; align-items: baseline; gap: 2px; color: var(--ink); }
+.ringCenter b { font-family: var(--mono); font-size: 28px; font-weight: 600; letter-spacing: -0.04em; }
+.ringCenter small { font-family: var(--mono); font-size: 12px; color: var(--faint); }
+.ringCenter svg { color: var(--red); }
+.ringMet .ringTrack { stroke: var(--red); }
+.ringMet .ringCenter { margin: 13px; border-radius: 50%; background: var(--red); }
+.ringMet .ringCenter svg { color: #fff; }
+
+.goalWeek { min-width: 0; }
+.goalWeekHead {
+  display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;
+  font-size: 12.5px; color: var(--muted);
+}
+.goalWeekHead > span:first-child { font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+.goalWeekHead b { font-family: var(--mono); color: var(--ink); }
+.days { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
+.day {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 8px 4px 9px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface);
+}
+.day small { font-family: var(--mono); font-size: 10.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--faint); }
+.day b { display: grid; place-items: center; height: 22px; font-family: var(--mono); font-size: 17px; font-weight: 600; color: var(--ink); }
+.dayPips { display: flex; gap: 2px; }
+.dayPips i { width: 5px; height: 5px; border-radius: 50%; background: var(--line-2); }
+.dayPips .pipOn { background: var(--red); }
+.day_done { background: var(--red); border-color: var(--red); }
+.day_done small, .day_done b { color: #fff; }
+.day_done .dayPips i, .day_done .dayPips .pipOn { background: rgba(255, 255, 255, 0.9); }
+.day_today { border-color: var(--red); box-shadow: 0 0 0 1px var(--red) inset; }
+.day_today small { color: var(--red); }
+.day_missed { background: var(--bg); }
+.day_missed b { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--red-3); text-decoration-thickness: 2px; }
+.day_upcoming, .day_before { border-style: dashed; background: transparent; }
+.day_upcoming b, .day_before b { color: var(--faint); }
+
+.goalStreak {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  min-width: 96px; padding: 12px 14px; border-radius: 14px; background: var(--ink); color: #fff; text-align: center;
+}
+.goalStreak svg { color: var(--red-2); }
+.goalStreak b { font-family: var(--mono); font-size: 26px; font-weight: 600; line-height: 1.1; }
+.goalStreak span { font-size: 11.5px; color: rgba(255, 255, 255, 0.7); }
+
+.goalBar {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  padding: 12px 16px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface); box-shadow: var(--shadow);
+  font-size: 13.5px;
+}
+.goalBarLabel { display: inline-flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--red); }
+.goalBarPips { display: inline-flex; align-items: center; gap: 4px; }
+.goalBarPips i { width: 18px; height: 8px; border-radius: 3px; background: var(--blush-2); }
+.goalBarPips .pipOn { background: var(--red); }
+.goalBarPips b { margin-left: 6px; font-family: var(--mono); font-weight: 600; color: var(--ink); }
+.goalBarPips em { font-style: normal; font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--red); }
+.goalBarText { flex: 1; min-width: 180px; color: var(--muted); }
+.goalBarStreak { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px; background: var(--ink); color: #fff; font-size: 12px; font-weight: 600; }
+.goalBarStreak svg { color: var(--red-2); }
+.goalBarMet { border-color: var(--red); background: linear-gradient(90deg, var(--blush), var(--surface) 60%); }
+
+/* ── End-of-day reminder ─────────────────────────────────── */
+.reminder {
+  max-width: 1120px; margin: 0 auto 22px;
+  display: flex; align-items: center; gap: 14px;
+  padding: 12px 12px 12px 14px; border-radius: 14px;
+  background: var(--ink); color: rgba(255, 255, 255, 0.82); box-shadow: var(--shadow-lift);
+  animation: rise 0.35s ease-out;
+}
+.reminder p { flex: 1; min-width: 0; font-size: 14px; color: rgba(255, 255, 255, 0.78); }
+.reminder strong { color: #fff; font-weight: 600; }
+.reminderIcon {
+  display: grid; place-items: center; flex: none; width: 38px; height: 38px; border-radius: 11px;
+  background: var(--red); color: #fff; animation: ring 2.4s ease-in-out infinite;
+}
+.reminder .btnPrimary { height: 36px; padding: 0 14px; font-size: 13.5px; box-shadow: none; }
+.reminder .iconBtn { color: rgba(255, 255, 255, 0.6); }
+.reminder .iconBtn:hover { background: rgba(255, 255, 255, 0.1); border-color: transparent; color: #fff; }
+@keyframes ring { 0%, 86%, 100% { transform: rotate(0); } 89% { transform: rotate(-12deg); } 92% { transform: rotate(10deg); } 95% { transform: rotate(-6deg); } }
+
+.notifyBtn, .notifyOn {
+  display: inline-flex; align-items: center; gap: 6px; margin-top: 8px;
+  font-size: 12.5px; font-weight: 600;
+}
+.notifyBtn { padding: 5px 10px; border-radius: 999px; border: 1px dashed var(--red-3); background: var(--blush); color: var(--red-deep); }
+.notifyBtn:hover { border-style: solid; border-color: var(--red); }
+.notifyOn { color: var(--muted); }
+.notifyOn svg { color: var(--red); }
+
 /* ── Overview: stats ─────────────────────────────────────── */
 .statGrid { display: grid; grid-template-columns: 1.3fr repeat(3, minmax(0, 1fr)); gap: 14px; }
 .stat {
@@ -424,7 +528,7 @@
 
 .rows { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--shadow); overflow: hidden; }
 .row {
-  display: grid; grid-template-columns: 50px minmax(0, 1fr) auto auto; align-items: center; gap: 16px;
+  display: grid; grid-template-columns: 50px minmax(0, 1fr) auto auto auto; align-items: center; gap: 14px;
   padding: 13px 14px 13px 16px; border-top: 1px solid var(--line);
   transition: background 0.15s;
 }
@@ -451,6 +555,31 @@
 }
 .rowLink:hover { color: var(--red); }
 .rowActions { display: flex; gap: 2px; }
+.rowMeta { display: contents; }   /* desktop: badge + status are their own grid columns */
+
+/* Status pill: the native <select> sits invisibly on top, so the real menu opens on click. */
+.status {
+  position: relative; display: inline-flex; align-items: center; gap: 7px; flex: none;
+  height: 30px; padding: 0 10px 0 11px; border-radius: 999px; border: 1px solid;
+  font-size: 12.5px; font-weight: 600; white-space: nowrap; cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.status i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.status svg:last-of-type { opacity: 0.6; margin-left: -1px; }
+.status select {
+  position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0;
+  cursor: pointer; font-size: 14px; border: 0; appearance: none;
+}
+.status select:disabled { cursor: progress; }
+.status:has(select:disabled) { opacity: 0.6; }
+.status:has(select:focus-visible) { outline: 2px solid var(--red); outline-offset: 2px; }
+.status_no_reply { border-color: var(--line-2); background: var(--surface); color: var(--muted); }
+.status_no_reply:hover { border-color: var(--ink-2); color: var(--ink); }
+.status_in_process { border-color: var(--blush-2); background: var(--blush); color: var(--red-deep); }
+.status_in_process i { background: var(--red-3); box-shadow: 0 0 0 3px rgba(218, 121, 121, 0.25); }
+.status_in_process:hover { border-color: var(--red-3); }
+.status_hired { border-color: var(--red); background: var(--red); color: #fff; }
+.status_hired:hover { background: var(--red-deep); border-color: var(--red-deep); }
 
 /* ── Bookmarks ───────────────────────────────────────────── */
 .bookGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
@@ -525,6 +654,8 @@
 /* ── Responsive ──────────────────────────────────────────── */
 @media (max-width: 1080px) {
   .statGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .goalCard { grid-template-columns: minmax(0, 1fr) auto; }
+  .goalWeek { grid-column: 1 / -1; grid-row: 2; }
   .overGrid { grid-template-columns: minmax(0, 1fr); }
 }
 
@@ -562,11 +693,22 @@
   .content { padding: 22px 16px 100px; }
   .pageHead { align-items: flex-start; }
   .row { grid-template-columns: 50px minmax(0, 1fr) auto; row-gap: 8px; }
-  .row .sourceBadge { grid-column: 2; grid-row: 2; justify-self: start; }
+  .rowMeta { grid-column: 2; grid-row: 2; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
   .rowActions { grid-column: 3; grid-row: 1 / span 2; flex-direction: column; }
 }
 
 @media (max-width: 520px) {
+  .reminder { flex-wrap: wrap; align-items: flex-start; }
+  .reminder p { flex-basis: calc(100% - 100px); }
+  .reminder .btnPrimary { order: 3; width: 100%; }
+  .goalCard { grid-template-columns: minmax(0, 1fr); gap: 18px; padding: 18px; }
+  .goalWeek { grid-row: auto; }
+  .goalStreak { flex-direction: row; gap: 8px; min-width: 0; padding: 10px 14px; }
+  .goalStreak b { font-size: 20px; }
+  .ring { width: 76px; height: 76px; }
+  .ringMet .ringCenter { margin: 11px; }
+  .days { gap: 5px; }
+  .dayPips i { width: 4px; height: 4px; }
   .statGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
   .statHero { grid-column: 1 / -1; }
   .stat:not(.statHero) { padding: 14px 12px; }

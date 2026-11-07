@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { X, AlertTriangle } from 'lucide-react';
+import { X, AlertTriangle, Check, ChevronDown } from 'lucide-react';
 import styles from './JobTracker.module.css';
 
 /* Where a job was found. Colours come from the Clark VA 360 brand (ink, red, blush, grey);
@@ -16,6 +16,28 @@ const SOURCE_BY_ID = Object.fromEntries(SOURCES.map(s => [s.id, s]));
 export const sourceOf = (id) => SOURCE_BY_ID[id] ?? SOURCE_BY_ID.other;
 /* "Other" jobs show the site the user typed, e.g. "Indeed". */
 export const sourceName = (job) => (job.source === 'other' && job.source_other) || sourceOf(job.source).label;
+
+/* Where an application stands. New applications start as "No reply". */
+export const STATUSES = [
+  { id: 'no_reply', label: 'No reply' },
+  { id: 'in_process', label: 'In process' },
+  { id: 'hired', label: 'Hired / Accepted' },
+];
+
+/* A pill that opens the native status menu (keyboard and screen-reader friendly). */
+export function StatusPicker({ value = 'no_reply', onChange, disabled, title }) {
+  const current = STATUSES.find(s => s.id === value) ?? STATUSES[0];
+  return (
+    <label className={`${styles.status} ${styles[`status_${current.id}`]}`} title="Change status">
+      {current.id === 'hired' ? <Check size={13} strokeWidth={3} aria-hidden="true" /> : <i aria-hidden="true" />}
+      <span>{current.label}</span>
+      <ChevronDown size={13} aria-hidden="true" />
+      <select value={current.id} onChange={(e) => onChange(e.target.value)} disabled={disabled} aria-label={`Status of ${title}`}>
+        {STATUSES.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
+      </select>
+    </label>
+  );
+}
 
 /* "https://www.linkedin.com/jobs/view/123" → "linkedin.com" */
 export function domainOf(url) {

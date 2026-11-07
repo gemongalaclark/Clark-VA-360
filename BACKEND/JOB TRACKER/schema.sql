@@ -9,7 +9,7 @@
 -- NOT use Supabase Auth. It keeps its own accounts:
 --   jt_users         username + bcrypt password hash
 --   jt_sessions      sha256 of each session token (the raw token lives only in the browser)
---   jt_applications  jobs the user has applied to
+--   jt_applications  jobs the user has applied to, and where each one stands (status)
 --   jt_bookmarks     jobs saved for later, with what the application needs
 --
 -- Security model: RLS is ON with NO policies, so the anon key cannot read or
@@ -51,6 +51,9 @@ create table if not exists public.jt_applications (
   constraint jt_applications_other_named
     check ((source = 'other') = (source_other is not null))
 );
+-- Where the application stands. Added after launch, so it's an ALTER (safe on existing databases).
+alter table public.jt_applications add column if not exists status text not null default 'no_reply'
+  check (status in ('no_reply', 'in_process', 'hired'));
 create index if not exists jt_applications_user_idx on public.jt_applications (user_id, applied_on desc);
 
 create table if not exists public.jt_bookmarks (
@@ -211,10 +214,14 @@ declare
   v_user  uuid := jt_user_from_token(p_token);
   v_other text := jt_check_job(p_job);
   v_date  date := nullif(p_job->>'applied_on', '')::date;
+  v_status text := nullif(p_job->>'status', '');   -- null = keep the current status (or 'no_reply' when new)
   v_row   jt_applications;
 begin
   if v_date is null then
     raise exception 'Add the date you applied.' using errcode = '22023';
+  end if;
+  if v_status is not null and v_status not in ('no_reply', 'in_process', 'hired') then
+    raise exception 'Pick a valid status.' using errcode = '22023';
   end if;
   if p_job ? 'id' and p_job->>'id' is not null then
     update jt_applications set
@@ -223,13 +230,14 @@ begin
       applied_on   = v_date,
       source       = p_job->>'source',
       source_other = v_other,
+      status       = coalesce(v_status, status),
       updated_at   = now()
     where id = (p_job->>'id')::uuid and user_id = v_user
     returning * into v_row;
     if v_row.id is null then raise exception 'Job not found.'; end if;
   else
-    insert into jt_applications (user_id, title, url, applied_on, source, source_other)
-    values (v_user, trim(p_job->>'title'), trim(p_job->>'url'), v_date, p_job->>'source', v_other)
+    insert into jt_applications (user_id, title, url, applied_on, source, source_other, status)
+    values (v_user, trim(p_job->>'title'), trim(p_job->>'url'), v_date, p_job->>'source', v_other, coalesce(v_status, 'no_reply'))
     returning * into v_row;
   end if;
   return v_row;

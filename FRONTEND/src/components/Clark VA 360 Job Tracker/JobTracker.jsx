@@ -3,6 +3,8 @@ import { ArrowLeft, LogOut, LayoutGrid, Send, Bookmark, X, CheckCircle2, AlertCi
 import styles from './JobTracker.module.css';
 import { api, getToken, SessionExpiredError } from './jtApi';
 import { Logo } from './ui';
+import { goalMessage } from './goalRules';
+import { useGoalReminder, ReminderBanner } from './Reminder';
 import AuthScreen from './AuthScreen';
 import Overview from './Overview';
 import Applications from './Applications';
@@ -28,6 +30,7 @@ export default function JobTracker({ onBackToPortfolio }) {
   const [applications, setApplications] = useState([]);
   const [bookmarks, setBookmarks] = useState([]);
   const [toast, setToast] = useState(null);        // { kind: 'ok' | 'error', text }
+  const [newAppAt, setNewAppAt] = useState(0);     // bumped to open the "Log application" form
 
   const notify = useCallback((kind, text) => setToast({ kind, text, at: Date.now() }), []);
 
@@ -69,12 +72,13 @@ export default function JobTracker({ onBackToPortfolio }) {
       .catch(() => setPhase('auth'));
   }, [enter]);
 
-  /* Upsert-by-id, keeping each list in its display order. */
-  const saver = (call, setList, sort, what) => async (item) => {
+  /* Upsert-by-id, keeping each list in its display order. `msg` overrides the toast text;
+     `describe(row, isNew)` can supply one too (e.g. daily-goal progress). */
+  const saver = (call, setList, sort, what, describe) => async (item, msg) => {
     try {
       const row = await call(item);
       setList(l => (l.some(x => x.id === row.id) ? l.map(x => (x.id === row.id ? row : x)) : [...l, row]).sort(sort));
-      notify('ok', item.id ? `${what} updated.` : `${what} added.`);
+      notify('ok', msg ?? describe?.(row, !item.id) ?? (item.id ? `${what} updated.` : `${what} added.`));
       return true;
     } catch (err) { return fail(err); }
   };
@@ -89,6 +93,10 @@ export default function JobTracker({ onBackToPortfolio }) {
 
   const signOut = async () => { await api.signOut(); setToast(null); toAuth(); };
   const go = (id) => { setTab(id); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+
+  /* End-of-day reminder: opens the Job Tracker with the "Log application" form ready. */
+  const openNewApplication = useCallback(() => { setTab('tracker'); setNewAppAt(Date.now()); }, []);
+  const reminder = useGoalReminder({ enabled: phase === 'app', username, applications, onOpen: openNewApplication });
 
   const counts = { tracker: applications.length, bookmarks: bookmarks.length };
 
@@ -159,13 +167,17 @@ export default function JobTracker({ onBackToPortfolio }) {
           </header>
 
           <main className={styles.content}>
+            {reminder.show && <ReminderBanner text={reminder.text} onOpen={openNewApplication} onDismiss={reminder.dismiss} />}
             {tab === 'overview' && (
               <Overview username={username} memberSince={memberSince} applications={applications} bookmarks={bookmarks} onNavigate={go} />
             )}
             {tab === 'tracker' && (
               <Applications
                 applications={applications}
-                onSave={saver(api.saveApplication, setApplications, byApplied, 'Application')}
+                memberSince={memberSince}
+                openNewAt={newAppAt}
+                onOpenedNew={() => setNewAppAt(0)}
+                onSave={saver(api.saveApplication, setApplications, byApplied, 'Application', (row, isNew) => goalMessage(applications, row, isNew))}
                 onDelete={deleter(api.deleteApplication, setApplications, 'Application')}
               />
             )}
