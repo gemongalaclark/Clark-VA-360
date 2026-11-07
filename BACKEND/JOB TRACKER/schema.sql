@@ -12,6 +12,10 @@
 --   jt_applications  jobs the user has applied to, and where each one stands (status)
 --   jt_bookmarks     jobs saved for later, with what the application needs
 --
+-- Public showcase: a user can turn on a share link (jt_users.share_slug). Anyone with
+-- the link can call jt_public_showcase, which returns ONLY the username plus each
+-- application's title, link and date applied (no status, source, goal or bookmarks).
+--
 -- Security model: RLS is ON with NO policies, so the anon key cannot read or
 -- write any jt_ table directly. The browser only calls the SECURITY DEFINER
 -- functions below; each one resolves the session token to a user and touches
@@ -28,6 +32,9 @@ create table if not exists public.jt_users (
   created_at    timestamptz not null default now()
 );
 create unique index if not exists jt_users_username_key on public.jt_users (lower(username));
+-- Public share link id. null = sharing is off.
+alter table public.jt_users add column if not exists share_slug text;
+create unique index if not exists jt_users_share_slug_key on public.jt_users (share_slug) where share_slug is not null;
 
 create table if not exists public.jt_sessions (
   token_hash text primary key,
@@ -197,6 +204,7 @@ declare v_user uuid := jt_user_from_token(p_token);
 begin
   return json_build_object(
     'member_since', (select created_at from jt_users where id = v_user),
+    'share_slug',   (select share_slug from jt_users where id = v_user),
     'applications', coalesce((select json_agg(a order by a.applied_on desc, a.created_at desc)
                                 from jt_applications a where a.user_id = v_user), '[]'::json),
     'bookmarks',    coalesce((select json_agg(b order by b.created_at desc)
@@ -284,7 +292,52 @@ returns void
 language sql security definer set search_path = public, extensions
 as $$ delete from jt_bookmarks where id = p_id and user_id = jt_user_from_token(p_token); $$;
 
--- ── 5. Grants: the browser may call only the public RPCs ─────
+-- ── 5. Public showcase ────────────────────────────────────────
+-- p_mode: 'enable' (keep the current link or create one), 'reset' (new link; the old one
+-- stops working) or 'disable' (turn sharing off). Returns { share_slug }.
+create or replace function public.jt_set_share(p_token text, p_mode text)
+returns json
+language plpgsql security definer set search_path = public, extensions
+as $$
+declare
+  v_user uuid := jt_user_from_token(p_token);
+  v_slug text;
+begin
+  if p_mode not in ('enable', 'reset', 'disable') then
+    raise exception 'Unknown share option.' using errcode = '22023';
+  end if;
+  if p_mode = 'disable' then
+    update jt_users set share_slug = null where id = v_user;
+  elsif p_mode = 'reset' or (select share_slug from jt_users where id = v_user) is null then
+    update jt_users set share_slug = encode(gen_random_bytes(8), 'hex') where id = v_user;
+  end if;
+  select share_slug into v_slug from jt_users where id = v_user;
+  return json_build_object('share_slug', v_slug);
+end;
+$$;
+
+-- Read-only, no sign-in: the showcase page for a share link.
+create or replace function public.jt_public_showcase(p_slug text)
+returns json
+language plpgsql stable security definer set search_path = public, extensions
+as $$
+declare v_user jt_users;
+begin
+  select * into v_user from jt_users where share_slug = p_slug and p_slug is not null;
+  if v_user.id is null then
+    raise exception 'This share link is no longer active.' using errcode = 'P0002';
+  end if;
+  return json_build_object(
+    'username', v_user.username,
+    'applications', coalesce((
+      select json_agg(json_build_object('title', a.title, 'url', a.url, 'applied_on', a.applied_on)
+                      order by a.applied_on desc, a.created_at desc)
+        from jt_applications a where a.user_id = v_user.id), '[]'::json)
+  );
+end;
+$$;
+
+-- ── 6. Grants: the browser may call only the public RPCs ─────
 revoke all on function public.jt_new_session(uuid)     from public, anon, authenticated;
 revoke all on function public.jt_user_from_token(text) from public, anon, authenticated;
 revoke all on function public.jt_check_job(jsonb)      from public, anon, authenticated;
@@ -297,5 +350,7 @@ grant execute on function
   public.jt_save_application(text, jsonb),
   public.jt_delete_application(text, uuid),
   public.jt_save_bookmark(text, jsonb),
-  public.jt_delete_bookmark(text, uuid)
+  public.jt_delete_bookmark(text, uuid),
+  public.jt_set_share(text, text),
+  public.jt_public_showcase(text)
 to anon, authenticated;

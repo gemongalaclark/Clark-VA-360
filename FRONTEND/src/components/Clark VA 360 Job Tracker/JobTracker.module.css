@@ -617,6 +617,51 @@
 .bookActions { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 14px; }
 .bookActions > span { display: flex; gap: 2px; }
 
+/* ── Share dialog ────────────────────────────────────────── */
+.liveDot { width: 7px; height: 7px; border-radius: 50%; background: var(--red); box-shadow: 0 0 0 3px rgba(203, 37, 37, 0.18); }
+.shareLists { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.shareLists > div { padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg); }
+.shareLists > div:first-child { background: var(--blush); border-color: var(--blush-2); }
+.shareHead {
+  display: inline-flex; align-items: center; gap: 6px; margin-bottom: 6px;
+  font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--red);
+}
+.shareLists > div:last-child .shareHead { color: var(--muted); }
+.shareLists li { position: relative; padding-left: 14px; font-size: 13.5px; color: var(--ink-2); line-height: 1.7; }
+.shareLists li::before { content: ''; position: absolute; left: 0; top: 0.72em; width: 5px; height: 5px; border-radius: 50%; background: currentColor; opacity: 0.45; }
+.shareUrl { display: flex; gap: 8px; }
+.shareUrl input {
+  flex: 1; min-width: 0; height: 40px; padding: 0 12px; border-radius: 11px; border: 1px solid var(--line-2);
+  background: var(--bg); font-family: var(--mono); font-size: 13px; color: var(--ink-2); outline: none;
+}
+.shareUrl input:focus { border-color: var(--red); }
+.shareActions { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.shareActions .linkBtn:disabled { opacity: 0.6; cursor: progress; }
+.linkMuted { color: var(--muted); }
+.linkMuted:hover { color: var(--red); }
+
+/* ── Public showcase ─────────────────────────────────────── */
+.showTop {
+  position: sticky; top: 0; z-index: 20;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 14px clamp(16px, 4vw, 48px); background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+}
+.showMain { padding: 40px clamp(16px, 4vw, 48px) 64px; }
+.showMain .page { max-width: 880px; }
+.showHero { padding: 8px 0 6px; }
+.showHero h1 { font-size: clamp(30px, 4.4vw, 44px); font-weight: 700; }
+.showName { overflow-wrap: anywhere; }
+.showMeta { display: flex; gap: 8px 18px; flex-wrap: wrap; margin-top: 14px; font-size: 14px; color: var(--muted); }
+.showMeta span { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); }
+.showMeta b { font-family: var(--mono); color: var(--ink); }
+.showRow { grid-template-columns: 50px minmax(0, 1fr) auto; }
+.showRow .rowMain strong { white-space: normal; overflow-wrap: anywhere; }   /* the full title matters here */
+.showMain > .empty { max-width: 880px; margin: 0 auto; }
+.showApplied { font-size: 12.5px; color: var(--faint); }
+.showFoot { text-align: center; font-size: 13px; color: var(--faint); padding-top: 8px; }
+.showFoot strong { color: var(--ink-2); }
+
 /* ── Empty state ─────────────────────────────────────────── */
 .empty {
   display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px;
@@ -698,6 +743,10 @@
 }
 
 @media (max-width: 520px) {
+  .shareLists { grid-template-columns: 1fr; }
+  .showTop .btnGhost { height: 36px; padding: 0 12px; font-size: 12.5px; }
+  .showRow { grid-template-columns: 50px minmax(0, 1fr); }
+  .showRow .btnSoft { grid-column: 2; justify-self: start; }
   .reminder { flex-wrap: wrap; align-items: flex-start; }
   .reminder p { flex-basis: calc(100% - 100px); }
   .reminder .btnPrimary { order: 3; width: 100%; }

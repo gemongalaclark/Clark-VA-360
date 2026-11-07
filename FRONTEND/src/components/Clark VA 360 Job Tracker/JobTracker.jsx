@@ -9,6 +9,7 @@ import AuthScreen from './AuthScreen';
 import Overview from './Overview';
 import Applications from './Applications';
 import Bookmarks from './Bookmarks';
+import Showcase from './Showcase';
 
 const TABS = [
   { id: 'overview', label: 'Overview', icon: LayoutGrid },
@@ -20,12 +21,25 @@ const TABS = [
 const byApplied = (a, b) => b.applied_on.localeCompare(a.applied_on) || b.created_at.localeCompare(a.created_at);
 const byCreated = (a, b) => b.created_at.localeCompare(a.created_at);
 
+/* /job-tracker/s/<slug> is a public showcase page; everything else is the signed-in app. */
+export default function JobTracker(props) {
+  const slug = window.location.pathname.match(/^\/job-tracker\/s\/([a-f0-9]+)\/?$/i)?.[1];
+  return slug ? <Showcase slug={slug} /> : <TrackerApp {...props} />;
+}
+
+const SHARE_MSG = {
+  enable: 'Share link created. Copy it and send it to anyone.',
+  reset: 'New share link created. The old link no longer works.',
+  disable: 'Sharing is off. Your link no longer works.',
+};
+
 /* Job Tracker root: loading → auth (sign up / sign in) → dashboard.
    Owns the applications/bookmarks lists; pages call onSave/onDelete, which resolve true on success. */
-export default function JobTracker({ onBackToPortfolio }) {
+function TrackerApp({ onBackToPortfolio }) {
   const [phase, setPhase] = useState('loading');   // loading | auth | app
   const [username, setUsername] = useState(null);
   const [memberSince, setMemberSince] = useState(null);
+  const [shareSlug, setShareSlug] = useState(null);
   const [tab, setTab] = useState('overview');
   const [applications, setApplications] = useState([]);
   const [bookmarks, setBookmarks] = useState([]);
@@ -57,6 +71,7 @@ export default function JobTracker({ onBackToPortfolio }) {
       setApplications(data.applications ?? []);
       setBookmarks(data.bookmarks ?? []);
       setMemberSince(data.member_since ?? null);
+      setShareSlug(data.share_slug ?? null);
       setUsername(name);
       setPhase('app');
     } catch (err) {
@@ -87,6 +102,14 @@ export default function JobTracker({ onBackToPortfolio }) {
       await call(id);
       setList(l => l.filter(x => x.id !== id));
       notify('ok', `${what} deleted.`);
+      return true;
+    } catch (err) { return fail(err); }
+  };
+
+  const setShare = async (mode) => {
+    try {
+      setShareSlug(await api.setShare(mode));
+      notify('ok', SHARE_MSG[mode]);
       return true;
     } catch (err) { return fail(err); }
   };
@@ -177,6 +200,8 @@ export default function JobTracker({ onBackToPortfolio }) {
                 memberSince={memberSince}
                 openNewAt={newAppAt}
                 onOpenedNew={() => setNewAppAt(0)}
+                shareSlug={shareSlug}
+                onSetShare={setShare}
                 onSave={saver(api.saveApplication, setApplications, byApplied, 'Application', (row, isNew) => goalMessage(applications, row, isNew))}
                 onDelete={deleter(api.deleteApplication, setApplications, 'Application')}
               />

@@ -1,17 +1,19 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Plus, Send, ArrowUpRight, Pencil, Trash2, SearchX } from 'lucide-react';
+import { Share2, Plus, Send, ArrowUpRight, Pencil, Trash2, SearchX } from 'lucide-react';
 import styles from './JobTracker.module.css';
 import { ConfirmModal, EmptyState, SourceBadge, StatusPicker, STATUSES, Toolbar, domainOf, matches, parseDay } from './ui';
 import JobModal from './JobModal';
 import { GoalBar } from './Goal';
+import ShareModal from './Share';
 
 /* Job Tracker page: every job applied to, grouped by month, newest first. */
-export default function Applications({ applications, memberSince, openNewAt, onOpenedNew, onSave, onDelete }) {
+export default function Applications({ applications, memberSince, openNewAt, onOpenedNew, shareSlug, onSetShare, onSave, onDelete }) {
   const [editing, setEditing] = useState(null);     // null | 'new' | application
   const [deleting, setDeleting] = useState(null);
   const [query, setQuery] = useState('');
   const [source, setSource] = useState('all');
   const [updating, setUpdating] = useState(null);   // id whose status is being saved
+  const [sharing, setSharing] = useState(false);
 
   /* The reminder's "Log application" button opens the form straight away. */
   useEffect(() => { if (openNewAt) { setEditing('new'); onOpenedNew(); } }, [openNewAt, onOpenedNew]);
@@ -46,6 +48,9 @@ export default function Applications({ applications, memberSince, openNewAt, onO
           <p className={styles.muted}>Log each application with its link, the date you applied and where you found it.</p>
         </div>
         <div className={styles.headActions}>
+          <button className={styles.btnGhost} onClick={() => setSharing(true)}>
+            <Share2 size={16} /> Share {shareSlug && <span className={styles.liveDot} aria-label="(link is on)" />}
+          </button>
           <button className={styles.btnPrimary} onClick={() => setEditing('new')}><Plus size={16} /> Log application</button>
         </div>
       </header>
@@ -102,6 +107,7 @@ export default function Applications({ applications, memberSince, openNewAt, onO
       {editing && (
         <JobModal kind="application" job={editing === 'new' ? null : editing} onSave={onSave} onClose={() => setEditing(null)} />
       )}
+      {sharing && <ShareModal slug={shareSlug} onSetShare={onSetShare} onClose={() => setSharing(false)} />}
       {deleting && (
         <ConfirmModal
           title="Delete this application?"

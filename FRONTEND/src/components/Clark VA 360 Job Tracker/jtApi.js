@@ -50,4 +50,10 @@ export const api = {
   deleteApplication: (id) => authed('jt_delete_application', { p_id: id }),
   saveBookmark: (job) => authed('jt_save_bookmark', { p_job: job }),
   deleteBookmark: (id) => authed('jt_delete_bookmark', { p_id: id }),
+  /* mode: 'enable' | 'reset' | 'disable' → the share slug (null when off) */
+  setShare: async (mode) => (await authed('jt_set_share', { p_mode: mode }))?.share_slug ?? null,
+  /* Public, no sign-in: { username, applications: [{ title, url, applied_on }] } */
+  showcase: (slug) => rpc('jt_public_showcase', { p_slug: slug }),
 };
+
+export const shareUrl = (slug) => `${window.location.origin}/job-tracker/s/${slug}`;
