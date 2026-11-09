@@ -36,3 +36,6 @@ Thumbs.db
 *.sln
 *.sw?
 CLARK VA 360 API KEYS.md
+
+# Supabase CLI local cache (linked project, CLI version)
+**/supabase/.temp/
