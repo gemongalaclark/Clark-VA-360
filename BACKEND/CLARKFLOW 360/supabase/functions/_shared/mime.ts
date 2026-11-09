@@ -131,6 +131,74 @@ export function toEmailRow(msg: GmailMessage) {
   };
 }
 
+// ── Building a reply (RFC 2822 / 2047) ───────────────────────
+const utf8 = new TextEncoder();
+
+function base64(bytes: Uint8Array): string {
+  let binary = '';
+  for (const b of bytes) binary += String.fromCharCode(b);
+  return btoa(binary);
+}
+
+// Header values can never contain line breaks (header injection).
+const oneLine = (s: string) => s.replace(/[\r\n]+/g, ' ').trim();
+
+// Non-ASCII text → RFC 2047 encoded words of ≤ 45 bytes each (≤ 75 chars once encoded),
+// folded onto continuation lines.
+export function encodeHeaderText(text: string): string {
+  if (/^[\x20-\x7e]*$/.test(text)) return text;
+  const words: string[] = [];
+  let chunk = '';
+  for (const ch of text) {
+    if (utf8.encode(chunk + ch).length > 45) { words.push(chunk); chunk = ''; }
+    chunk += ch;
+  }
+  if (chunk) words.push(chunk);
+  return words.map((w) => `=?UTF-8?B?${base64(utf8.encode(w))}?=`).join('\r\n ');
+}
+
+export function formatAddress(name: string | null, email: string): string {
+  const n = oneLine(name ?? '');
+  if (!n) return email;
+  if (/^[\x20-\x7e]*$/.test(n)) return `"${n.replace(/["\\]/g, '\\$&')}" <${email}>`;
+  return `${encodeHeaderText(n)} <${email}>`;
+}
+
+export const replySubject = (subject: string | null) => {
+  const s = oneLine(subject ?? '');
+  return /^re:/i.test(s) ? s : `Re: ${s}`.trim();
+};
+
+export interface ReplyInput {
+  from: string;                    // the connected mailbox
+  to: { name: string | null; email: string };
+  subject: string | null;          // original subject
+  inReplyTo: string | null;        // original Message-ID
+  references: string | null;       // original References
+  body: string;                    // plain text
+}
+
+// Returns the full message as base64url, ready for users.messages.send { raw }.
+export function buildReply(input: ReplyInput): string {
+  const ids = [...(input.references ?? '').split(/\s+/), input.inReplyTo ?? '']
+    .map(oneLine).filter((id) => /^<[^<>\s]+>$/.test(id));
+  const references = [...new Set(ids)];
+
+  const headers = [
+    `From: ${oneLine(input.from)}`,
+    `To: ${formatAddress(input.to.name, oneLine(input.to.email))}`,
+    `Subject: ${encodeHeaderText(replySubject(input.subject))}`,
+    ...(input.inReplyTo && /^<[^<>\s]+>$/.test(oneLine(input.inReplyTo)) ? [`In-Reply-To: ${oneLine(input.inReplyTo)}`] : []),
+    ...(references.length ? [`References: ${references.join('\r\n ')}`] : []),
+    'MIME-Version: 1.0',
+    'Content-Type: text/plain; charset="UTF-8"',
+    'Content-Transfer-Encoding: base64',
+  ];
+  const body = base64(utf8.encode(input.body.replace(/\r?\n/g, '\r\n'))).replace(/.{76}/g, '$&\r\n');
+  const message = `${headers.join('\r\n')}\r\n\r\n${body}`;
+  return base64(utf8.encode(message)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
 // ── Client matching (same rule as public.cf_sender_matches in schema.sql) ──
 // Exact contact email wins; otherwise the most specific matching domain
 // (mail.acme.com matches "acme.com", and "mail.acme.com" beats "acme.com").

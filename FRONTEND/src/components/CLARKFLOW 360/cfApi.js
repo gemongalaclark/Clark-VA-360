@@ -6,6 +6,8 @@ import { supabase } from '../../lib/supabase';
 
    Sync & triage: cf-gmail-sync pulls new unread mail in batches, then cf-triage-analyze
    has Gemini set priority, summary and a draft in batches. syncAndTriage() loops both.
+   Reply: the browser edits drafts / statuses directly (RLS + column grants allow only
+   those fields); sending goes through cf-gmail-send.
 
    Connect Gmail:
      1. connectGmail() asks cf-google-auth for a Google consent URL (one-time state + PKCE).
@@ -72,9 +74,35 @@ export const api = {
     window.location.assign(url);
   },
 
-  /* Newest 100 emails, without bodies (the list doesn't need them). */
+  /* Newest 200 emails, without bodies (the queue doesn't need them). */
   listEmails: async () => must(await supabase.from('cf_emails').select(EMAIL_COLUMNS)
-    .order('received_at', { ascending: false }).limit(100)),
+    .order('received_at', { ascending: false }).limit(200)),
+
+  /* One email with its bodies, for the reading pane. */
+  getEmail: async (id) => must(await supabase.from('cf_emails').select('*').eq('id', id).single()),
+
+  /* Every synced email in the same Gmail thread, oldest first. */
+  getThread: async (threadId) => must(await supabase.from('cf_emails').select(`${EMAIL_COLUMNS}, gmail_thread_id, replied_at`)
+    .eq('gmail_thread_id', threadId).order('received_at')),
+
+  /* Saving your own draft counts as reviewing the email, and stops a pending triage
+     from overwriting it (triage only writes to 'pending' emails). */
+  async saveDraft(email, text) {
+    const patch = { ai_generated_draft: text };
+    if (email.triage_status === 'pending' || email.triage_status === 'triaged') patch.triage_status = 'reviewed';
+    return must(await supabase.from('cf_emails').update(patch).eq('id', email.id).select(EMAIL_COLUMNS).single());
+  },
+
+  /* 'reviewed' | 'archived' | 'triaged' (back to the inbox). Sending sets 'replied' server-side. */
+  setStatus: async (id, status) => must(await supabase.from('cf_emails').update({ triage_status: status })
+    .eq('id', id).select(EMAIL_COLUMNS).single()),
+
+  setPriority: async (id, priority) => must(await supabase.from('cf_emails').update({ priority_level: priority })
+    .eq('id', id).select(EMAIL_COLUMNS).single()),
+
+  /* Sends from the connected Gmail, in the original thread. Throws with err.code
+     'already_replied' or 'gmail_not_connected' when relevant. */
+  sendReply: (emailId, body) => invoke('cf-gmail-send', { email_id: emailId, body }),
 
   listClients: async () => must(await supabase.from('cf_clients').select('*').order('company_name')),
 

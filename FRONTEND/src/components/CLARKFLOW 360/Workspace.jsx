@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
-import { CheckCircle2, Loader2, RefreshCw, Inbox, Users } from 'lucide-react';
+import { CheckCircle2, Loader2, RefreshCw, Inbox as InboxIcon, Users } from 'lucide-react';
 import styles from './ClarkFlow360.module.css';
 import { api } from './cfApi';
-import InboxList from './InboxList';
+import Inbox from './Inbox';
+import { isTodo } from './ui';
 import ClientsManager from './ClientsManager';
 
 const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
@@ -64,7 +65,7 @@ export default function Workspace({ status, onNotice, onReconnect, reconnecting,
   };
 
   const tabs = [
-    { id: 'inbox', label: 'Inbox', icon: Inbox, count: emails?.length },
+    { id: 'inbox', label: 'Inbox', icon: InboxIcon, count: emails?.filter(isTodo).length },
     { id: 'clients', label: 'Clients', icon: Users, count: clients?.length },
   ];
 
@@ -95,8 +96,9 @@ export default function Workspace({ status, onNotice, onReconnect, reconnecting,
       </div>
 
       {tab === 'inbox'
-        ? <InboxList emails={emails} clients={clients} onAddClients={() => setTab('clients')}
-            onRetryFailed={() => syncNow({ retryFailed: true })} busy={!!progress} />
+        ? <Inbox emails={emails} clients={clients} onAddClients={() => setTab('clients')}
+            onRetryFailed={() => syncNow({ retryFailed: true })} busy={!!progress}
+            onChanged={load} onNotice={onNotice} onDisconnected={onDisconnected} />
         : <ClientsManager clients={clients} onChanged={load} onNotice={onNotice} />}
     </section>
   );
