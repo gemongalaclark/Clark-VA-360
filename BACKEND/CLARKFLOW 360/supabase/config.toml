@@ -10,6 +10,12 @@ project_id = "clarkflow-360"
 [functions.cf-google-auth]
 verify_jwt = true
 
+[functions.cf-gmail-sync]
+verify_jwt = true
+
+[functions.cf-triage-analyze]
+verify_jwt = true
+
 # Google redirects the browser here with no Supabase session. The one-time `state`
 # (cf_oauth_states) is what proves who started the flow.
 [functions.cf-google-callback]

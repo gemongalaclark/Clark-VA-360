@@ -1,17 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Mail, CheckCircle2, Loader2, RefreshCw, ShieldAlert, Eye, Send } from 'lucide-react';
+import { Mail, Loader2, ShieldAlert } from 'lucide-react';
 import styles from './ClarkFlow360.module.css';
 import { api } from './cfApi';
+import Workspace from './Workspace';
 
-const PERMISSIONS = {
-  'https://www.googleapis.com/auth/gmail.readonly': { icon: Eye, label: 'Read email' },
-  'https://www.googleapis.com/auth/gmail.send': { icon: Send, label: 'Send replies' },
-};
-
-const formatDate = (iso) =>
-  new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-
-/* Shows whether Gmail is connected, and starts the Google consent flow. */
+/* Not connected: the Connect Gmail card (starts the Google consent flow).
+   Connected: the workspace. */
 export default function ConnectGmail({ onNotice }) {
   const [status, setStatus] = useState(undefined);   // undefined = loading, null = not connected
   const [busy, setBusy] = useState(false);
@@ -36,13 +30,6 @@ export default function ConnectGmail({ onNotice }) {
 
   if (status === undefined) return <Loader2 className={styles.spin} size={28} aria-label="Loading" />;
 
-  const connectButton = (label, ghost) => (
-    <button className={ghost ? styles.btnGhost : styles.btnPrimary} onClick={connect} disabled={busy}>
-      {busy ? <Loader2 className={styles.spin} size={16} /> : ghost ? <RefreshCw size={16} /> : <Mail size={16} />}
-      {busy ? 'Opening Google…' : label}
-    </button>
-  );
-
   if (!status) {
     return (
       <section className={styles.card}>
@@ -60,25 +47,21 @@ export default function ConnectGmail({ onNotice }) {
             click <strong>Advanced</strong>, then <strong>Go to … (unsafe)</strong>, and leave both permission boxes ticked.
           </span>
         </p>
-        {connectButton('Connect Gmail')}
+        <button className={styles.btnPrimary} onClick={connect} disabled={busy}>
+          {busy ? <Loader2 className={styles.spin} size={16} /> : <Mail size={16} />}
+          {busy ? 'Opening Google…' : 'Connect Gmail'}
+        </button>
       </section>
     );
   }
 
   return (
-    <section className={styles.card}>
-      <span className={`${styles.cardIcon} ${styles.cardIconOk}`}><CheckCircle2 size={22} /></span>
-      <h2>Gmail connected</h2>
-      <p className={styles.mailbox}>{status.google_email}</p>
-      <p className={styles.muted}>Connected {formatDate(status.connected_at)}</p>
-      <ul className={styles.chips}>
-        {(status.scopes ?? []).filter((s) => PERMISSIONS[s]).map((s) => {
-          const { icon: Icon, label } = PERMISSIONS[s];
-          return <li key={s}><Icon size={14} aria-hidden="true" /> {label}</li>;
-        })}
-      </ul>
-      <p className={styles.muted}>Inbox sync and AI triage come next. They’ll appear here.</p>
-      {connectButton('Reconnect or switch account', true)}
-    </section>
+    <Workspace
+      status={status}
+      onNotice={onNotice}
+      onReconnect={connect}
+      reconnecting={busy}
+      onDisconnected={(message) => { setStatus(null); onNotice({ kind: 'error', text: message }); }}
+    />
   );
 }

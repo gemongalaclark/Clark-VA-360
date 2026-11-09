@@ -276,3 +276,53 @@ revoke all on function public.cf_normalize_client() from public, anon, authentic
 --   on conflict (user_id) do nothing;
 --
 -- Check:   select u.email from public.cf_members m join auth.users u on u.id = m.user_id;
+
+
+-- ── 8. Phase 3: triage retries + linking emails to clients added later ──
+-- (Safe to re-run. Added after Phase 2 went live, so these are ALTERs / OR REPLACE.)
+
+-- cf-triage-analyze gives each email up to 3 tries, so one bad email can't block the queue.
+alter table public.cf_emails add column if not exists triage_attempts smallint not null default 0;
+alter table public.cf_emails add column if not exists triage_error text;
+
+-- Same rule as cf-gmail-sync: a sender belongs to a client when their address is the
+-- client's contact_email, or their domain is (or is a subdomain of) a whitelisted domain.
+create or replace function public.cf_sender_matches(p_sender text, p_contact text, p_domains text[])
+returns boolean
+language sql immutable set search_path = public
+as $$
+  select p_sender = p_contact
+      or exists (
+           select 1 from unnest(p_domains) d
+            where split_part(p_sender, '@', 2) = d
+               or right(split_part(p_sender, '@', 2), char_length(d) + 1) = '.' || d
+         );
+$$;
+
+-- When a client is added or edited, link that user's unassigned emails from them.
+-- Emails Gemini already triaged without this client's context go back to 'pending',
+-- so the next "Sync & triage" redrafts them in the client's tone. Emails you've
+-- reviewed or replied to are linked but left alone.
+create or replace function public.cf_link_client_emails()
+returns trigger
+language plpgsql security definer set search_path = public
+as $$
+begin
+  if new.is_active then
+    update cf_emails e set
+      client_id       = new.id,
+      triage_status   = case when e.triage_status = 'triaged' then 'pending' else e.triage_status end,
+      triage_attempts = case when e.triage_status = 'triaged' then 0 else e.triage_attempts end
+    where e.user_id = new.user_id
+      and e.client_id is null
+      and public.cf_sender_matches(e.sender_email, new.contact_email, new.domain_whitelist);
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists cf_clients_link_emails on public.cf_clients;
+create trigger cf_clients_link_emails after insert or update on public.cf_clients
+  for each row execute function public.cf_link_client_emails();
+
+revoke all on function public.cf_link_client_emails() from public, anon, authenticated;

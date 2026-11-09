@@ -83,9 +83,13 @@ export default function ClarkFlow360({ onBackToPortfolio }) {
         <div className={styles.topActions}>
           {signedIn && <span className={styles.who} title={email}>{email}</span>}
           {signedIn && (
-            <button className={styles.btnGhost} onClick={() => api.signOut()}><LogOut size={15} /> Sign out</button>
+            <button className={styles.btnGhost} onClick={() => api.signOut()} aria-label="Sign out">
+              <LogOut size={15} /> <span className={styles.btnLabel}>Sign out</span>
+            </button>
           )}
-          <button className={styles.btnGhost} onClick={onBackToPortfolio}><ArrowLeft size={15} /> Portfolio</button>
+          <button className={styles.btnGhost} onClick={onBackToPortfolio} aria-label="Back to portfolio">
+            <ArrowLeft size={15} /> <span className={styles.btnLabel}>Portfolio</span>
+          </button>
         </div>
       </header>
 
