@@ -19,6 +19,9 @@ verify_jwt = true
 [functions.cf-gmail-send]
 verify_jwt = true
 
+[functions.cf-gmail-disconnect]
+verify_jwt = true
+
 # Google redirects the browser here with no Supabase session. The one-time `state`
 # (cf_oauth_states) is what proves who started the flow.
 [functions.cf-google-callback]

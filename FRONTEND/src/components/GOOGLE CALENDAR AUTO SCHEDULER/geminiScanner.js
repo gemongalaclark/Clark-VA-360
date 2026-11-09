@@ -1,15 +1,10 @@
 import * as XLSX from 'xlsx';
+import { supabase } from '../../lib/supabase';
 
-const FALLBACK_GEMINI_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
+/* Schedules are read by the scheduler-scan Supabase Edge Function, which keeps the Gemini
+   key on the server (BACKEND/GOOGLE CALENDAR AUTO SCHEDULER/functions/scheduler-scan).
+   The local Express backend (server.js) is only a fallback for development. */
 const SCHEDULER_API_BASE = (import.meta.env.VITE_SCHEDULER_API_URL || '').replace(/\/$/, '');
-
-const GEMINI_MODELS = [
-  'gemini-2.5-flash',
-  'gemini-2.0-flash',
-  'gemini-2.0-flash-lite',
-  'gemini-flash-latest',
-  'gemini-1.5-flash'
-];
 
 export function fileToBase64(file) {
   return new Promise((resolve, reject) => {
@@ -32,37 +27,6 @@ export async function parseSpreadsheetToCsv(file) {
   }).join('\n\n');
 }
 
-function buildSchedulePrompt(referenceDate) {
-  return `
-You are the AI Schedule Extraction Intelligence Engine for "Clark VA 360's Google Auto Scheduler".
-Analyze the provided schedule (image timetable, PDF roster, or spreadsheet data) and extract every event/task/shift from Monday through Sunday.
-
-Anchor Date / Week start reference: ${referenceDate}
-(If days are relative like "Monday", "Tuesday", calculate the exact calendar date YYYY-MM-DD for this week starting around ${referenceDate}).
-
-EXTRACT ALL ITEMS WITH THIS EXACT JSON STRUCTURE:
-[
-  {
-    "id": "evt-1",
-    "title": "Clear event or shift name (e.g. Client Onboarding, Social Media Planning)",
-    "dayOfWeek": "Monday",
-    "date": "YYYY-MM-DD",
-    "startTime": "HH:MM",
-    "endTime": "HH:MM",
-    "description": "Short summary or notes from the schedule",
-    "location": "Zoom / Google Meet / Office / Room if mentioned",
-    "category": "Work | Meeting | Study | Personal | Shift"
-  }
-]
-
-RULES:
-- Use 24-hour format for startTime and endTime (e.g. 09:00, 14:30). If no end time is written, make it 1 hour after start.
-- If multiple events happen on the same day, output each as a separate item.
-- Ensure date is valid YYYY-MM-DD.
-- Output ONLY valid JSON array with NO markdown wrapping.
-`;
-}
-
 function normalizeEvents(parsedEvents, referenceDate) {
   return (parsedEvents || []).map((evt, idx) => ({
     id: evt.id || `evt-${Date.now()}-${idx}`,
@@ -77,9 +41,53 @@ function normalizeEvents(parsedEvents, referenceDate) {
   }));
 }
 
-function parseEventsFromText(text) {
-  const parsed = JSON.parse(text);
-  return Array.isArray(parsed) ? parsed : (parsed.events || []);
+const isSpreadsheetFile = (file) => {
+  const name = file.name.toLowerCase();
+  return name.endsWith('.xlsx') || name.endsWith('.xls') || name.endsWith('.csv')
+    || file.type.includes('spreadsheet') || file.type.includes('excel') || file.type === 'text/csv';
+};
+
+function fileMimeType(file) {
+  const name = file.name.toLowerCase();
+  if (name.endsWith('.pdf')) return 'application/pdf';
+  if (name.endsWith('.png')) return 'image/png';
+  if (name.endsWith('.jpg') || name.endsWith('.jpeg')) return 'image/jpeg';
+  if (name.endsWith('.webp')) return 'image/webp';
+  return file.type || 'image/png';
+}
+
+/* Throws with err.notDeployed when the Edge Function isn't there (e.g. local dev). */
+async function scanWithEdgeFunction({ file, textData, referenceDate, onStatusUpdate }) {
+  if (!supabase) throw Object.assign(new Error('Supabase is not configured.'), { notDeployed: true });
+
+  const body = { reference_date: referenceDate };
+  if (file && isSpreadsheetFile(file)) {
+    onStatusUpdate('Extracting spreadsheet rows & columns...');
+    body.text = `SPREADSHEET DATA (CSV):\n${await parseSpreadsheetToCsv(file)}`;
+  } else if (file) {
+    onStatusUpdate('Preparing your schedule file...');
+    body.file = { data: await fileToBase64(file), mime_type: fileMimeType(file) };
+  } else if (textData) {
+    body.text = textData;
+  } else {
+    throw new Error('Please provide a file or schedule text to scan.');
+  }
+
+  onStatusUpdate('Reading your schedule with Gemini AI...');
+  const { data, error } = await supabase.functions.invoke('scheduler-scan', { body });
+  if (error) {
+    const status = error.context?.status;
+    let msg = error.message;
+    try { msg = (await error.context.json()).error || msg; } catch { /* keep default */ }
+    throw Object.assign(new Error(msg), { notDeployed: status === 404 || /failed to send/i.test(error.message) });
+  }
+  if (!data?.success) throw new Error(data?.error || 'Could not read this schedule.');
+
+  return {
+    success: true,
+    modelUsed: data.modelUsed || 'Gemini AI',
+    events: normalizeEvents(data.events, referenceDate)
+  };
 }
 
 async function scanWithBackend({ file, textData, referenceDate, onStatusUpdate }) {
@@ -107,125 +115,18 @@ async function scanWithBackend({ file, textData, referenceDate, onStatusUpdate }
   };
 }
 
-async function scanWithGeminiDirect({ file, textData, referenceDate, apiKey, onStatusUpdate }) {
-  const activeKey = apiKey || import.meta.env.VITE_GEMINI_API_KEY || FALLBACK_GEMINI_KEY;
-  if (!activeKey) {
-    throw new Error('Gemini API key is missing. Add VITE_GEMINI_API_KEY or run the scheduler backend.');
-  }
-
-  onStatusUpdate('Preparing schedule file...');
-
-  const promptText = buildSchedulePrompt(referenceDate);
-  const parts = [];
-
-  if (file) {
-    const fileName = file.name.toLowerCase();
-    const isSpreadsheet =
-      fileName.endsWith('.xlsx') ||
-      fileName.endsWith('.xls') ||
-      fileName.endsWith('.csv') ||
-      file.type.includes('spreadsheet') ||
-      file.type.includes('excel') ||
-      file.type === 'text/csv';
-
-    if (isSpreadsheet) {
-      onStatusUpdate('Extracting spreadsheet rows & columns...');
-      const csvContent = await parseSpreadsheetToCsv(file);
-      parts.push({ text: promptText });
-      parts.push({ text: `\n\nSPREADSHEET DATA CONTENT (CSV FORMAT):\n${csvContent}` });
-    } else {
-      onStatusUpdate('Encoding visual document for Gemini multimodal OCR...');
-      const base64Data = await fileToBase64(file);
-      let mimeType = file.type || 'image/png';
-      if (fileName.endsWith('.pdf')) mimeType = 'application/pdf';
-      else if (fileName.endsWith('.png')) mimeType = 'image/png';
-      else if (fileName.endsWith('.jpg') || fileName.endsWith('.jpeg')) mimeType = 'image/jpeg';
-      else if (fileName.endsWith('.webp')) mimeType = 'image/webp';
-
-      parts.push({
-        inlineData: {
-          mimeType,
-          data: base64Data
-        }
-      });
-      parts.push({ text: promptText });
-    }
-  } else if (textData) {
-    parts.push({ text: promptText });
-    parts.push({ text: `\n\nSCHEDULE TEXT TO SCAN:\n${textData}` });
-  } else {
-    throw new Error('Please provide a file or schedule text to scan.');
-  }
-
-  let lastError = null;
-
-  for (const model of GEMINI_MODELS) {
-    try {
-      onStatusUpdate(`Analyzing schedule with ${model}...`);
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${activeKey}`;
-
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts }],
-          generationConfig: {
-            responseMimeType: 'application/json'
-          }
-        })
-      });
-
-      const data = await response.json();
-
-      if (data.error) {
-        lastError = new Error(`[${model}] ${data.error.message}`);
-        console.warn(`Gemini model ${model} skipped:`, data.error.message);
-        continue;
-      }
-
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!text) {
-        throw new Error('No text generated by Gemini.');
-      }
-
-      let parsedEvents = [];
-      try {
-        parsedEvents = parseEventsFromText(text);
-      } catch {
-        const match = text.match(/\[[\s\S]*\]/);
-        if (match) {
-          parsedEvents = JSON.parse(match[0]);
-        } else {
-          throw new Error('Could not parse JSON array from Gemini response.');
-        }
-      }
-
-      return {
-        success: true,
-        modelUsed: model,
-        events: normalizeEvents(parsedEvents, referenceDate)
-      };
-    } catch (err) {
-      lastError = err;
-      console.warn(`Error using model ${model}:`, err.message);
-    }
-  }
-
-  throw lastError || new Error('All Gemini AI models failed. Please verify your connection or try again.');
-}
-
 export async function scanScheduleWithGemini({
   file,
   textData,
   referenceDate = new Date().toISOString().split('T')[0],
-  apiKey = null,
   onStatusUpdate = () => {}
 }) {
   try {
-    return await scanWithBackend({ file, textData, referenceDate, onStatusUpdate });
-  } catch (backendError) {
-    console.warn('Scheduler backend unavailable, using client Gemini:', backendError.message);
-    return scanWithGeminiDirect({ file, textData, referenceDate, apiKey, onStatusUpdate });
+    return await scanWithEdgeFunction({ file, textData, referenceDate, onStatusUpdate });
+  } catch (err) {
+    if (!err.notDeployed) throw err;
+    console.warn('scheduler-scan function not deployed, trying the local scheduler backend:', err.message);
+    return scanWithBackend({ file, textData, referenceDate, onStatusUpdate });
   }
 }
 

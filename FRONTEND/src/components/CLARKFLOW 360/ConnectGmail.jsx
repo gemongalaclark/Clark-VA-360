@@ -61,7 +61,7 @@ export default function ConnectGmail({ onNotice }) {
       onNotice={onNotice}
       onReconnect={connect}
       reconnecting={busy}
-      onDisconnected={(message) => { setStatus(null); onNotice({ kind: 'error', text: message }); }}
+      onDisconnected={(message, kind = 'error') => { setStatus(null); onNotice({ kind, text: message }); }}
     />
   );
 }

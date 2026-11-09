@@ -28,8 +28,6 @@ export default function GoogleCalendarAutoScheduler({ onBackToPortfolio }) {
     }
   });
 
-  const geminiApiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
-
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
@@ -113,7 +111,6 @@ export default function GoogleCalendarAutoScheduler({ onBackToPortfolio }) {
       const result = await scanScheduleWithGemini({
         file,
         referenceDate,
-        apiKey: geminiApiKey,
         onStatusUpdate: (msg) => setScanStatus(msg)
       });
 
@@ -148,7 +145,6 @@ export default function GoogleCalendarAutoScheduler({ onBackToPortfolio }) {
       const result = await scanScheduleWithGemini({
         textData: sample.text,
         referenceDate,
-        apiKey: geminiApiKey,
         onStatusUpdate: (msg) => setScanStatus(msg)
       });
 

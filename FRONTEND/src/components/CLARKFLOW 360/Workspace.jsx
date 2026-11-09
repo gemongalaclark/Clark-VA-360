@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { CheckCircle2, Loader2, RefreshCw, Inbox as InboxIcon, Users } from 'lucide-react';
+import { CheckCircle2, Loader2, RefreshCw, Inbox as InboxIcon, Users, Unplug } from 'lucide-react';
 import styles from './ClarkFlow360.module.css';
 import { api } from './cfApi';
 import Inbox from './Inbox';
@@ -27,6 +27,22 @@ export default function Workspace({ status, onNotice, onReconnect, reconnecting,
   const [emails, setEmails] = useState(null);
   const [clients, setClients] = useState(null);
   const [progress, setProgress] = useState(null);   // text while a run is going
+  const [disconnecting, setDisconnecting] = useState(false);
+
+  const disconnect = async () => {
+    if (!window.confirm(`Disconnect ${status.google_email}?\n\nClarkFlow stops syncing and sending until you connect again. Emails already in ClarkFlow stay.`)) return;
+    setDisconnecting(true);
+    try {
+      const res = await api.disconnectGmail();
+      onDisconnected(res.revoked || !res.was_connected
+        ? 'Gmail disconnected. ClarkFlow no longer has access to your mailbox.'
+        : 'Gmail disconnected here, but Google couldn’t confirm. To be sure, remove ClarkFlow at myaccount.google.com/permissions.',
+      res.revoked || !res.was_connected ? 'ok' : 'error');
+    } catch (err) {
+      onNotice({ kind: 'error', text: err.message });
+      setDisconnecting(false);
+    }
+  };
 
   const load = useCallback(async () => {
     try {
@@ -89,8 +105,11 @@ export default function Workspace({ status, onNotice, onReconnect, reconnecting,
           <button className={styles.btnPrimary} onClick={() => syncNow()} disabled={!!progress}>
             <RefreshCw size={16} /> Sync &amp; triage
           </button>
-          <button className={styles.btnGhost} onClick={onReconnect} disabled={reconnecting || !!progress} title="Reconnect or switch Gmail account">
+          <button className={styles.btnGhost} onClick={onReconnect} disabled={reconnecting || disconnecting || !!progress} title="Reconnect or switch Gmail account">
             {reconnecting ? <Loader2 className={styles.spin} size={16} /> : null} Reconnect
+          </button>
+          <button className={styles.btnGhost} onClick={disconnect} disabled={reconnecting || disconnecting || !!progress} title="Remove ClarkFlow's access to this Gmail">
+            {disconnecting ? <Loader2 className={styles.spin} size={16} /> : <Unplug size={16} />} Disconnect
           </button>
         </div>
       </div>

@@ -74,6 +74,10 @@ export const api = {
     window.location.assign(url);
   },
 
+  /* Revokes ClarkFlow's Google access and deletes the stored tokens. Synced emails stay.
+     → { revoked }: false means Google couldn't confirm; remove access in the Google Account. */
+  disconnectGmail: () => invoke('cf-gmail-disconnect', {}),
+
   /* Newest 200 emails, without bodies (the queue doesn't need them). */
   listEmails: async () => must(await supabase.from('cf_emails').select(EMAIL_COLUMNS)
     .order('received_at', { ascending: false }).limit(200)),

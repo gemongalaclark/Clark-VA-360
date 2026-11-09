@@ -94,17 +94,21 @@ export const exchangeCode = (code: string, codeVerifier: string) =>
 export const refreshAccessToken = (refreshToken: string) =>
   tokenRequest({ grant_type: 'refresh_token', refresh_token: refreshToken });
 
-// Best effort: a failed revoke must never block the user-facing flow.
-export async function revokeToken(token: string): Promise<void> {
+// Best effort: a failed revoke must never block the user-facing flow. Returns whether
+// Google confirmed it. (Revoking ends this app's whole grant for that Google account.)
+export async function revokeToken(token: string): Promise<boolean> {
   try {
-    await fetch(REVOKE_URL, {
+    const res = await fetch(REVOKE_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({ token }),
       signal: AbortSignal.timeout(TIMEOUT),
     });
+    if (!res.ok) console.error('Google token revoke refused', res.status, await res.text());
+    return res.ok;
   } catch (err) {
     console.error('Google token revoke failed', err);
+    return false;
   }
 }
 
