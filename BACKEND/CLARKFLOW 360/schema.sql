@@ -326,3 +326,44 @@ create trigger cf_clients_link_emails after insert or update on public.cf_client
   for each row execute function public.cf_link_client_emails();
 
 revoke all on function public.cf_link_client_emails() from public, anon, authenticated;
+
+
+-- ── 9. Sign-in codes sent through Resend (cf-signin-code) ─────
+-- (Safe to re-run. ClarkFlow emails its own branded sign-in code instead of the
+-- project-wide Supabase email, which other apps share.)
+-- Codes are only ever sent to ClarkFlow members, at most once a minute per address.
+
+create table if not exists public.cf_signin_throttle (
+  email        text primary key,
+  last_sent_at timestamptz not null
+);
+alter table public.cf_signin_throttle enable row level security;
+revoke all on public.cf_signin_throttle from anon, authenticated;
+
+-- 'send' (member, not in cooldown: the send is recorded), 'cooldown', or 'unknown'
+-- (no member with that email: nothing is sent, and the caller isn't told).
+create or replace function public.cf_start_signin(p_email text)
+returns text
+language plpgsql security definer set search_path = public
+as $$
+declare
+  v_email text := lower(trim(coalesce(p_email, '')));
+begin
+  if not exists (
+    select 1 from auth.users u join public.cf_members m on m.user_id = u.id
+     where lower(u.email) = v_email
+  ) then
+    return 'unknown';
+  end if;
+
+  insert into cf_signin_throttle as t (email, last_sent_at) values (v_email, now())
+  on conflict (email) do update set last_sent_at = now()
+  where t.last_sent_at < now() - interval '60 seconds';
+  if not found then return 'cooldown'; end if;
+
+  return 'send';
+end;
+$$;
+
+revoke all on function public.cf_start_signin(text) from public, anon, authenticated;
+grant execute on function public.cf_start_signin(text) to service_role;

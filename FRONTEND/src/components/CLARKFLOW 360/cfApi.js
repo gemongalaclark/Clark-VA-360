@@ -48,17 +48,14 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 export const isConfigured = !!supabase;
 
 export const api = {
-  /* Email sign-in code. shouldCreateUser:false keeps strangers from creating accounts on this
-     shared Supabase project; ClarkFlow access is further gated by cf_members. */
-  async sendSignInCode(email) {
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { shouldCreateUser: false, emailRedirectTo: `${window.location.origin}${APP_PATH}` },
-    });
-    if (error && !/signups not allowed|user not found/i.test(error.message)) throw error;
-  },
+  /* Email sign-in code, sent as a ClarkFlow email through Resend (cf-signin-code). Only
+     ClarkFlow members get one; no account is ever created here. */
+  sendSignInCode: (email) => invoke('cf-signin-code', { email }),
+
+  /* The code is a normal Supabase sign-in code (made with generateLink), so Supabase checks it. */
   async verifySignInCode(email, token) {
-    const { error } = await supabase.auth.verifyOtp({ email, token, type: 'email' });
+    let { error } = await supabase.auth.verifyOtp({ email, token, type: 'email' });
+    if (error) ({ error } = await supabase.auth.verifyOtp({ email, token, type: 'magiclink' }));
     if (error) throw new Error('That code is invalid or has expired. Check it and try again.');
   },
   signOut: () => supabase.auth.signOut(),

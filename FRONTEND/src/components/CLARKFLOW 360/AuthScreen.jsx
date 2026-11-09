@@ -62,7 +62,7 @@ export default function AuthScreen() {
             <h2>Check your email</h2>
             <p className={styles.muted}>
               If <strong>{email}</strong> has an account, we’ve sent a sign-in link and a code.
-              Click the link, or type the code here. (The email may mention another Clark VA 360 app. It works the same.)
+              It comes from ClarkFlow 360. Click its sign-in button, or type the code here.
             </p>
             <label className={styles.label} htmlFor="cf-code">Sign-in code</label>
             <input

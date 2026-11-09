@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight, ExternalLink, Sparkles, Calendar, ArrowUpRight, ArrowRight, Zap, Rocket, ClipboardCheck, ShieldCheck, BookOpen, X, Briefcase, Wallet, Target, Gamepad2, Send, Bookmark } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ExternalLink, Sparkles, Calendar, ArrowUpRight, ArrowRight, Zap, Rocket, ClipboardCheck, ShieldCheck, BookOpen, X, Briefcase, Wallet, Target, Gamepad2, Send, Bookmark, MailCheck } from 'lucide-react';
 import styles from './Projects.module.css';
 
 /* Projects data */
@@ -92,6 +92,19 @@ const projects = [
   },
   {
     id: 8,
+    category: 'AI Email Triage',
+    title: 'ClarkFlow 360',
+    description: 'AI inbox assistant for VA work: pulls in unread Gmail, matches each email to a client, and has Gemini rank it high, medium or low, summarize it, and draft a reply in that client’s tone, ready to review and send in the same Gmail thread.',
+    tags: ['Gemini AI', 'Gmail API', 'Supabase', 'React'],
+    image: null,
+    liveUrl: '/clarkflow',
+    githubUrl: null,
+    placeholder: false,
+    featured: false,
+    badge: 'Private VA Tool',
+  },
+  {
+    id: 9,
     category: 'In the pipeline',
     title: 'Coming Soon',
     description: 'Building out my portfolio one project at a time.',
@@ -230,6 +243,24 @@ const docs = {
       'Know which job sites actually work for you.',
       'Prepare the right files before applying, because each bookmark lists its requirements.',
       'Private: each account only ever sees its own jobs.',
+    ],
+  },
+  8: {
+    what: 'ClarkFlow 360 is the email helper I built for my own virtual assistant work. It reads new emails from my clients, tells me which ones are urgent, sums each one up in a sentence, and writes a first draft of the reply in the way each client likes to be spoken to. It is a private tool, so only approved accounts can sign in.',
+    use: [
+      'Sign in with a code sent to your email. Only approved accounts get past this step.',
+      'Connect Gmail once. Google asks permission to read and send email, and the keys are locked (encrypted) on the server, never in the browser.',
+      'Add your clients: their email or company website, plus notes on how to talk to them, like “friendly, first names” or “never confirm prices”.',
+      'Press “Sync & triage”. New unread emails come in, and Google Gemini marks each one high, medium or low, writes a one-line summary, and drafts a reply.',
+      'Open an email, fix the draft (fill in anything in [square brackets]), and press “Send reply”. It goes out from Gmail, in the same conversation.',
+    ],
+    purpose: 'A virtual assistant can get dozens of emails a day from different clients. Working out which ones are urgent, and writing every reply in the right tone, takes hours. ClarkFlow does the sorting and the first draft, and a person still checks every reply before it is sent.',
+    help: [
+      'Urgent emails, like a deadline today or a payment problem, go straight to the top.',
+      'Every reply starts as a draft in that client’s own tone.',
+      'Nothing is sent until a person reads it and presses Send.',
+      'Replies stay in the same Gmail thread, so clients see a normal conversation.',
+      'Safe: Google access is encrypted, and Gmail can be disconnected at any time.',
     ],
   },
 };
@@ -430,6 +461,20 @@ function ProjectCard({ project, onDocs }) {
               <div className={styles.graphicBadgeRow}>
                 <span className={styles.graphicAiPill}><Bookmark size={11} /> Bookmarks</span>
                 <span className={styles.teamsyncRolePill}>Source insights</span>
+              </div>
+            </div>
+          </div>
+        ) : project.id === 8 ? (
+          <div className={styles.teamsyncGraphic}>
+            <div className={styles.teamsyncGlow} />
+            <div className={styles.teamsyncGraphicInner}>
+              <div className={styles.teamsyncIconWrap}>
+                <MailCheck size={30} className={styles.teamsyncIcon} />
+              </div>
+              <span className={styles.teamsyncTitle}>ClarkFlow 360</span>
+              <div className={styles.graphicBadgeRow}>
+                <span className={styles.graphicAiPill}><Sparkles size={11} /> Gemini AI</span>
+                <span className={styles.teamsyncRolePill}>Gmail triage</span>
               </div>
             </div>
           </div>
