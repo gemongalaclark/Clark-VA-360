@@ -20,6 +20,7 @@ const PROJECT_APPS = {
   copilot: lazy(() => import('./components/BUHAYVA COPILOT/BuhayvaCopilot')),
   balanse: lazy(() => import('./components/BALANSE/Balanse')),
   jobtracker: lazy(() => import('./components/Clark VA 360 Job Tracker/JobTracker')),
+  clarkflow: lazy(() => import('./components/CLARKFLOW 360/ClarkFlow360')),
   services: lazy(() => import('./components/ServicesPage')),
 };
 
@@ -33,6 +34,8 @@ function checkRoute() {
   const hash = window.location.hash.toLowerCase();
   /* Checked first: the copilot's #ingest= fragment carries job text that may contain other route words. */
   if (path.startsWith('/buhayva-copilot') || hash.startsWith('#buhayva-copilot')) return 'copilot';
+  /* Path only, checked before the hash rules: a sign-in link returns with a token in the hash. */
+  if (path.startsWith('/clarkflow')) return 'clarkflow';
   if (
     path.startsWith('/auto-scheduler') ||
     path.startsWith('/google-calendar-auto-scheduler') ||

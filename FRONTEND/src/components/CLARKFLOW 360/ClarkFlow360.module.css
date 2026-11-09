@@ -1,0 +1,200 @@
+/* ============================================================
+   ClarkFlow 360 — AI Email Triage Dashboard
+   Brand (Clark VA 360 brand board): #cb2525 Red · #ea4343 Light Red ·
+   #da7979 Much Lighter Red · Pastel Red · #ffffff White · Gray Orange.
+   Headings Poppins, body Inter (loaded by FRONTEND/index.html).
+
+   Phase 1: design tokens. Phase 2: shell, sign-in, Gmail connection.
+   The dual-panel workspace (queue + thread viewer + draft composer)
+   is built on these in Phase 4.
+   ============================================================ */
+
+.root {
+  /* Brand */
+  --red: #cb2525;
+  --red-deep: #a81c1c;      /* hover / pressed on red */
+  --red-2: #ea4343;
+  --red-3: #da7979;
+  --pastel: #f0a0a0;
+  --blush: #fdf0f0;         /* selected queue row, soft fills */
+  --white: #ffffff;
+  --orange: #e8833a;        /* Gray Orange accent */
+  --gray: #6b6b75;          /* Gray Orange base */
+
+  /* Ink & surfaces */
+  --ink: #1a1a2e;
+  --ink-2: #3a3a55;
+  --muted: #6b6b85;
+  --bg: #f7f6f8;
+  --surface: #ffffff;
+  --line: #ebe9ee;
+
+  /* Triage priority → brand colour */
+  --priority-high: var(--red);
+  --priority-high-bg: #fde8e8;
+  --priority-medium: var(--orange);
+  --priority-medium-bg: #fdf0e6;
+  --priority-low: var(--gray);
+  --priority-low-bg: #efeff2;
+
+  --gradient-red: linear-gradient(135deg, #cb2525 0%, #ea4343 50%, #da7979 100%);
+  --sans: var(--font-heading, 'Poppins', sans-serif);
+  --body: var(--font-body, 'Inter', system-ui, sans-serif);
+  --r: 14px;
+  --shadow: 0 1px 2px rgba(26, 26, 46, 0.04), 0 6px 20px rgba(26, 26, 46, 0.05);
+
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.root *, .root *::before, .root *::after { box-sizing: border-box; }
+.root :where(h1, h2, h3) { margin: 0; font-family: var(--sans); color: var(--ink); line-height: 1.2; }
+.root :focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+.root ::selection { background: var(--pastel); color: var(--ink); }
+
+/* Priority chips (queue rows, thread header) */
+.priority {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 2px 10px; border-radius: 999px;
+  font-size: 12px; font-weight: 600; text-transform: capitalize;
+}
+.priority::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.high   { color: var(--priority-high);   background: var(--priority-high-bg); }
+.medium { color: var(--priority-medium); background: var(--priority-medium-bg); }
+.low    { color: var(--priority-low);    background: var(--priority-low-bg); }
+
+/* ── Shell ───────────────────────────────────────────────── */
+.topbar {
+  position: sticky; top: 0; z-index: 10;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 14px clamp(16px, 4vw, 32px);
+  background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--line);
+}
+.brand { display: flex; align-items: center; gap: 11px; min-width: 0; }
+.brand > span:last-child { display: flex; flex-direction: column; line-height: 1.15; }
+.brand strong { font-family: var(--sans); font-size: 15px; font-weight: 700; }
+.brand small { color: var(--muted); font-size: 12px; }
+.logoTile {
+  display: inline-grid; place-items: center; flex: none; overflow: hidden;
+  width: 38px; height: 38px; border-radius: 28%; background: var(--white);
+  box-shadow: 0 0 0 1px var(--line), 0 4px 12px rgba(203, 37, 37, 0.12);
+}
+.logoTile img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.55) translate(-1%, 0); }
+.topActions { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.who { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: 13px; }
+
+.main {
+  display: grid; justify-items: center; align-content: start;
+  padding: clamp(24px, 6vh, 64px) 16px 64px;
+}
+
+/* ── Buttons ─────────────────────────────────────────────── */
+.btnPrimary, .btnGhost {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  height: 40px; padding: 0 16px; border-radius: 11px;
+  font: inherit; font-size: 14px; font-weight: 600; white-space: nowrap; cursor: pointer;
+  transition: background 0.18s, border-color 0.18s, transform 0.18s;
+}
+.btnPrimary {
+  border: 0; background: var(--red); color: var(--white);
+  box-shadow: 0 6px 16px rgba(203, 37, 37, 0.22);
+}
+.btnPrimary:hover:not(:disabled) { background: var(--red-deep); transform: translateY(-1px); }
+.btnPrimary:disabled, .btnGhost:disabled { opacity: 0.65; cursor: progress; }
+.btnGhost { border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.btnGhost:hover:not(:disabled) { border-color: var(--red); color: var(--red); }
+.btnBlock { width: 100%; height: 46px; }
+.btnText {
+  border: 0; background: none; padding: 6px 0; font: inherit; font-size: 13.5px;
+  color: var(--red); cursor: pointer;
+}
+.btnText:hover { text-decoration: underline; }
+.iconBtn {
+  display: inline-grid; place-items: center; flex: none; width: 30px; height: 30px;
+  border: 0; border-radius: 8px; background: transparent; color: inherit; cursor: pointer; opacity: 0.7;
+}
+.iconBtn:hover { opacity: 1; background: rgba(0, 0, 0, 0.05); }
+
+/* ── Notices ─────────────────────────────────────────────── */
+.notice {
+  display: flex; align-items: center; gap: 10px;
+  max-width: 640px; margin: 16px auto 0; padding: 10px 10px 10px 14px;
+  border-radius: 12px; font-size: 14px;
+}
+.notice > span { flex: 1; }
+.noticeOk { background: #e9f6ee; color: #1d6b3a; }
+.noticeError { background: var(--priority-high-bg); color: var(--red-deep); }
+
+/* ── Cards ───────────────────────────────────────────────── */
+.card {
+  display: grid; gap: 12px; justify-items: start;
+  width: min(560px, 100%); padding: 28px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r);
+  box-shadow: var(--shadow);
+}
+.card h2 { font-size: 20px; }
+.card p { margin: 0; }
+.cardIcon {
+  display: grid; place-items: center; width: 44px; height: 44px; border-radius: 12px;
+  background: var(--blush); color: var(--red);
+}
+.cardIconOk { background: #e9f6ee; color: #1d6b3a; }
+.muted { color: var(--muted); }
+.mailbox { font-family: var(--sans); font-size: 17px; font-weight: 600; color: var(--ink); word-break: break-all; }
+.callout {
+  display: flex; gap: 10px; padding: 12px 14px; border-radius: 12px;
+  background: var(--priority-medium-bg); color: #8a4a17; font-size: 13.5px;
+}
+.callout svg { flex: none; margin-top: 1px; color: var(--orange); }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.chips li {
+  display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px;
+  background: var(--blush); color: var(--red-deep); font-size: 12.5px; font-weight: 600;
+}
+
+/* ── Sign in ─────────────────────────────────────────────── */
+.authCard {
+  display: grid; grid-template-columns: 1.1fr 1fr; overflow: hidden;
+  width: min(900px, 100%);
+  background: var(--surface); border: 1px solid var(--line); border-radius: 20px; box-shadow: var(--shadow);
+}
+.authPitch {
+  display: grid; align-content: center; gap: 18px; padding: clamp(28px, 5vw, 48px);
+  background: var(--gradient-red); color: var(--white);
+}
+.authPitch h1 { color: var(--white); font-size: clamp(28px, 4vw, 38px); letter-spacing: -0.02em; }
+.authPitch h1 em { font-family: 'Playfair Display', Georgia, serif; font-style: italic; }
+.authPitch ul { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+.authPitch li { display: flex; gap: 10px; font-size: 14.5px; line-height: 1.45; color: rgba(255, 255, 255, 0.92); }
+.authPitch li svg { flex: none; margin-top: 2px; }
+.eyebrow {
+  justify-self: start; padding: 4px 10px; border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18); font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+}
+.authForm { display: grid; align-content: center; padding: clamp(24px, 4vw, 40px); }
+.authForm form { display: grid; gap: 12px; }
+.authForm h2 { font-size: 22px; }
+.authForm p { margin: 0; font-size: 14px; }
+.label { font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.input {
+  height: 44px; padding: 0 14px; border: 1px solid var(--line); border-radius: 11px;
+  font: inherit; color: var(--ink); background: var(--surface);
+}
+.input:focus { outline: none; border-color: var(--red); box-shadow: 0 0 0 3px rgba(203, 37, 37, 0.12); }
+.errorText { color: var(--red-deep); font-size: 13.5px; }
+
+.spin { animation: cf-spin 0.9s linear infinite; color: var(--red); }
+.btnPrimary .spin, .btnGhost .spin { color: inherit; }
+@keyframes cf-spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 720px) {
+  .authCard { grid-template-columns: 1fr; }
+  .who { display: none; }
+  .topActions .btnGhost { padding: 0 10px; }
+}

@@ -1,0 +1,16 @@
+# ClarkFlow 360 — Supabase CLI config, used only to deploy this app's Edge Functions.
+# From the repo root (no Docker needed):
+#   npx supabase login
+#   npx supabase functions deploy --workdir "BACKEND/CLARKFLOW 360" --project-ref <your-project-ref> --use-api
+# Shared code in functions/_shared/ is bundled into each function on deploy.
+
+project_id = "clarkflow-360"
+
+# Called by the signed-in browser: the Supabase gateway checks the user's JWT first.
+[functions.cf-google-auth]
+verify_jwt = true
+
+# Google redirects the browser here with no Supabase session. The one-time `state`
+# (cf_oauth_states) is what proves who started the flow.
+[functions.cf-google-callback]
+verify_jwt = false
