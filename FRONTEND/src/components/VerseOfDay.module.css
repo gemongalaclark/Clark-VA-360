@@ -1,0 +1,91 @@
+/* Slim editorial band between the hero and About.
+   Picks up the hero's paper tone and fades into About's white. */
+.band {
+  background: linear-gradient(180deg, #fbf6f3 0%, var(--white) 100%);
+  padding: 56px 24px 48px;
+}
+
+.inner {
+  max-width: 760px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+/* small caps label flanked by hairlines with red accents (hero's .open rule) */
+.label {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  font-family: var(--font-heading);
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--text-dark);
+}
+.label::before,
+.label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+}
+.label::before { background: linear-gradient(90deg, rgba(26, 26, 46, 0.16), var(--red-primary)); }
+.label::after  { background: linear-gradient(90deg, var(--red-primary), rgba(26, 26, 46, 0.16)); }
+
+/* reserves room while loading so About doesn't jump */
+.body {
+  min-height: 7.5rem;
+  margin: 22px 0 0;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.ready { opacity: 1; transform: none; }
+
+.text {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-style: italic;
+  font-weight: 500;
+  font-size: clamp(1.05rem, 1.9vw, 1.35rem);
+  line-height: 1.6;
+  color: var(--text-dark);
+  text-wrap: balance;
+}
+
+.cite {
+  margin-top: 14px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--red-primary);
+}
+.dot { margin: 0 8px; color: var(--text-muted); }
+
+.credit {
+  display: inline-block;
+  margin-top: 14px;
+  font-size: 0.66rem;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+  transition: color 0.2s ease;
+}
+.credit:hover { color: var(--red-primary); }
+.credit:focus-visible {
+  outline: 2px solid var(--red-primary);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+@media (max-width: 600px) {
+  .band { padding: 40px 16px 36px; }
+  .label { gap: 12px; letter-spacing: 0.24em; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .body { transition: none; transform: none; }
+}
+
+/* ── Dark theme ── */
+:global(html[data-theme='dark']) .band { background: var(--dk-page); }
+:global(html[data-theme='dark']) .label::before { background: linear-gradient(90deg, rgba(255, 255, 255, 0.14), var(--red-primary)); }
+:global(html[data-theme='dark']) .label::after  { background: linear-gradient(90deg, var(--red-primary), rgba(255, 255, 255, 0.14)); }

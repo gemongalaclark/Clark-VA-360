@@ -1,6 +1,7 @@
 import { lazy, Suspense, useState, useEffect, useLayoutEffect, useRef } from 'react';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
+import VerseOfDay from './components/VerseOfDay';
 import Preloader from './components/Preloader';
 import Cursor from './components/Cursor';
 import About from './components/About';
@@ -104,6 +105,7 @@ export default function App() {
           <Navbar />
           <main>
             <Hero />
+            <VerseOfDay />
             <About />
             <Skills />
             <Projects />
