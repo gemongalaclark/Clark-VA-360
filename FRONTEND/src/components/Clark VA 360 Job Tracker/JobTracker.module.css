@@ -580,6 +580,8 @@
 .status_in_process:hover { border-color: var(--red-3); }
 .status_hired { border-color: var(--red); background: var(--red); color: #fff; }
 .status_hired:hover { background: var(--red-deep); border-color: var(--red-deep); }
+.status_rejected { border-color: var(--ink); background: var(--ink); color: #fff; }
+.status_rejected:hover { background: var(--ink-2); border-color: var(--ink-2); }
 
 /* ── Bookmarks ───────────────────────────────────────────── */
 .bookGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }

@@ -40,7 +40,7 @@ export default function ShareModal({ slug, onSetShare, onClose }) {
           <div>
             <span className={styles.shareHead}><EyeOff size={14} /> Hidden</span>
             <ul>
-              <li>Status (no reply, in process, hired)</li>
+              <li>Status (no reply, in process, hired, rejected)</li>
               <li>Where you found each job</li>
               <li>Your daily goal and streak</li>
               <li>Bookmarks</li>

@@ -60,7 +60,11 @@ create table if not exists public.jt_applications (
 );
 -- Where the application stands. Added after launch, so it's an ALTER (safe on existing databases).
 alter table public.jt_applications add column if not exists status text not null default 'no_reply'
-  check (status in ('no_reply', 'in_process', 'hired'));
+  check (status in ('no_reply', 'in_process', 'hired', 'rejected'));
+-- 'rejected' added later: swap the old check (Postgres' default name for it) for one that allows it.
+alter table public.jt_applications drop constraint if exists jt_applications_status_check;
+alter table public.jt_applications add constraint jt_applications_status_check
+  check (status in ('no_reply', 'in_process', 'hired', 'rejected'));
 create index if not exists jt_applications_user_idx on public.jt_applications (user_id, applied_on desc);
 
 create table if not exists public.jt_bookmarks (
@@ -228,7 +232,7 @@ begin
   if v_date is null then
     raise exception 'Add the date you applied.' using errcode = '22023';
   end if;
-  if v_status is not null and v_status not in ('no_reply', 'in_process', 'hired') then
+  if v_status is not null and v_status not in ('no_reply', 'in_process', 'hired', 'rejected') then
     raise exception 'Pick a valid status.' using errcode = '22023';
   end if;
   if p_job ? 'id' and p_job->>'id' is not null then
