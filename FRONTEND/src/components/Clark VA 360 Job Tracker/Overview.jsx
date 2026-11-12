@@ -1,10 +1,11 @@
 import { useMemo } from 'react';
-import { ArrowUpRight, ArrowRight, Send, Bookmark } from 'lucide-react';
+import { ArrowUpRight, ArrowRight, Send, Bookmark, Check, X } from 'lucide-react';
 import styles from './JobTracker.module.css';
 import { GoalCard } from './Goal';
-import { SOURCES, SourceBadge, domainOf, fmtDate, isoDay, parseDay, relDay, reqList, sourceName } from './ui';
+import { SOURCES, STATUSES, SourceBadge, domainOf, fmtDate, isoDay, parseDay, relDay, reqList, sourceName } from './ui';
 
 const WEEKS = 12;
+const TRACKED = STATUSES.filter(s => s.id !== 'no_reply');
 
 /* Monday of the week containing d. */
 function weekStart(d) {
@@ -104,6 +105,53 @@ export default function Overview({ username, memberSince, applications, bookmark
           <span className={styles.statLabel}>Bookmarked</span>
           <strong className={styles.statValue}>{bookmarks.length}</strong>
           <span className={styles.statFoot}>Saved to apply later</span>
+        </div>
+      </section>
+
+      {/* Jobs that have moved past "No reply" */}
+      <section className={styles.card} aria-label="Application status">
+        <div className={styles.cardHead}>
+          <div>
+            <h2>Application status</h2>
+            <p className={styles.muted}>Jobs that replied: in process, hired or rejected</p>
+          </div>
+          <button className={styles.linkBtn} onClick={() => onNavigate('tracker')}>View all <ArrowRight size={14} /></button>
+        </div>
+        <div className={styles.statusCols}>
+          {TRACKED.map(s => {
+            const jobs = applications.filter(a => a.status === s.id);
+            return (
+              <div key={s.id} className={styles.statusCol}>
+                <div className={styles.statusColHead}>
+                  <span className={`${styles.status} ${styles.statusStatic} ${styles[`status_${s.id}`]}`}>
+                    {s.id === 'hired' ? <Check size={13} strokeWidth={3} aria-hidden="true" />
+                      : s.id === 'rejected' ? <X size={13} strokeWidth={3} aria-hidden="true" />
+                      : <i aria-hidden="true" />}
+                    {s.label}
+                  </span>
+                  <b>{jobs.length}</b>
+                </div>
+                {jobs.length === 0 ? (
+                  <p className={styles.cardEmpty}>None yet.</p>
+                ) : (
+                  <ul className={styles.miniList}>
+                    {jobs.slice(0, 5).map(a => (
+                      <li key={a.id}>
+                        <span className={styles.miniMain}>
+                          <strong>{a.title}</strong>
+                          <small><SourceBadge job={a} /> · {relDay(a.applied_on)}</small>
+                        </span>
+                        <a className={styles.iconBtn} href={a.url} target="_blank" rel="noopener noreferrer" aria-label={`Open ${a.title} on ${domainOf(a.url)}`} title="Open job post"><ArrowUpRight size={16} /></a>
+                      </li>
+                    ))}
+                    {jobs.length > 5 && (
+                      <li><button className={styles.linkBtn} onClick={() => onNavigate('tracker')}>+{jobs.length - 5} more <ArrowRight size={14} /></button></li>
+                    )}
+                  </ul>
+                )}
+              </div>
+            );
+          })}
         </div>
       </section>
 

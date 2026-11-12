@@ -442,6 +442,14 @@
 /* ── Overview: layout & charts ───────────────────────────── */
 .overGrid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 14px; }
 
+/* Overview: in process / hired / rejected columns */
+.statusCols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; }
+.statusCol { min-width: 0; }
+.statusColHead { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-bottom: 10px; margin-bottom: 4px; border-bottom: 1px solid var(--line); }
+.statusColHead b { font-family: var(--mono); font-size: 15px; color: var(--ink); }
+.statusCol .cardEmpty { padding-top: 10px; }
+.statusStatic { cursor: default; }
+
 .bars {
   display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 8px; align-items: end;
   height: 170px; padding-top: 8px;
@@ -525,6 +533,11 @@
 }
 .groupHead::after { content: ''; flex: 1; height: 1px; background: var(--line-2); }
 .groupHead span { color: var(--red); }
+
+.pager { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.pager .btnGhost:disabled { opacity: 0.45; cursor: not-allowed; border-color: var(--line-2); }
+.pagerInfo { font-family: var(--mono); font-size: 12px; color: var(--muted); text-align: center; }
+.pagerInfo b { color: var(--ink); }
 
 .rows { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--shadow); overflow: hidden; }
 .row {
@@ -704,6 +717,7 @@
   .goalCard { grid-template-columns: minmax(0, 1fr) auto; }
   .goalWeek { grid-column: 1 / -1; grid-row: 2; }
   .overGrid { grid-template-columns: minmax(0, 1fr); }
+  .statusCols { grid-template-columns: minmax(0, 1fr); }
 }
 
 @media (max-width: 860px) {

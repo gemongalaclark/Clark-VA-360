@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Share2, Plus, Send, ArrowUpRight, Pencil, Trash2, SearchX } from 'lucide-react';
+import { Share2, Plus, Send, ArrowUpRight, Pencil, Trash2, SearchX, ChevronLeft, ChevronRight } from 'lucide-react';
 import styles from './JobTracker.module.css';
 import { ConfirmModal, EmptyState, SourceBadge, StatusPicker, STATUSES, Toolbar, domainOf, matches, parseDay } from './ui';
 import JobModal from './JobModal';
 import { GoalBar } from './Goal';
 import ShareModal from './Share';
+
+const PAGE_SIZE = 10;
 
 /* Job Tracker page: every job applied to, grouped by month, newest first. */
 export default function Applications({ applications, memberSince, openNewAt, onOpenedNew, shareSlug, onSetShare, onSave, onDelete }) {
@@ -14,6 +16,7 @@ export default function Applications({ applications, memberSince, openNewAt, onO
   const [source, setSource] = useState('all');
   const [updating, setUpdating] = useState(null);   // id whose status is being saved
   const [sharing, setSharing] = useState(false);
+  const [page, setPage] = useState(1);
 
   /* The reminder's "Log application" button opens the form straight away. */
   useEffect(() => { if (openNewAt) { setEditing('new'); onOpenedNew(); } }, [openNewAt, onOpenedNew]);
@@ -25,19 +28,33 @@ export default function Applications({ applications, memberSince, openNewAt, onO
     setUpdating(null);
   };
 
+  const filtered = useMemo(
+    () => applications.filter(a => (source === 'all' || a.source === source) && matches(a, query.trim())),
+    [applications, query, source]
+  );
+
+  /* New search or filter starts back on page 1. */
+  useEffect(() => { setPage(1); }, [query, source]);
+
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const current = Math.min(page, pageCount);   // stays valid after deletes
+
+  /* Month groups for the current page; the count shows the month's full total. */
   const groups = useMemo(() => {
+    const totals = {};
+    for (const a of filtered) { const k = a.applied_on.slice(0, 7); totals[k] = (totals[k] || 0) + 1; }
     const out = [];
-    for (const a of applications) {
-      if (source !== 'all' && a.source !== source) continue;
-      if (!matches(a, query.trim())) continue;
+    for (const a of filtered.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE)) {
       const key = a.applied_on.slice(0, 7);
       if (out.at(-1)?.key !== key) {
-        out.push({ key, label: parseDay(a.applied_on).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }), items: [] });
+        out.push({ key, label: parseDay(a.applied_on).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }), total: totals[key], items: [] });
       }
       out.at(-1).items.push(a);
     }
     return out;
-  }, [applications, query, source]);
+  }, [filtered, current]);
+
+  const goTo = (p) => { setPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }); };
 
   return (
     <div className={styles.page}>
@@ -72,7 +89,7 @@ export default function Applications({ applications, memberSince, openNewAt, onO
             <EmptyState icon={SearchX} title="No matches" text="Try another search or source filter." />
           ) : groups.map(g => (
             <section key={g.key} className={styles.group}>
-              <h2 className={styles.groupHead}>{g.label} <span>{g.items.length}</span></h2>
+              <h2 className={styles.groupHead}>{g.label} <span>{g.total}</span></h2>
               <ul className={styles.rows}>
                 {g.items.map(a => {
                   const d = parseDay(a.applied_on);
@@ -101,6 +118,16 @@ export default function Applications({ applications, memberSince, openNewAt, onO
               </ul>
             </section>
           ))}
+
+          {pageCount > 1 && (
+            <nav className={styles.pager} aria-label="Applications pages">
+              <button className={styles.btnGhost} disabled={current === 1} onClick={() => goTo(current - 1)}><ChevronLeft size={16} /> Prev</button>
+              <span className={styles.pagerInfo}>
+                Page <b>{current}</b> of {pageCount} · {(current - 1) * PAGE_SIZE + 1}–{Math.min(current * PAGE_SIZE, filtered.length)} of {filtered.length}
+              </span>
+              <button className={styles.btnGhost} disabled={current === pageCount} onClick={() => goTo(current + 1)}>Next <ChevronRight size={16} /></button>
+            </nav>
+          )}
         </>
       )}
 
