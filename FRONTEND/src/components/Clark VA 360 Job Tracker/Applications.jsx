@@ -132,7 +132,7 @@ export default function Applications({ applications, memberSince, openNewAt, onO
       )}
 
       {editing && (
-        <JobModal kind="application" job={editing === 'new' ? null : editing} onSave={onSave} onClose={() => setEditing(null)} />
+        <JobModal kind="application" job={editing === 'new' ? null : editing} existing={applications} onSave={onSave} onClose={() => setEditing(null)} />
       )}
       {sharing && <ShareModal slug={shareSlug} onSetShare={onSetShare} onClose={() => setSharing(false)} />}
       {deleting && (
