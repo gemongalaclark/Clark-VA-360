@@ -21,7 +21,7 @@ function useGoal(applications, memberSince) {
 }
 
 function todayText({ today, rest }) {
-  if (rest) return 'Sunday is your rest day. The goal starts again on Monday.';
+  if (rest) return 'It’s the weekend, your rest days. The goal starts again on Monday.';
   if (today >= DAILY_GOAL) return today > DAILY_GOAL ? `Goal reached, plus ${today - DAILY_GOAL} extra. Great work today.` : 'Goal reached for today. Great work.';
   if (today === 0) return `Send ${DAILY_GOAL} applications today to hit your goal.`;
   const left = DAILY_GOAL - today;
@@ -47,7 +47,7 @@ function Ring({ value, rest }) {
   );
 }
 
-/* Overview: today's ring, the Monday–Saturday strip and the streak. */
+/* Overview: today's ring, the Monday–Friday strip and the streak. */
 export function GoalCard({ applications, memberSince }) {
   const g = useGoal(applications, memberSince);
   return (
@@ -55,7 +55,7 @@ export function GoalCard({ applications, memberSince }) {
       <div className={styles.goalToday}>
         <Ring value={g.today} rest={g.rest} />
         <div>
-          <span className={styles.eyebrow}>Daily goal · {DAILY_GOAL} a day, Mon–Sat</span>
+          <span className={styles.eyebrow}>Daily goal · {DAILY_GOAL} a day, Mon–Fri</span>
           <h2>{g.rest ? 'Rest day' : g.today >= DAILY_GOAL ? <>Goal <em>reached!</em></> : <>Today: <em>{g.today} of {DAILY_GOAL}</em></>}</h2>
           <p className={styles.muted}>{todayText(g)}</p>
           <NotifyButton />

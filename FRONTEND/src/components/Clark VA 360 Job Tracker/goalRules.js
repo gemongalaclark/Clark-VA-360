@@ -1,12 +1,12 @@
 import { isoDay } from './ui';
 
-/* Daily application goal: DAILY_GOAL applications every Monday–Saturday. Sunday is a rest day.
+/* Daily application goal: DAILY_GOAL applications every Monday–Friday. Saturday and Sunday are rest days.
    A day counts by each application's applied_on date. Everything is derived from the
    applications list, so there is nothing extra to store. */
 export const DAILY_GOAL = 5;
-export const WORKDAYS = 6;
+export const WORKDAYS = 5;
 
-export const isRestDay = (d) => d.getDay() === 0;
+export const isRestDay = (d) => d.getDay() === 0 || d.getDay() === 6;
 
 const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
 const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -18,7 +18,7 @@ export function countByDay(applications) {
   return m;
 }
 
-/* Monday–Saturday of the current week (on Sunday: the week that just ended).
+/* Monday–Friday of the current week (on the weekend: the week that just ended).
    state: done | missed | today | upcoming | before (before the account existed). */
 export function goalWeek(counts, memberSince, now = new Date()) {
   const today = startOfDay(now);
@@ -40,7 +40,7 @@ export function goalWeek(counts, memberSince, now = new Date()) {
   });
 }
 
-/* Consecutive workdays (Sundays skipped) that hit the goal, ending today.
+/* Consecutive workdays (weekends skipped) that hit the goal, ending today.
    Today only adds to the streak once it's hit; until then it doesn't break it. */
 export function goalStreak(counts, now = new Date()) {
   let d = startOfDay(now);
