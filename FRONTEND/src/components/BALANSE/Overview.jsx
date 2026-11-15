@@ -4,15 +4,24 @@ import { Meter, Money, peso, pct, num } from './ui';
 import { debtRemaining } from './Debts';
 import { goalRemaining, monthlyNeeded } from './Goals';
 import { renewText } from './Subscriptions';
-import { billingCycle, subscriptionTotals } from './blCycle';
+import { billingCycle, subscriptionTotals, installmentPaid } from './blCycle';
 
-/* Next occurrence of a monthly due day (a 31st in a short month falls on its last day). */
-function nextDue(day) {
+const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+/* Next unpaid occurrence of a debt's monthly due day (a 31st in a short month falls on its last
+   day). Installments already covered by early payments are skipped; null if none are left. */
+function nextDue(debt) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+  const day = debt.due_day;
   const onDay = (y, m) => new Date(y, m, Math.min(day, new Date(y, m + 1, 0).getDate()));
-  let next = onDay(today.getFullYear(), today.getMonth());
-  if (next < today) next = onDay(today.getFullYear(), today.getMonth() + 1);
+  let m = today.getMonth();
+  let next = onDay(today.getFullYear(), m);
+  if (next < today) next = onDay(today.getFullYear(), ++m);
+  while (installmentPaid(debt, ymd(next))) {
+    next = onDay(today.getFullYear(), ++m);
+    if (debt.end_date && ymd(next) > debt.end_date) return null;
+  }
   return { date: next, inDays: Math.round((next - today) / 86_400_000) };
 }
 
@@ -76,9 +85,9 @@ export default function Overview({ username, debts, goals, subscriptions, onNavi
     .sort((a, b) => a.cycle.daysLeft - b.cycle.daysLeft);
   /* Debts and subscriptions share one calendar, soonest first. */
   const upcoming = [
-    ...activeDebts.filter(d => d.due_day).map(d => {
-      const { date, inDays } = nextDue(d.due_day);
-      return { key: `debt-${d.id}`, kind: 'Debt', name: d.name, amount: num(d.monthly_payment), date, inDays };
+    ...activeDebts.filter(d => d.due_day).flatMap(d => {
+      const due = nextDue(d);
+      return due ? [{ key: `debt-${d.id}`, kind: 'Debt', name: d.name, amount: num(d.monthly_payment), ...due }] : [];
     }),
     ...renewals.map(s => ({
       key: `sub-${s.id}`, kind: 'Subscription', name: s.title, amount: num(s.amount), date: s.cycle.next, inDays: s.cycle.daysLeft,

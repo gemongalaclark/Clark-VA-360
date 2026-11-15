@@ -4,7 +4,7 @@ import styles from './Balanse.module.css';
 import { Money, peso, num } from './ui';
 import { debtRemaining } from './Debts';
 import { goalRemaining } from './Goals';
-import { onDay } from './blCycle';
+import { onDay, installmentPaid } from './blCycle';
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const KINDS = [
@@ -23,20 +23,6 @@ const inMonth = (dateStr, year, month) => {
   const [y, m] = dateStr.split('-').map(Number);
   return y === year && m - 1 === month;
 };
-
-/* There's no payment history, only a running paid_amount, so an installment counts as paid
-   once paid_amount covers every installment from start_date up to and including `due`.
-   Paying early (or ahead) therefore marks the coming due date(s) as paid. */
-const cents = (v) => Math.round(v * 100);
-function installmentPaid(d, due) {
-  const monthly = num(d.monthly_payment);
-  if (!d.start_date || monthly <= 0) return false;
-  const [sy, sm] = d.start_date.split('-').map(Number);
-  const [y, m] = due.split('-').map(Number);
-  const firstDue = ymd(onDay(sy, sm - 1, Number(d.due_day)));
-  const count = (y - sy) * 12 + (m - sm) + (firstDue >= d.start_date ? 1 : 0);
-  return cents(num(d.paid_amount)) >= cents(Math.min(count * monthly, num(d.total_amount)));
-}
 
 /* Everything that lands in one month. `amount` is money actually paid that day (debt dues,
    renewals); milestones (debt end dates, goal deadlines) carry a detail line instead. */

@@ -12,6 +12,20 @@ export const onDay = (year, month, day) =>
 
 const daysBetween = (from, to) => Math.round((to - from) / DAY_MS);
 
+/* There's no payment history, only a running paid_amount, so a debt installment counts as paid
+   once paid_amount covers every installment from start_date up to and including the one due
+   on `due` (YYYY-MM-DD). Paying early (or ahead) therefore marks the coming due date(s) as paid. */
+const cents = (v) => Math.round(Number(v || 0) * 100);
+export function installmentPaid(debt, due) {
+  const monthly = Number(debt.monthly_payment || 0);
+  if (!debt.start_date || !debt.due_day || monthly <= 0) return false;
+  const [sy, sm] = debt.start_date.split('-').map(Number);
+  const [y, m] = due.split('-').map(Number);
+  const firstDue = onDay(sy, sm - 1, Number(debt.due_day));
+  const count = (y - sy) * 12 + (m - sm) + (firstDue >= new Date(`${debt.start_date}T00:00:00`) ? 1 : 0);
+  return cents(debt.paid_amount) >= Math.min(count * cents(monthly), cents(debt.total_amount));
+}
+
 export function billingCycle(sub, now = new Date()) {
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const year = today.getFullYear();
