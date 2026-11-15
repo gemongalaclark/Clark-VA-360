@@ -556,6 +556,8 @@
 .chipDebtEnd { background: var(--surface); color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--ink); }
 .chipGoal { background: var(--red); color: #fff; }
 .chipSub { background: #ecebf4; color: var(--ink-2); }
+.chipPaid { background: var(--surface); color: var(--muted); box-shadow: inset 0 0 0 1px var(--line-2); }
+.chipPaid > span { text-decoration: line-through; }
 .calMore { font-size: 10.5px; font-weight: 600; color: var(--muted); padding-left: 2px; }
 .calDayTotal { margin-top: auto; align-self: flex-end; font-size: 11px; font-weight: 700; color: var(--ink-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
 
@@ -590,6 +592,10 @@
 .calList .calItem_debt { border-left-color: var(--ink); }
 .calList .calItem_goal { border-left-color: var(--red); }
 .calList .calItem_sub { border-left-color: #9a9ab8; }
+.calList .calItemPaid { border-left-color: var(--line-2); background: var(--surface); }
+.calItemPaid .calListText strong { color: var(--muted); }
+.calItemPaid .calListText small { display: flex; align-items: center; gap: 4px; }
+.calItemPaid .calListAmt { color: var(--muted); font-weight: 600; }
 .calListText { display: grid; flex: 1; min-width: 0; }
 .calListText strong { font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .calListText small { font-size: 11.5px; color: var(--muted); }
@@ -907,6 +913,7 @@
   .calChip { width: 7px; height: 7px; padding: 0; border-radius: 50%; }
   .calChip > span, .calChip svg { display: none; }
   .chipSub.calChip { background: #9a9ab8; }
+  .chipPaid.calChip { background: var(--line-2); box-shadow: none; }
   .formRow { grid-template-columns: minmax(0, 1fr); }
   .band { padding: 24px 22px; }
   .cardGrid { grid-template-columns: minmax(0, 1fr); }

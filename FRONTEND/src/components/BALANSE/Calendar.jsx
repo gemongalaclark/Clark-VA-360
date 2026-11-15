@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CalendarDays, ChevronLeft, ChevronRight, Flag, Trophy } from 'lucide-react';
+import { CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, Flag, Trophy } from 'lucide-react';
 import styles from './Balanse.module.css';
 import { Money, peso, num } from './ui';
 import { debtRemaining } from './Debts';
@@ -24,6 +24,20 @@ const inMonth = (dateStr, year, month) => {
   return y === year && m - 1 === month;
 };
 
+/* There's no payment history, only a running paid_amount, so an installment counts as paid
+   once paid_amount covers every installment from start_date up to and including `due`.
+   Paying early (or ahead) therefore marks the coming due date(s) as paid. */
+const cents = (v) => Math.round(v * 100);
+function installmentPaid(d, due) {
+  const monthly = num(d.monthly_payment);
+  if (!d.start_date || monthly <= 0) return false;
+  const [sy, sm] = d.start_date.split('-').map(Number);
+  const [y, m] = due.split('-').map(Number);
+  const firstDue = ymd(onDay(sy, sm - 1, Number(d.due_day)));
+  const count = (y - sy) * 12 + (m - sm) + (firstDue >= d.start_date ? 1 : 0);
+  return cents(num(d.paid_amount)) >= cents(Math.min(count * monthly, num(d.total_amount)));
+}
+
 /* Everything that lands in one month. `amount` is money actually paid that day (debt dues,
    renewals); milestones (debt end dates, goal deadlines) carry a detail line instead. */
 function monthEvents(year, month, { debts, goals, subscriptions }) {
@@ -34,7 +48,11 @@ function monthEvents(year, month, { debts, goals, subscriptions }) {
     if (d.due_day) {
       const due = ymd(onDay(year, month, Number(d.due_day)));
       if ((!d.start_date || due >= d.start_date) && (!d.end_date || due <= d.end_date)) {
-        add(due, { key: `due-${d.id}`, kind: 'debt', name: d.name, what: 'Payment due', amount: num(d.monthly_payment) });
+        if (installmentPaid(d, due)) {
+          add(due, { key: `due-${d.id}`, kind: 'debt', name: d.name, what: 'Paid', paid: true, detail: peso(d.monthly_payment) });
+        } else {
+          add(due, { key: `due-${d.id}`, kind: 'debt', name: d.name, what: 'Payment due', amount: num(d.monthly_payment) });
+        }
       }
     }
     if (inMonth(d.end_date, year, month)) {
@@ -60,8 +78,8 @@ const sum = (list) => list.reduce((s, e) => s + e.amount, 0);
 const whenText = (days) => (days === 0 ? 'Today' : days === 1 ? 'Tomorrow' : `in ${days} days`);
 
 function Chip({ e }) {
-  const cls = { debt: e.milestone ? styles.chipDebtEnd : styles.chipDebt, goal: styles.chipGoal, sub: styles.chipSub }[e.kind];
-  const Icon = e.kind === 'goal' ? Trophy : e.milestone ? Flag : null;
+  const cls = e.paid ? styles.chipPaid : { debt: e.milestone ? styles.chipDebtEnd : styles.chipDebt, goal: styles.chipGoal, sub: styles.chipSub }[e.kind];
+  const Icon = e.paid ? CheckCircle2 : e.kind === 'goal' ? Trophy : e.milestone ? Flag : null;
   return (
     <span className={`${styles.calChip} ${cls}`} title={`${e.name} · ${e.what}`}>
       {Icon && <Icon size={11} strokeWidth={2.5} />}<span>{e.name}</span>
@@ -93,7 +111,7 @@ export default function Calendar({ debts, goals, subscriptions }) {
   let next = null;
   for (let i = 0; i < 13 && !next; i++) {
     const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
-    next = monthEvents(d.getFullYear(), d.getMonth(), data).find(e => shown[e.kind] && e.date >= todayStr) ?? null;
+    next = monthEvents(d.getFullYear(), d.getMonth(), data).find(e => shown[e.kind] && e.date >= todayStr && !e.paid) ?? null;
   }
   const nextIn = next && Math.round((toDate(next.date) - toDate(todayStr)) / DAY_MS);
 
@@ -247,12 +265,12 @@ export default function Calendar({ debts, goals, subscriptions }) {
                   )}
                   <ul className={styles.calList}>
                     {listed.filter(e => e.day === day).map(e => (
-                      <li key={e.key} className={styles[`calItem_${e.kind}`]}>
+                      <li key={e.key} className={`${styles[`calItem_${e.kind}`]} ${e.paid ? styles.calItemPaid : ''}`}>
                         <span className={styles.calListText}>
                           <strong>{e.name}</strong>
-                          <small>{KIND_LABEL[e.kind]} · {e.what}</small>
+                          <small>{KIND_LABEL[e.kind]} · {e.paid && <CheckCircle2 size={11} />} {e.what}</small>
                         </span>
-                        <span className={styles.calListAmt}>{e.amount > 0 ? peso(e.amount) : e.detail ?? '—'}</span>
+                        <span className={styles.calListAmt}>{e.amount > 0 ? peso(e.amount) : e.paid ? <s>{e.detail}</s> : e.detail ?? '—'}</span>
                       </li>
                     ))}
                   </ul>
