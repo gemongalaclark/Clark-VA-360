@@ -11,6 +11,7 @@
 --   jt_sessions      sha256 of each session token (the raw token lives only in the browser)
 --   jt_applications  jobs the user has applied to, and where each one stands (status)
 --   jt_bookmarks     jobs saved for later, with what the application needs
+--   jt_copilot_*     Apply Copilot: profile + answer bank, AI writes per day (section 7)
 --
 -- Sign-up is CLOSED: the browser can't call jt_sign_up (see section 6). To add a
 -- user, run this in the SQL Editor (same username/password rules as before):
@@ -363,4 +364,188 @@ grant execute on function
   public.jt_delete_bookmark(text, uuid),
   public.jt_set_share(text, text),
   public.jt_public_showcase(text)
+to anon, authenticated;
+
+-- ── 7. Apply Copilot ─────────────────────────────────────────
+-- The AI application writer (docs/superpowers/specs/2026-11-16-job-tracker-apply-copilot-design.md).
+--   jt_copilot_profiles  one row per user: the profile text the AI writes from + the answer bank
+--   jt_copilot_usage     AI writes per user per day (Philippine date), for the daily cap
+-- The Edge Function jt-copilot calls jt_copilot_take with the user's own token, never a service key.
+-- Grants for this section are at its end (the functions must exist first).
+
+create table if not exists public.jt_copilot_profiles (
+  user_id    uuid primary key references public.jt_users(id) on delete cascade,
+  profile    text not null default '' check (char_length(profile) <= 12000),
+  answers    jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.jt_copilot_usage (
+  user_id uuid not null references public.jt_users(id) on delete cascade,
+  day     date not null,
+  count   int  not null default 0,
+  primary key (user_id, day)
+);
+
+alter table public.jt_copilot_profiles enable row level security;
+alter table public.jt_copilot_usage    enable row level security;
+revoke all on public.jt_copilot_profiles, public.jt_copilot_usage from anon, authenticated;
+
+-- AI writes allowed per user per day.
+create or replace function public.jt_copilot_daily_cap()
+returns int
+language sql immutable
+as $$ select 25; $$;
+
+-- Today in the Philippines: the daily cap resets at Manila midnight.
+create or replace function public.jt_copilot_today()
+returns date
+language sql stable
+as $$ select (now() at time zone 'Asia/Manila')::date; $$;
+
+-- The same job link however it's spelled: lower-case, no #fragment, no ?query, no trailing slash.
+-- The extension's normalizeJobUrl (EXTENSION/JOB TRACKER COPILOT/lib.js) must match this.
+create or replace function public.jt_norm_url(p_url text)
+returns text
+language sql immutable
+as $$ select regexp_replace(split_part(split_part(lower(trim(coalesce(p_url, ''))), '#', 1), '?', 1), '/+$', ''); $$;
+
+-- Keeps only the known answer-bank fields, trimmed; empty values and empty custom rows are dropped.
+-- copilotRules.js cleanAnswers (the Copilot tab) must match this.
+create or replace function public.jt_copilot_clean_answers(p_answers jsonb)
+returns jsonb
+language plpgsql immutable
+as $$
+declare
+  v_out    jsonb := '{}'::jsonb;
+  v_custom jsonb := '[]'::jsonb;
+  v_key    text;
+  v_val    text;
+  v_max    int;
+  v_item   jsonb;
+  v_q      text;
+  v_a      text;
+begin
+  if p_answers is null or jsonb_typeof(p_answers) <> 'object' then
+    raise exception 'Answers must be an object.' using errcode = '22023';
+  end if;
+
+  foreach v_key in array array['first_name', 'portfolio_url', 'resume_url', 'rate', 'hours_per_week',
+                               'schedule', 'start', 'internet', 'equipment', 'va_experience'] loop
+    v_val := trim(coalesce(p_answers->>v_key, ''));
+    v_max := case when v_key = 'first_name' then 40 else 500 end;
+    if char_length(v_val) > v_max then
+      raise exception 'The answer for "%" is too long (max % characters).', replace(v_key, '_', ' '), v_max using errcode = '22023';
+    end if;
+    if v_val <> '' then v_out := v_out || jsonb_build_object(v_key, v_val); end if;
+  end loop;
+
+  if jsonb_typeof(p_answers->'custom') = 'array' then
+    for v_item in select value from jsonb_array_elements(p_answers->'custom') loop
+      exit when jsonb_array_length(v_custom) >= 30;
+      v_q := trim(coalesce(v_item->>'question', ''));
+      v_a := trim(coalesce(v_item->>'answer', ''));
+      continue when v_q = '' or v_a = '';
+      if char_length(v_q) > 300 or char_length(v_a) > 1000 then
+        raise exception 'Saved questions can be up to 300 characters and answers up to 1,000.' using errcode = '22023';
+      end if;
+      v_custom := v_custom || jsonb_build_array(jsonb_build_object('question', v_q, 'answer', v_a));
+    end loop;
+  end if;
+  if jsonb_array_length(v_custom) > 0 then v_out := v_out || jsonb_build_object('custom', v_custom); end if;
+
+  return v_out;
+end;
+$$;
+
+-- What the Copilot tab, the extension and the Edge Function all get back.
+create or replace function public.jt_copilot_state(p_user uuid)
+returns json
+language sql stable security definer set search_path = public, extensions
+as $$
+  select json_build_object(
+    'profile',    coalesce((select profile from jt_copilot_profiles where user_id = p_user), ''),
+    'answers',    coalesce((select answers from jt_copilot_profiles where user_id = p_user), '{}'::jsonb),
+    'used_today', coalesce((select count from jt_copilot_usage where user_id = p_user and day = jt_copilot_today()), 0),
+    'daily_cap',  jt_copilot_daily_cap());
+$$;
+
+create or replace function public.jt_copilot_load(p_token text)
+returns json
+language plpgsql stable security definer set search_path = public, extensions
+as $$
+begin
+  return jt_copilot_state(jt_user_from_token(p_token));
+end;
+$$;
+
+create or replace function public.jt_copilot_save(p_token text, p_profile text, p_answers jsonb)
+returns json
+language plpgsql security definer set search_path = public, extensions
+as $$
+declare
+  v_user    uuid  := jt_user_from_token(p_token);
+  v_profile text  := trim(coalesce(p_profile, ''));
+  v_answers jsonb := jt_copilot_clean_answers(p_answers);
+begin
+  if char_length(v_profile) > 12000 then
+    raise exception 'Your profile is too long (max 12,000 characters).' using errcode = '22023';
+  end if;
+  insert into jt_copilot_profiles (user_id, profile, answers, updated_at)
+  values (v_user, v_profile, v_answers, now())
+  on conflict (user_id) do update
+    set profile = excluded.profile, answers = excluded.answers, updated_at = now();
+  return jt_copilot_state(v_user);
+end;
+$$;
+
+-- Called by the Edge Function before each AI write: needs a profile, counts the write, enforces the cap.
+-- Raising after the increment rolls it back, so a refused write doesn't count.
+create or replace function public.jt_copilot_take(p_token text)
+returns json
+language plpgsql security definer set search_path = public, extensions
+as $$
+declare
+  v_user  uuid := jt_user_from_token(p_token);
+  v_count int;
+begin
+  if coalesce((select profile from jt_copilot_profiles where user_id = v_user), '') = '' then
+    raise exception 'Set up your Copilot profile in the Job Tracker first.' using errcode = 'JTNOP';
+  end if;
+  insert into jt_copilot_usage (user_id, day, count) values (v_user, jt_copilot_today(), 1)
+  on conflict (user_id, day) do update set count = jt_copilot_usage.count + 1
+  returning count into v_count;
+  if v_count > jt_copilot_daily_cap() then
+    raise exception 'You''ve used all % AI writes for today. They reset at midnight, Philippine time.',
+      jt_copilot_daily_cap() using errcode = 'JTCAP';
+  end if;
+  return jt_copilot_state(v_user);
+end;
+$$;
+
+-- The caller's application with this job link (however it's spelled), or null. Stops double logging.
+create or replace function public.jt_find_application(p_token text, p_url text)
+returns uuid
+language plpgsql stable security definer set search_path = public, extensions
+as $$
+declare v_user uuid := jt_user_from_token(p_token);
+begin
+  return (select id from jt_applications
+           where user_id = v_user and jt_norm_url(url) = jt_norm_url(p_url)
+           order by created_at limit 1);
+end;
+$$;
+
+revoke all on function
+  public.jt_copilot_daily_cap(),
+  public.jt_copilot_today(),
+  public.jt_norm_url(text),
+  public.jt_copilot_clean_answers(jsonb),
+  public.jt_copilot_state(uuid)
+from public, anon, authenticated;
+grant execute on function
+  public.jt_copilot_load(text),
+  public.jt_copilot_save(text, text, jsonb),
+  public.jt_copilot_take(text),
+  public.jt_find_application(text, text)
 to anon, authenticated;

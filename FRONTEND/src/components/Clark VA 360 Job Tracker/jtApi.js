@@ -47,6 +47,9 @@ export const api = {
   deleteBookmark: (id) => authed('jt_delete_bookmark', { p_id: id }),
   /* mode: 'enable' | 'reset' | 'disable' → the share slug (null when off) */
   setShare: async (mode) => (await authed('jt_set_share', { p_mode: mode }))?.share_slug ?? null,
+  /* Apply Copilot: { profile, answers, used_today, daily_cap } */
+  copilotLoad: () => authed('jt_copilot_load'),
+  copilotSave: (profile, answers) => authed('jt_copilot_save', { p_profile: profile, p_answers: answers }),
   /* Public, no sign-in: { username, applications: [{ title, url, applied_on }] } */
   showcase: (slug) => rpc('jt_public_showcase', { p_slug: slug }),
 };

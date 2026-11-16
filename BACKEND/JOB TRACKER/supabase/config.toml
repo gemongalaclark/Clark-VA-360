@@ -1,0 +1,12 @@
+# Job Tracker — Supabase CLI config, used only to deploy the Job Tracker's Edge Functions.
+# From the repo root (no Docker needed):
+#   npx supabase login
+#   npx supabase functions deploy jt-copilot --workdir "BACKEND/JOB TRACKER" --project-ref <your-project-ref> --use-api
+# Shared code in functions/_shared/ is bundled into each function on deploy.
+
+project_id = "job-tracker"
+
+# Called by the Apply Copilot extension with the public anon key (the gateway accepts it).
+# Who the caller is comes from the Job Tracker session token in the body (jt_copilot_take).
+[functions.jt-copilot]
+verify_jwt = true

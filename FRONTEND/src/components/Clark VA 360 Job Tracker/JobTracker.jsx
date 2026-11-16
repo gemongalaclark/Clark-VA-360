@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ArrowLeft, LogOut, LayoutGrid, Send, Bookmark, X, CheckCircle2, AlertCircle } from 'lucide-react';
+import { ArrowLeft, LogOut, LayoutGrid, Send, Bookmark, Sparkles, X, CheckCircle2, AlertCircle } from 'lucide-react';
 import styles from './JobTracker.module.css';
 import { api, getToken, SessionExpiredError } from './jtApi';
 import { Logo } from './ui';
@@ -10,11 +10,13 @@ import Overview from './Overview';
 import Applications from './Applications';
 import Bookmarks from './Bookmarks';
 import Showcase from './Showcase';
+import Copilot from './Copilot';
 
 const TABS = [
   { id: 'overview', label: 'Overview', icon: LayoutGrid },
   { id: 'tracker', label: 'Job Tracker', icon: Send },
   { id: 'bookmarks', label: 'Bookmarks', icon: Bookmark },
+  { id: 'copilot', label: 'Copilot', icon: Sparkles },
 ];
 
 /* Newest first: applications by date applied, bookmarks by when they were saved. */
@@ -79,6 +81,26 @@ function TrackerApp({ onBackToPortfolio }) {
       setPhase('auth');
     }
   }, [fail]);
+
+  /* Applications can also be logged from outside this page (the Apply Copilot extension), so reload
+     the lists when the user comes back to this tab or window. Quiet: only an expired session is shown. */
+  useEffect(() => {
+    if (phase !== 'app') return undefined;
+    let lastLoad = Date.now();
+    const reload = () => {
+      if (document.visibilityState !== 'visible' || Date.now() - lastLoad < 5000) return;
+      lastLoad = Date.now();
+      api.load()
+        .then((data) => { setApplications(data.applications ?? []); setBookmarks(data.bookmarks ?? []); })
+        .catch((err) => { if (err instanceof SessionExpiredError) fail(err); });
+    };
+    document.addEventListener('visibilitychange', reload);
+    window.addEventListener('focus', reload);
+    return () => {
+      document.removeEventListener('visibilitychange', reload);
+      window.removeEventListener('focus', reload);
+    };
+  }, [phase, fail]);
 
   useEffect(() => {
     if (!getToken()) { setPhase('auth'); return; }
@@ -213,6 +235,7 @@ function TrackerApp({ onBackToPortfolio }) {
                 onDelete={deleter(api.deleteBookmark, setBookmarks, 'Bookmark')}
               />
             )}
+            {tab === 'copilot' && <Copilot notify={notify} fail={fail} />}
           </main>
         </div>
       )}
