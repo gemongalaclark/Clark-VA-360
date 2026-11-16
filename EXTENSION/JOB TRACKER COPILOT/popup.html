@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Clark VA 360 Copilot</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header>
+    <strong>Clark VA 360</strong>
+    <small>Apply Copilot</small>
+  </header>
+
+  <form id="signedOut" hidden>
+    <p class="muted">Sign in with your Job Tracker username and password.</p>
+    <label>Username <input name="username" autocomplete="username" required></label>
+    <label>Password <input name="password" type="password" autocomplete="current-password" required></label>
+    <p id="error" class="error" role="alert"></p>
+    <button type="submit" id="signInBtn">Sign in</button>
+  </form>
+
+  <section id="signedIn" hidden>
+    <p>Signed in as <b id="user"></b></p>
+    <p id="usage" class="muted"></p>
+    <a id="settings" target="_blank" rel="noopener">Open Copilot settings</a>
+    <button type="button" id="signOutBtn" class="ghost">Sign out</button>
+  </section>
+
+  <script src="config.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

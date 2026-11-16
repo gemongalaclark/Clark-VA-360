@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Copilot Send flow case</title></head>
+<body>
+<!-- One Send-flow scenario, run by flows.html in an iframe: flow-case.html?case=single|double|throws|placeholder.
+     Loads the real content scripts against a copy of the OLJ apply form, with chrome.runtime stubbed,
+     then reports { logs, submits, submitters } to the parent page. -->
+<form class="oj-form mb-3" method="POST" id="appy-form">
+  <div class="form-group"><label for="">SUBJECT<span class="text-danger">*</span></label>
+    <input type="text" class="form-control" name="info[subject]" value="" id="subject" required></div>
+  <div class="form-group"><label for="">Message</label>
+    <textarea rows="4" class="form-control" name="info[message]" id="message" required></textarea></div>
+  <div class="form-group"><label for="">Contact Info</label><textarea id="contact-info-content">Test User</textarea></div>
+  <div class="form-group"><label for=""> Apply points </label><input type="text" name="points"></div>
+  <button type="submit" name="op" value="Send Email">SEND EMAIL</button>
+  <input type="hidden" value="1767109" name="job_id" id="job_id" />
+</form>
+
+<script>
+  const CASE = new URLSearchParams(location.search).get('case');
+  const seen = { logs: 0, submits: 0, submitters: [] };
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+
+  document.getElementById('appy-form').addEventListener('submit', (e) => {
+    seen.submits += 1;
+    seen.submitters.push(e.submitter ? e.submitter.value : null);
+    e.preventDefault();   // stay on the page
+  });
+  window.confirm = () => false;   // "Send anyway?" → Cancel
+  try { sessionStorage.clear(); } catch { /* storage blocked */ }
+
+  const RESULT = {
+    job_title: 'Clip Finder', fit_score: 80, fit_reason: 'ok', attention_check: '', red_flags: [],
+    subject: 'Clip Finder application',
+    message: CASE === 'placeholder' ? 'Hi, I can start [start date].' : 'Hi, I would love to help.',
+  };
+  Object.defineProperty(window, 'chrome', {
+    configurable: true,
+    value: {
+      runtime: {
+        getURL: (p) => '../' + p,
+        sendMessage(msg) {
+          if (msg.type === 'getJob') return Promise.resolve({ ok: true, job: { id: '1767109', title: 'Clip Finder', url: 'https://www.onlinejobs.ph/jobseekers/job/Clip-Finder-1767109', text: 'x'.repeat(120) } });
+          if (msg.type === 'write') return Promise.resolve({ ok: true, result: RESULT });
+          if (msg.type === 'log') {
+            seen.logs += 1;
+            if (CASE === 'throws') throw new Error('Extension context invalidated.');
+            return wait(80).then(() => ({ ok: true, id: 'row-1', duplicate: false }));
+          }
+          return Promise.resolve({ ok: true });
+        },
+      },
+    },
+  });
+</script>
+<script src="../lib.js"></script>
+<script src="../content/oljFields.js"></script>
+<script>JTC.olj.pageKind = () => 'apply';</script>
+<script src="../content/panel.js"></script>
+<script src="../content/olj.js"></script>
+<script>
+  (async () => {
+    try {
+      const shadow = document.getElementById('jtc-copilot-host').shadowRoot;
+      shadow.querySelector('button.primary').click();   // Write my application
+      await wait(100);
+      const send = document.querySelector('button[type="submit"]');
+      send.click();
+      if (CASE === 'double') send.click();
+      await wait(400);
+      let pending = null;
+      try { pending = JSON.parse(sessionStorage.getItem('jtc_pending_send') || 'null'); } catch { pending = 'storage blocked'; }
+      parent.postMessage({ case: CASE, ...seen, pending }, '*');
+    } catch (err) {
+      parent.postMessage({ case: CASE, error: String(err && err.message || err), ...seen }, '*');
+    }
+  })();
+</script>
+</body>
+</html>

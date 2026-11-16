@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Copilot popup sign-in case</title><link rel="stylesheet" href="../popup.css"></head>
+<body>
+<!-- Run by flows.html in an iframe. Same element ids as popup.html; chrome.* stubbed.
+     A successful sign-in must switch to the signed-in view. -->
+<form id="signedOut" hidden>
+  <input name="username"><input name="password" type="password">
+  <p id="error"></p>
+  <button type="submit" id="signInBtn">Sign in</button>
+</form>
+<section id="signedIn" hidden>
+  <b id="user"></b><p id="usage"></p><a id="settings"></a>
+  <button type="button" id="signOutBtn">Sign out</button>
+</section>
+
+<script>
+  const store = {};
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  let uncaught = null;
+  window.addEventListener('unhandledrejection', (e) => { uncaught = String(e.reason && e.reason.message || e.reason); });
+  window.addEventListener('error', (e) => { uncaught = e.message; });
+  self.JTC_CONFIG = { JOB_TRACKER_URL: 'https://www.clarkva360.site/job-tracker' };
+  Object.defineProperty(window, 'chrome', {
+    configurable: true,
+    value: {
+      storage: { local: { get: (keys) => Promise.resolve(Object.fromEntries(keys.filter((k) => k in store).map((k) => [k, store[k]]))) } },
+      runtime: {
+        async sendMessage(msg) {
+          await wait(20);
+          if (msg.type === 'signIn') { store.jtc_token = 't'; store.jtc_user = msg.username; return { ok: true, username: msg.username }; }
+          if (msg.type === 'status') return { ok: true, signedIn: true, username: store.jtc_user, used_today: 0, daily_cap: 25 };
+          return { ok: true };
+        },
+      },
+    },
+  });
+</script>
+<script src="../popup.js"></script>
+<script>
+  (async () => {
+    await wait(50);
+    const shown = (id) => getComputedStyle(document.getElementById(id)).display !== 'none';
+    const before = { form: shown('signedOut'), signedIn: shown('signedIn') };
+    const form = document.getElementById('signedOut');
+    form.username.value = 'clark';
+    form.password.value = 'secret';
+    form.requestSubmit();
+    await wait(300);
+    parent.postMessage({
+      case: 'popup-signin',
+      signedInShown: shown('signedIn'),
+      formShownAfter: shown('signedOut'),
+      before,
+      user: document.getElementById('user').textContent,
+      uncaught,
+    }, '*');
+  })();
+</script>
+</body>
+</html>

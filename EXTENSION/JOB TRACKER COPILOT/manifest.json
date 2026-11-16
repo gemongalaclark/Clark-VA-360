@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "Clark VA 360 Copilot",
+  "version": "0.1.0",
+  "description": "Writes OnlineJobs.ph applications from your Job Tracker Copilot profile. You read them and click Send yourself.",
+  "background": { "service_worker": "background.js" },
+  "action": { "default_popup": "popup.html", "default_title": "Clark VA 360 Copilot" },
+  "permissions": ["storage"],
+  "host_permissions": ["https://*.onlinejobs.ph/*", "https://*.supabase.co/*"],
+  "content_scripts": [
+    {
+      "matches": ["https://*.onlinejobs.ph/*"],
+      "js": ["config.js", "lib.js", "content/oljFields.js", "content/panel.js", "content/olj.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    { "resources": ["content/panel.css"], "matches": ["https://*.onlinejobs.ph/*"] }
+  ]
+}

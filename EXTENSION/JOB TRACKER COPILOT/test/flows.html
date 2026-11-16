@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Copilot flow tests</title></head>
+<body>
+<!-- Send-flow and popup tests: each case runs in its own iframe with chrome.* stubbed.
+     Run like harness.html (Edge headless, --allow-file-access-from-files, --dump-dom);
+     the last <pre id="result"> line is ALL PASS (n) or FAIL: … -->
+<div id="frames"></div>
+<pre id="result">NOT RUN</pre>
+<script>
+  const EXPECT = {
+    // One click sends once (OLJ still gets op=Send Email) and only remembers the job; nothing is logged yet.
+    single: (r) => r.logs === 0 && r.submits === 1 && r.submitters[0] === 'Send Email'
+      && r.pending && r.pending.url.endsWith('1767109') && r.pending.source === 'onlinejobsph',
+    // A double click must not send the application twice.
+    double: (r) => r.logs === 0 && r.submits === 1,
+    // The extension failing must never block sending.
+    throws: (r) => r.submits === 1,
+    // A [placeholder] + Cancel: nothing sent, nothing remembered.
+    placeholder: (r) => r.logs === 0 && r.submits === 0 && !r.pending,
+    // Review Focus 1: OLJ's "successfully sent" page → logged once, with the remembered job, and an Undo.
+    confirmed: (r) => r.logs === 1 && r.logMsg.url.endsWith('1767109') && r.logMsg.source === 'onlinejobsph'
+      && /Logged to Job Tracker\./.test(r.panel) && /Undo/.test(r.panel),
+    // No confirmation on the next page → not logged, and the user is told.
+    unconfirmed: (r) => r.logs === 0 && /wasn.t logged/.test(r.panel),
+    // Signed out: only the form is visible. After a successful sign-in: only the signed-in view, no error
+    // (checked with popup.css loaded, since its display rules can override [hidden]).
+    'popup-signin': (r) => r.before.form && !r.before.signedIn && r.signedInShown && !r.formShownAfter && r.user === 'clark' && !r.uncaught,
+  };
+  const PAGES = { 'popup-signin': 'popup-case.html', confirmed: 'sent-case.html?case=confirmed', unconfirmed: 'sent-case.html?case=unconfirmed' };
+  const results = {};
+  const out = document.getElementById('result');
+
+  // One case at a time: the frames share this tab's sessionStorage, which the cases use.
+  const names = Object.keys(EXPECT);
+  const runNext = () => {
+    const name = names[Object.keys(results).length];
+    const frame = document.createElement('iframe');
+    frame.src = PAGES[name] || `flow-case.html?case=${name}`;
+    document.getElementById('frames').replaceChildren(frame);
+  };
+  window.addEventListener('message', (e) => {
+    results[e.data.case] = e.data;
+    if (Object.keys(results).length < names.length) return runNext();
+    const failed = names.filter((name) => !EXPECT[name](results[name]));
+    out.textContent = failed.length
+      ? 'FAIL: ' + failed.map((name) => `${name} ${JSON.stringify(results[name])}`).join(' | ')
+      : `ALL PASS (${names.length})`;
+  });
+  runNext();
+</script>
+</body>
+</html>

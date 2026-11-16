@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Copilot after-send case</title></head>
+<body>
+<!-- The page OLJ shows after Send, run by flows.html: sent-case.html?case=confirmed|unconfirmed.
+     A job was remembered on the apply page (sessionStorage); this page decides whether to log it. -->
+<script>
+  const CASE = new URLSearchParams(location.search).get('case');
+  if (CASE === 'confirmed') {
+    document.write('<h3>Awesome, you have successfully sent the email for your job application!</h3><p>Still looking for more jobs?</p>');
+  } else {
+    document.write('<h3>Job Application</h3><p>Something went wrong. Please try again.</p>');
+  }
+  const seen = { logs: 0, logMsg: null };
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  try {
+    sessionStorage.setItem('jtc_pending_send', JSON.stringify({
+      title: 'Clip Finder', url: 'https://www.onlinejobs.ph/jobseekers/job/Clip-Finder-1767109', source: 'onlinejobsph', at: Date.now(),
+    }));
+  } catch { /* storage blocked: the case will fail and say so */ }
+  Object.defineProperty(window, 'chrome', {
+    configurable: true,
+    value: {
+      runtime: {
+        getURL: (p) => '../' + p,
+        sendMessage(msg) {
+          if (msg.type === 'log') { seen.logs += 1; seen.logMsg = msg; return wait(30).then(() => ({ ok: true, id: 'row-1', duplicate: false })); }
+          return Promise.resolve({ ok: true });
+        },
+      },
+    },
+  });
+</script>
+<script src="../lib.js"></script>
+<script src="../content/oljFields.js"></script>
+<script>JTC.olj.pageKind = () => 'apply';</script>
+<script src="../content/panel.js"></script>
+<script src="../content/olj.js"></script>
+<script>
+  (async () => {
+    await wait(300);
+    const host = document.getElementById('jtc-copilot-host');
+    const panel = host ? host.shadowRoot.querySelector('.body').textContent : '(no panel)';
+    parent.postMessage({ case: CASE, ...seen, panel }, '*');
+  })();
+</script>
+</body>
+</html>

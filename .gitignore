@@ -39,3 +39,7 @@ CLARK VA 360 API KEYS.md
 
 # Supabase CLI local cache (linked project, CLI version)
 **/supabase/.temp/
+
+# Apply Copilot extension: local config and saved OnlineJobs.ph pages (personal data)
+EXTENSION/JOB TRACKER COPILOT/config.js
+EXTENSION/JOB TRACKER COPILOT/test/fixtures/real/

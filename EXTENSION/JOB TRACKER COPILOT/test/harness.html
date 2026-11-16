@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Copilot OLJ field-finder tests</title>
+<!-- Run (Edge headless, no extension needed):
+     msedge --headless=new --disable-gpu --allow-file-access-from-files --user-data-dir=<tmp> --dump-dom "file:///…/EXTENSION/JOB%20TRACKER%20COPILOT/test/harness.html"
+     Output contains <pre id="result">ALL PASS (n)</pre> or FAIL: <name>.
+     The templates copy the real OnlineJobs.ph markup (saved 2026-11-16) with personal data replaced. -->
+</head>
+<body>
+
+<template id="apply">
+  <form class="oj-form mb-3" method="POST" id="appy-form">
+    <input type="hidden" name="csrf-token" value="test">
+    <input type="hidden" name="info[name]" value="Test User" readonly />
+    <input type="hidden" name="info[email]" value="test@example.com" readonly />
+    <div class="form-group col-md-6 pl-0">
+      <label for="">SUBJECT<span class="text-danger">*</span></label>
+      <input type="text" class="form-control" name="info[subject]" value="" id="subject" required >
+    </div>
+    <div class="form-group col-md-8 pl-0">
+      <label for="">Message</label>
+      <textarea rows="4" class="form-control pl-3" name="info[message]" id="message" required ></textarea>
+    </div>
+    <div class="form-group col-md-8 pl-0">
+      <label for="">Contact Info <a href="javascript:void(0);" data-toggle="tooltip" title="help"><i class="fas fa-question-circle"></i></a></label>
+      <textarea rows="4" class="form-control pl-3" id="contact-info-content">Test User
+Email: test@example.com</textarea>
+    </div>
+    <div class="form-group col-md-8 pl-0 mb-3">
+      <label for=""> Apply points <a href="javascript:void(0);"><i class="fas fa-question-circle"></i></a> </label>
+      <div class="input-group input-group_apply-points mb-3">
+        <input type="text" name="points" class="form-control" placeholder="ex. 3">
+        <div class="input-group-append"><span class="input-group-text"><span class="input-group-text_points">10</span> <span class="input-group-text_label">apply points left</span></span></div>
+      </div>
+    </div>
+    <div class="form-group"><div class="form-group">
+      <button type="submit" class="btn btn-success btn-lg btn-rounded" name="op" value="Send Email"><i class="icon icon-mail"></i> SEND EMAIL</button>
+    </div></div>
+    <input type="hidden" value="1767109" name="job_id" id="job_id" />
+  </form>
+</template>
+
+<!-- The same form after a redesign: labels, ids and names all changed. -->
+<template id="apply-nolabels">
+  <form class="oj-form mb-3" method="POST" id="apply-form-v2">
+    <div class="form-group"><label>Title of your email</label><input type="text" name="email[title]" id="email-title"></div>
+    <div class="form-group"><label>Your note</label><textarea name="email[body]" id="email-body"></textarea></div>
+    <div class="form-group"><label>Contact Info</label><textarea id="contact-info-content">Test User</textarea></div>
+    <div class="form-group"><label>Apply points</label><input type="text" name="points"></div>
+    <button type="submit">Send</button>
+    <input type="hidden" value="1767109" name="job_id" id="job_id" />
+  </form>
+</template>
+
+<template id="job">
+  <h1 class="fs-24 fw-600 text-white text-center mb-40 job__title" data-jobid="1767109">Clip Finder/ Researcher</h1>
+  <div class="row">
+    <div class="col-lg-3 col-md-6 border-right"><dl class="row no-gutters"><dt class="col-auto"><img src="" alt=""></dt>
+      <dd class="col-auto"><h3 class="fs-12 mb-0">TYPE OF WORK</h3><p class="fs-18"> Gig </p></dd></dl></div>
+    <div class="col-lg-3 col-md-6 border-right"><dl class="row no-gutters"><dt class="col-auto"><img src="" alt=""></dt>
+      <dd class=""><h3 class="fs-12 mb-0">WAGE / SALARY</h3><p class="fs-18"> 15$/ 10 clips </p></dd></dl></div>
+    <div class="col-lg-3 col-md-6 border-right"><dl class="row no-gutters"><dt class="col-auto"><img src="" alt=""></dt>
+      <dd class="col-auto"><h3 class="fs-12 mb-0">HOURS PER WEEK</h3><p class="fs-18"> TBD </p></dd></dl></div>
+    <div class="col-lg-3 col-md-6"><dl class="row no-gutters"><dt class="col-auto"><img src="" alt=""></dt>
+      <dd class="col-auto"><h3 class="fs-12 mb-0">DATE UPDATED</h3><p class="fs-18"> Nov 16, 2026 </p></dd></dl></div>
+  </div>
+  <div class="card"><div class="card-header"><strong>JOB OVERVIEW</strong></div>
+    <div class="card-body">
+      <p id="job-description" class="job-description" data-jobid="1767109">
+        I&#039;m looking for a Clip Finder to help source videos for my YouTube channel.<br /> <br />
+        Your tasks:<br />
+        - Find clips independently: I give you a detailed task of what to search for, then you search the internet for interesting, high-quality videos that I can use for my YouTube content.<br />
+        - Find original footage: I send you a video or story, you track down the original source footage and send me the raw, unedited video.
+      </p>
+    </div>
+  </div>
+</template>
+
+<!-- OLJ's page after a successful send (text from a screenshot, 2026-11-16). -->
+<template id="sent">
+  <h1>Job Application</h1>
+  <div class="card"><div class="card-body text-center">
+    <img src="" alt="">
+    <h3>Awesome, you have successfully sent the email for your job application!</h3>
+    <p>Still looking for more jobs?</p>
+  </div></div>
+</template>
+
+<div id="stage"></div>
+<pre id="result">NOT RUN</pre>
+
+<script src="../lib.js"></script>
+<script src="../content/oljFields.js"></script>
+<script src="harness.js"></script>
+</body>
+</html>

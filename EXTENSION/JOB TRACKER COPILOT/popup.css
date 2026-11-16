@@ -1,0 +1,18 @@
+* { box-sizing: border-box; }
+body { width: 280px; margin: 0; padding: 16px; font: 14px/1.45 "Segoe UI", system-ui, sans-serif; color: #1a1a2e; background: #fff; }
+header { display: flex; flex-direction: column; margin-bottom: 12px; }
+header strong { font-size: 15px; }
+header small { color: #cb2525; font-weight: 600; font-size: 12px; }
+form, section { display: flex; flex-direction: column; gap: 10px; }
+[hidden] { display: none !important; }   /* the rule above would otherwise un-hide the signed-out/in views */
+label { display: flex; flex-direction: column; gap: 4px; font-size: 12.5px; font-weight: 600; color: #3d3d55; }
+input { font: inherit; padding: 8px 10px; border: 1px solid #dcdae2; border-radius: 8px; }
+input:focus { outline: 2px solid #cb2525; outline-offset: -1px; }
+p { margin: 0; }
+.muted { color: #6b6b85; font-size: 13px; }
+.error { color: #b42318; font-size: 12.5px; min-height: 1em; }
+.error:empty { display: none; }
+button { font: inherit; font-weight: 600; padding: 9px 12px; border-radius: 8px; border: 0; background: #cb2525; color: #fff; cursor: pointer; }
+button:disabled { opacity: 0.6; cursor: progress; }
+button.ghost { background: #fff; color: #1a1a2e; border: 1px solid #dcdae2; }
+a { color: #cb2525; font-weight: 600; font-size: 13px; }
