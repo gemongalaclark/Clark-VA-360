@@ -230,7 +230,7 @@ const docs = {
   7: {
     what: 'The Job Tracker is a notebook for your job hunt. It remembers every job you applied to, when you applied, and where you found it, like LinkedIn, OnlineJobs.ph or Upwork. It also keeps a list of jobs you want to apply to later.',
     use: [
-      'Sign up with just a username and password. No email needed.',
+      'Sign in with your username and password. Accounts are invite-only, so there is no public sign-up.',
       'Open Job Tracker and press “Log application”. Paste the job link, type the job title, pick the date you applied and where you found it.',
       'Found a job on another site? Pick “Other” and type the site’s name, like Indeed or a Facebook group.',
       'Not ready to apply yet? Open Bookmarks and save the job with the things it asks for, like a resume, a Loom video or a portfolio link, one per line.',

@@ -33,7 +33,7 @@ const SHARE_MSG = {
   disable: 'Sharing is off. Your link no longer works.',
 };
 
-/* Job Tracker root: loading → auth (sign up / sign in) → dashboard.
+/* Job Tracker root: loading → auth (sign in; sign-up is closed) → dashboard.
    Owns the applications/bookmarks lists; pages call onSave/onDelete, which resolve true on success. */
 function TrackerApp({ onBackToPortfolio }) {
   const [phase, setPhase] = useState('loading');   // loading | auth | app

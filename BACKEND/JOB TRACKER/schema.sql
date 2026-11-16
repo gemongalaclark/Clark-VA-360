@@ -12,6 +12,11 @@
 --   jt_applications  jobs the user has applied to, and where each one stands (status)
 --   jt_bookmarks     jobs saved for later, with what the application needs
 --
+-- Sign-up is CLOSED: the browser can't call jt_sign_up (see section 6). To add a
+-- user, run this in the SQL Editor (same username/password rules as before):
+--   select public.jt_sign_up('new.username', 'their-password');
+-- It returns a session token too; you can ignore it.
+--
 -- Public showcase: a user can turn on a share link (jt_users.share_slug). Anyone with
 -- the link can call jt_public_showcase, which returns ONLY the username plus each
 -- application's title, link and date applied (no status, source, goal or bookmarks).
@@ -345,8 +350,9 @@ $$;
 revoke all on function public.jt_new_session(uuid)     from public, anon, authenticated;
 revoke all on function public.jt_user_from_token(text) from public, anon, authenticated;
 revoke all on function public.jt_check_job(jsonb)      from public, anon, authenticated;
+-- Sign-up is admin-only (SQL Editor), so the website can't create accounts.
+revoke all on function public.jt_sign_up(text, text)   from public, anon, authenticated;
 grant execute on function
-  public.jt_sign_up(text, text),
   public.jt_sign_in(text, text),
   public.jt_sign_out(text),
   public.jt_me(text),

@@ -27,11 +27,6 @@ async function rpc(fn, args) {
 const authed = (fn, args = {}) => rpc(fn, { p_token: getToken(), ...args });
 
 export const api = {
-  async signUp(username, password) {
-    const res = await rpc('jt_sign_up', { p_username: username, p_password: password });
-    setToken(res.token);
-    return res.username;
-  },
   async signIn(username, password) {
     const res = await rpc('jt_sign_in', { p_username: username, p_password: password });
     setToken(res.token);
