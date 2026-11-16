@@ -762,6 +762,33 @@ FEATURES
     username, job titles, links and dates applied. Status, sources, goal/streak and
     bookmarks stay hidden. The link can be reset (old one stops working) or turned off.
 
+APPLY COPILOT (added November 16, 2026)
+  An AI application writer for OnlineJobs.ph (OLJ): a Job Tracker tab plus a Chrome
+  extension. The AI writes each application from the user's own profile; the user
+  reads it and clicks Send. Design: docs/superpowers/specs/2026-11-16-job-tracker-
+  apply-copilot-design.md.
+  • Copilot tab: a one-page profile (up to 12,000 characters; the AI only claims what's
+    in it), an answer bank (first name, portfolio and résumé links, rate, hours, schedule,
+    start date, internet, equipment, VA experience) and up to 30 saved question/answer
+    pairs, today's count ("3 of 25 AI writes used"), and how to install the extension.
+  • Extension (EXTENSION/JOB TRACKER COPILOT, loaded unpacked): sign in with the Job
+    Tracker username and password. On an OLJ job post it remembers the description,
+    type of work, wage and hours. On the apply page a panel offers "Write my
+    application": it fills Subject and Message only (never Contact Info or Apply
+    Points, never Send) and shows a fit score, the attention-check code word and red
+    flags. If the boxes can't be found it shows the text with Copy buttons.
+  • Sending: if a [placeholder] is left in the message it asks before sending, and a
+    double click can't send twice. With "Log to Job Tracker" on, the application is
+    logged only when OLJ's next page confirms it ("successfully sent the email"), once
+    per job link, with "Logged to Job Tracker." and Undo; no confirmation, no log.
+  • The Job Tracker reloads its lists when you come back to its tab, so applications
+    logged by the extension show up without a manual refresh.
+  • Rules: 25 AI writes per user per day (Philippine date); the pitch never claims a
+    paid VA client or anything not in the profile; the job post is treated as untrusted.
+  • Back end: jt_copilot_profiles, jt_copilot_usage and RPCs jt_copilot_load / save /
+    take and jt_find_application (schema.sql section 7); Edge Function jt-copilot calls
+    jt_copilot_take with the user's own token, then Gemini.
+
 --------------------------------------------------------------------------------
 5.8 CLARKFLOW 360                             Route: /clarkflow
     Category: AI Email Triage · Ribbon: "Private VA Tool"
@@ -883,6 +910,8 @@ GOOGLE INTEGRATIONS
 
 IN-APP / BROWSER AUTOMATIONS
   • Job Tracker: daily goal, streak, 6 PM reminder banner + browser notification.
+  • Job Tracker Apply Copilot (Chrome extension): remembers OLJ job posts, fills the
+    apply form, logs each sent application to the Job Tracker once per job link.
   • BALANSE: renewal countdowns, monthly-saving calculation, upcoming payments.
   • OnboardBase: "Stalled" detection after 3 idle days.
   • BuhayVA: bookmarklet capture from Upwork/OLJ, auto-analysis, polling fallback.
@@ -914,6 +943,9 @@ prompt-injection rules.
   BuhayVA résumé import       Edge fn bv-parse-resume      flash-latest →
                                                            flash-lite-latest
   ClarkFlow email triage      Edge fn cf-triage-analyze    gemini-3.6-flash →
+                                                           3.5-flash-lite
+  Job Tracker Apply Copilot   Edge fn jt-copilot           (JT_COPILOT_MODEL →)
+                                                           gemini-3.6-flash →
                                                            3.5-flash-lite
 
 Portfolio chat bot specifics
@@ -959,7 +991,9 @@ BACKEND
   • Edge Functions (Deno / TypeScript): portfolio-chat, scheduler-scan,
     teamsync-ai-brief, invite-client, bv-parse-resume, cf-signin-code, cf-google-auth,
     cf-google-callback, cf-gmail-sync, cf-triage-analyze, cf-gmail-send,
-    cf-gmail-disconnect.
+    cf-gmail-disconnect, jt-copilot.
+  • Chrome extension (unpacked, plain JavaScript, no build step):
+    EXTENSION/JOB TRACKER COPILOT, the Job Tracker Apply Copilot.
   • Storage buckets: avatars (public), task-attachments (private, 20 MB),
     onboardbase (private, 10 MB).
   • Optional Node.js/Express server for the Auto Scheduler (local development).
