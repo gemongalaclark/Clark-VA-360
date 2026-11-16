@@ -3,6 +3,8 @@
 ================================================================================
 Compiled: November 9, 2026, from the full source code of the Clark-VA-360 repository
 (FRONTEND + BACKEND) and the KalakalGG repository's README.
+Updated: November 16, 2026 (new VA-focused CV, Verse of the Day, Job Tracker and
+BALANSE changes since November 9).
 Live site: https://www.clarkva360.site   (older address: clarkportfolio.vercel.app)
 
 
@@ -146,14 +148,31 @@ Contact details published on the site
   • A "S C R O L L" rail. The cover reacts to the mouse (parallax) and fades as you
     scroll; both are switched off for visitors who prefer reduced motion.
 
-3.5 CV viewer (opened from the CV button)
-  A pop-up that shows the résumé PDF inside the page, with a download button and four
-  quick facts: Experience (Web Developer Intern · Knowles Training Institute),
-  Education (BS Information Technology · CIT, 2026), Certifications (TESDA AI
-  Prompting L-III · AWS Academy), Based in (Cebu, Philippines · Remote-ready).
-  File: /files/Gemongala_Resume.pdf (2 pages).
+3.5 Verse of the Day
+  A band right under the Hero with a daily Bible verse from the free OurManna API, its
+  reference and version, today's date, and a "Powered by OurManna" credit. The verse is
+  kept in the browser for the day and rolls over at the visitor's midnight. If the
+  service is down it shows the last saved verse, or Colossians 3:23 (NIV).
 
-3.6 About Me
+3.6 CV viewer (opened from the CV button)
+  A pop-up that shows the résumé PDF inside the page ("PDF · 2 pages · Updated Nov
+  2026"), with a download button and four quick facts: Experience (Web Developer
+  Intern · Knowles Training Institute), Education (BS Information Technology · CIT,
+  2026), Certifications (TESDA AI Prompting L-III · AWS Academy), Based in (Cebu,
+  Philippines · Remote-ready).
+  File: /files/Gemongala_Resume.pdf (2 pages).
+  The CV (rewritten November 2026) is aimed at VA work. Title: "Technical & Operations
+  Virtual Assistant" (the same title as Clark's OnlineJobs.ph profile). Page 1:
+  Professional Summary; Core Skills (Inbox & Scheduling, Lead Generation, Social Media
+  & Design, Project & Client Operations, Automation & AI, Web & Data); Work Experience
+  (Knowles internship); VA Training (The VA Bar, ongoing); Education. Page 2: Projects
+  (ClarkFlow 360, OnboardBase, TeamSync, Auto Scheduler, BuhayVA Copilot, plus "Also
+  built": Job Tracker, BALANSE, KalakalGG) and Certifications. Links:
+  www.clarkva360.site and LinkedIn. It never claims a paid VA client. The editable
+  source is an HTML file kept outside the repo (WORK_VA\RESUME\Gemongala_Resume_VA.html),
+  printed to PDF with Edge.
+
+3.7 About Me
   • Story: recent IT graduate, former Web Developer intern at Knowles Training
     Institute, pivoting to remote VA work, training at The VA Bar while looking for a
     first client; pitch to business owners who want a tech-savvy assistant.
@@ -164,12 +183,12 @@ Contact details published on the site
   • Stats: 4 Years of IT Study, 1+ Year Internship, 15+ VA Tools Mastered,
     100% Dedication. Buttons: Let's connect, See my tools.
 
-3.7 My Skills
+3.8 My Skills
   The two tool tracks listed in section 2, as cards with icons. Each track has filter
   pills by category (with counts); filtering dims the other tools instead of hiding
   them. Each category has its own accent colour.
 
-3.8 My Projects
+3.9 My Projects
   • A carousel showing 3 cards on desktop, 2 on tablets, 1 on phones, with arrows,
     swipe support, page dots and a "01 / 07" style counter.
   • Each card: category, title, short description, technology tags, an "Open Web App"
@@ -182,12 +201,12 @@ Contact details published on the site
   • Tip under the carousel: "open the Auto Scheduler to test drive the Gemini AI
     schedule scanner."
 
-3.9 My Services (homepage teaser)
+3.10 My Services (homepage teaser)
   Shows the first two website passes (Basic and Advanced Website) on a "battle pass"
   track, plus "View all services" which opens the /services page. Full details in
   section 4.
 
-3.10 Get In Touch (Contact)
+3.11 Get In Touch (Contact)
   • "Let's work together!" pitch, email and location.
   • "Book a Free Discovery Call" card: 30 minutes, Google Meet, weekdays,
     "Schedule a Call" button (Google Calendar booking page).
@@ -199,12 +218,12 @@ Contact details published on the site
   • When a visitor clicks "Get this pass" on any service, they land here with the
     subject already filled in as "Inquiry: <pass name>".
 
-3.11 Footer
+3.12 Footer
   Logo, tagline "Driving Digital Growth, Streamlining Operations.", section links,
   social icons, "© <current year> Clark VA 360. All rights reserved." and
   "Built with ❤️".
 
-3.12 "Clark's AI Assistant" (floating chat bot)
+3.13 "Clark's AI Assistant" (floating chat bot)
   • A floating avatar button with an "AI" badge, on the homepage and /services. The
     conversation carries over when moving between those two pages.
   • Header: "Clark's AI Assistant — AI, not Clark. May make mistakes."
@@ -217,13 +236,13 @@ Contact details published on the site
     and invites interested visitors to book the discovery call.
   • Conversations are not stored.
 
-3.13 /services page (all services)
+3.14 /services page (all services)
   A standalone page with: Track 01 "Website Passes" (all 4), Track 02 "Automation
   Passes" (both), and "Compare All Passes", a comparison table that ticks every
   feature per pass. The ticks are calculated from the pass data itself, so the table
   can never disagree with the cards ("Everything in X" is expanded automatically).
 
-3.14 Legal pages
+3.15 Legal pages
   /privacy-policy.html and /terms-of-service.html (last updated October 17, 2026).
   Written for the Google Calendar Auto Scheduler (needed for Google sign-in
   approval). Key points: only the calendar.events scope is requested; events are
@@ -233,7 +252,7 @@ Contact details published on the site
   within 7 days; not for children under 13; the service is "as is" and the user must
   check AI results.
 
-3.15 Behind-the-scenes site features
+3.16 Behind-the-scenes site features
   • Auto-update: if a newer version of the site has been deployed, an open tab
     reloads itself (at most once per new version) when you come back to it.
   • Caching (vercel.json): built files are cached for a year; pages are always
@@ -617,11 +636,17 @@ PAGES
   • Overview: the signature balance-beam graphic that tips toward whichever is
     heavier ("Your savings outweigh your debts by ₱X" or the reverse); You owe /
     You've saved; KPIs: Debt-free progress, Goals funded, Monthly commitments;
-    "Coming up" (next payments from debt due days and subscriptions, soonest first);
-    Biggest debts; Goals; Subscriptions with totals per month and per year.
+    "Coming up" (next payments from debt due days and subscriptions, soonest first;
+    installments already covered by early payments are skipped); Biggest debts; Goals;
+    Subscriptions with totals per month and per year.
   • Calendar: a month grid (Sunday first) with Debts / Goals / Subscriptions filters,
     "Due this month", "Deadlines" (debt end dates and goal target dates), "Next up",
     and money totals per day and per week.
+  • Paid installments: there is no payment history, only the running "already paid"
+    amount, so a debt's due date counts as paid once that amount covers every
+    installment from the start date up to it. Paying early or ahead marks the coming
+    due dates as paid. Paid dates show greyed out with a check, "Paid" and the amount
+    struck through, and "Next up" / "Coming up" skip them.
   • Debts ("What you owe"): name, lender, total, already paid, monthly payment, due day
     (1–31), start date, paid-off-by date, notes. "Record payment" fills the bar. Fully
     paid debts move to "Past debts".
@@ -708,21 +733,28 @@ WHAT IT IS
 
 FEATURES
   • Username + password accounts (same custom, bcrypt + hashed-session design as
-    BALANSE, with jt_ tables).
+    BALANSE, with jt_ tables). Invite-only since November 16, 2026: the sign-in page
+    has no Sign up option, and the website can no longer call jt_sign_up. Clark adds
+    users in the Supabase SQL Editor: select public.jt_sign_up('username', 'password');
   • Job Tracker page ("Jobs you've applied to"): log title, job link, date applied and
     source (LinkedIn, OnlineJobs.ph, Upwork, or Other + the site's name, e.g. Indeed or
-    a Facebook group). Status per application: No reply, In process, Hired. Grouped by
-    month, newest first; search and source filter.
+    a Facebook group). Status per application: No reply, In process, Hired, Rejected.
+    Grouped by month, newest first (each month header shows the month's full total);
+    search and source filter; 10 per page with Prev / Next ("Page 1 of 3 · 1–10 of 24").
+  • Duplicate warning: while typing a title, the form warns if the same title (ignoring
+    case and extra spaces) is already logged, with the date and site of each match
+    ("Already logged: … Check it's not the same post."). It warns but doesn't block.
   • Bookmarks ("Saved to apply later"): title, link, source and requirements, one per
     line (e.g. Updated résumé, 2-minute Loom video, portfolio link), with an "Open job
     post" button.
   • Overview: Total applications, This week, This month, Bookmarked; weekly activity
-    chart; "Where you apply" (source mix and top source); recent applications; saved
-    for later.
-  • Daily goal: 5 applications every Monday to Saturday (Sunday is a rest day), shown as
-    a progress ring, a Monday–Saturday strip (done / missed / today / upcoming), and a
-    streak counter ("🔥 5-day streak"). Toasts after each log: "3 of 5 today, 2 to go"
-    or "🎯 Daily goal reached!".
+    chart; "Where you apply" (source mix and top source); "Application status" (jobs
+    that replied, in three columns: In process, Hired, Rejected, up to 5 each); recent
+    applications; saved for later.
+  • Daily goal: 5 applications every Monday to Friday (Saturday and Sunday are rest
+    days), shown as a progress ring, a Monday–Friday strip (done / missed / today /
+    upcoming), and a streak counter that skips weekends ("🔥 5-day streak"). Toasts
+    after each log: "3 of 5 today, 2 to go" or "🎯 Daily goal reached!".
   • End-of-day reminder: from 6 PM on a workday, if today's goal isn't met, a banner
     appears ("It's 6:30 PM and you've sent 2 of 5 today…") with a "Log application"
     button, plus an optional browser notification (once per day).
@@ -939,7 +971,7 @@ HOW EACH APP SIGNS PEOPLE IN
   OnboardBase ......... magic link / email code, invite only
   BuhayVA Copilot ..... email code, members only (bv_members)
   BALANSE ............. username + password (custom, bcrypt)
-  Job Tracker ......... username + password (custom, bcrypt)
+  Job Tracker ......... username + password (custom, bcrypt), invite only
   ClarkFlow 360 ....... email code via Resend, members only (cf_members)
   KalakalGG ........... username + password
 
@@ -953,8 +985,9 @@ HOW EACH APP SIGNS PEOPLE IN
   • Secrets stay on the server: Gemini key, EmailJS private key, Make.com webhook and
     callback token (app_secrets table), Google client secret, Resend key, token
     encryption key.
-  • Allowlists for costly features (bv_members, cf_members) and rate limits on public
-    AI endpoints (chat bot, scheduler).
+  • Allowlists for costly features (bv_members, cf_members), closed sign-up for the Job
+    Tracker (accounts are added by Clark only), and rate limits on public AI endpoints
+    (chat bot, scheduler).
   • Prompt-injection rules in every AI prompt; AI output validated and clamped before
     saving.
   • Passwords hashed with bcrypt; session tokens stored only as SHA-256 hashes.
@@ -970,15 +1003,13 @@ HOW EACH APP SIGNS PEOPLE IN
 ================================================================================
 10. INCONSISTENCIES AND THINGS WORTH FIXING
 ================================================================================
-Found while reading the code. None of these were changed.
+Found while reading the code on November 9. Items marked FIXED were resolved later.
 
   1. Internship length: the Hero ("1+ yr Internship") and About ("1+ Year Internship")
      disagree with the CV and the chat bot, which say January to April 2026 (about 4
      months). A client who reads both may notice.
-  2. The chat bot's knowledge is out of date: it lists only 5 projects (Auto Scheduler,
-     TeamSync, OnboardBase, BuhayVA, BALANSE) and says "More projects are coming." It
-     doesn't know about KalakalGG, the Job Tracker or ClarkFlow 360, so a visitor asking
-     "What projects has Clark built?" gets an incomplete answer.
+  2. FIXED (November 11): the chat bot's knowledge used to list only 5 projects. It now
+     includes KalakalGG, the Job Tracker and ClarkFlow 360 too.
      (BACKEND/PORTFOLIO CHAT/functions/portfolio-chat/index.ts, KNOWLEDGE block.)
   3. KalakalGG card says "CODM and MLBB accounts", but the KalakalGG README now lists 13
      games.
@@ -987,8 +1018,8 @@ Found while reading the code. None of these were changed.
   5. Location wording: the Hero and Contact say "Philippines"; the CV, CV viewer and chat
      bot say "Cebu, Philippines". (Not wrong, just uneven.)
   6. TeamSync landing page footer says "© 2025 TeamSync Workspace".
-  7. The CV's header still links the old address https://clarkportfolio.vercel.app
-     instead of www.clarkva360.site.
+  7. FIXED (November 16): the CV's header used to link the old address
+     https://clarkportfolio.vercel.app. The new CV links www.clarkva360.site.
   8. FRONTEND/.env.example doesn't list VITE_EMAILJS_PUBLIC_KEY, but the contact form
      needs it to send the email notification.
   9. BuhayVA's landing page names "Gemini 2.5 Flash"; the code notes elsewhere say
@@ -997,6 +1028,9 @@ Found while reading the code. None of these were changed.
  10. The local Auto Scheduler server (server.js) still uses old Gemini model names
      (gemini-2.5-flash, 2.0-flash, 1.5-flash). It is only a development fallback, but it
      will stop working as those models retire.
+ 11. Outside the code: the Contact Info on Clark's OnlineJobs.ph profile (seen November
+     16) still lists another old address, https://clark-va-360.vercel.app. It should be
+     www.clarkva360.site.
 
 ================================================================================
 END OF SUMMARY

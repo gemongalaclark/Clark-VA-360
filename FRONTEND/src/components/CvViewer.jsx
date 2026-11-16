@@ -48,7 +48,7 @@ export default function CvViewer({ open, onClose }) {
           <span className={styles.fileIcon} aria-hidden="true"><FileText size={18} /></span>
           <div className={styles.titleWrap}>
             <h2 id="cv-title" className={styles.title}>Clark Gemongala — Résumé</h2>
-            <p className={styles.sub}>PDF · 2 pages · Updated Oct 2026</p>
+            <p className={styles.sub}>PDF · 2 pages · Updated Nov 2026</p>
           </div>
           <div className={styles.actions}>
             <a className={styles.ghostBtn} href={CV_URL} target="_blank" rel="noopener noreferrer">
