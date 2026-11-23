@@ -1,5 +1,6 @@
-/* Admin: same paper-and-ink look as the public site. Phone first (top bar +
-   bottom tabs), light sidebar from 900px. Lists are ruled rows, not cards.
+/* Admin: same paper-and-ink sticker look as the public site. Phone first (top
+   bar + bottom tabs), a dark ink sidebar from 900px. Block heads are ink tabs on
+   a rule; lists are ruled rows, not cards.
    Tokens come from .app in Showroom360.module.css. */
 
 .admin { min-height: 100vh; }
@@ -32,7 +33,7 @@
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
   display: grid; grid-template-columns: repeat(var(--tabs, 5), 1fr);
   background: rgba(var(--paper-rgb), 0.97); backdrop-filter: blur(8px);
-  border-top: 1.5px solid var(--ink); padding-bottom: env(safe-area-inset-bottom);
+  border-top: 2px solid var(--ink); padding-bottom: env(safe-area-inset-bottom);
 }
 .bottomNav .navItem {
   flex-direction: column; justify-content: center; gap: 3px; min-height: 60px; padding: 6px 2px;
@@ -40,7 +41,7 @@
 }
 .bottomNav .navItem[aria-current='page'] { color: var(--ink); }
 .bottomNav .navItem[aria-current='page']::before {
-  content: ''; position: absolute; top: -1.5px; left: 24%; right: 24%; height: 3px; background: var(--red);
+  content: ''; position: absolute; top: -2px; left: 24%; right: 24%; height: 4px; background: var(--red);
 }
 
 .sidebar { display: none; }
@@ -48,33 +49,35 @@
 @media (min-width: 900px) {
   .admin { display: grid; grid-template-columns: 240px minmax(0, 1fr); }
   .topBar, .bottomNav { display: none; }
+  /* A dark band in both themes (--band), like the back office of the lot */
   .sidebar {
     position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; gap: 8px;
-    padding: 20px 12px; background: var(--paper-2); border-right: 1.5px solid var(--ink); color: var(--ink);
+    padding: 20px 12px; background: var(--band); border-right: 2px solid var(--ink); color: var(--on-band);
   }
 }
-.sideBrand { display: flex; align-items: center; gap: 10px; padding: 4px 8px 16px; margin-bottom: 4px; border-bottom: 2px solid var(--ink); }
-.sideName { font-family: var(--display); font-weight: 700; font-size: 1.2rem; text-transform: uppercase; letter-spacing: 0.02em; line-height: 1.05; color: var(--ink); }
-.sideRole { color: var(--ink-2); font-size: 0.8rem; }
+.sideBrand { display: flex; align-items: center; gap: 10px; padding: 4px 8px 18px; margin-bottom: 6px; border-bottom: 1px solid rgba(var(--on-band-rgb), 0.16); }
+.sideName { font-family: var(--display); font-weight: 700; font-size: 1.25rem; text-transform: uppercase; letter-spacing: 0.02em; line-height: 1.05; color: var(--on-band); }
+.sideRole { color: rgba(var(--on-band-rgb), 0.66); font-size: 0.8rem; }
 .sideNav { display: grid; gap: 2px; }
-.sideNav .navItem { padding: 10px 12px; border-radius: var(--radius); color: var(--ink-2); font-weight: 600; }
-.sideNav .navItem:hover { background: rgba(var(--ink-rgb), 0.06); color: var(--ink); }
+.sideNav .navItem { padding: 10px 12px; border-radius: var(--radius); color: rgba(var(--on-band-rgb), 0.72); font-weight: 600; transition: background-color 0.15s, color 0.15s; }
+.sideNav .navItem:hover { background: rgba(var(--on-band-rgb), 0.08); color: var(--on-band); }
 .sideNav .navIcon { position: static; }
 .sideNav .navBadge { top: 50%; right: 12px; transform: translateY(-50%); }
-.sideNav .navItem[aria-current='page'] { background: var(--ink); color: var(--paper); }
-.sideFoot { margin-top: auto; display: grid; gap: 2px; padding-top: 12px; border-top: 1px solid var(--rule-2); }
+.sideNav .navItem[aria-current='page'] { background: rgba(var(--on-band-rgb), 0.1); color: var(--on-band); box-shadow: inset 4px 0 0 var(--red); }
+.sideFoot { margin-top: auto; display: grid; gap: 2px; padding-top: 12px; border-top: 1px solid rgba(var(--on-band-rgb), 0.16); }
 .sideLink {
   display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 10px 12px; border: 0; border-radius: var(--radius);
-  background: none; color: var(--ink-2); font: inherit; font-weight: 600; text-decoration: none; cursor: pointer; text-align: left;
+  background: none; color: rgba(var(--on-band-rgb), 0.72); font: inherit; font-weight: 600; text-decoration: none; cursor: pointer; text-align: left;
 }
-.sideLink:hover { background: rgba(var(--ink-rgb), 0.06); color: var(--ink); }
+.sideLink:hover { background: rgba(var(--on-band-rgb), 0.08); color: var(--on-band); }
 
 /* ── PIN gate ── */
 
 .gateWrap { display: grid; place-items: center; min-height: 100vh; padding: 24px 16px !important; }
 .gate {
   width: min(380px, 100%); display: grid; justify-items: center; gap: 14px; text-align: center;
-  padding: 28px 22px 18px; background: var(--surface); border: 2px solid var(--ink); border-radius: var(--radius);
+  padding: 28px 22px 18px; background: var(--surface); border: 2px solid var(--ink); border-top-width: 10px; border-radius: var(--radius);
+  box-shadow: var(--lift);
 }
 .gate > div { width: 100%; text-align: left; }
 .pinInput { text-align: center; letter-spacing: 0.45em; font-size: 1.35rem !important; font-variant-numeric: tabular-nums; }
@@ -85,7 +88,7 @@
 @media (min-width: 900px) { .page { padding: 28px 32px 48px; } }
 .pageHead {
   display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;
-  padding-bottom: 12px; margin-bottom: 18px; border-bottom: 2px solid var(--ink);
+  padding-bottom: 14px; margin-bottom: 20px; border-bottom: 3px solid var(--ink);
 }
 .headActions { display: flex; flex-wrap: wrap; gap: 8px; }
 .count {
@@ -106,13 +109,13 @@
 
 /* ── dashboard ── */
 
-/* One ruled strip of numbers: the 1px gaps show the rule colour behind */
+/* One ruled strip of numbers on a block shadow: the gaps show the ink behind */
 .stats {
-  list-style: none; margin: 0 0 8px; padding: 0;
-  display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px;
-  background: var(--rule-2); border-bottom: 1px solid var(--rule-2);
+  list-style: none; margin: 0 4px 8px 0; padding: 0;
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5px;
+  background: var(--ink); border: 2px solid var(--ink); border-radius: 2px; box-shadow: var(--lift);
 }
-.stats li { background: var(--paper); }
+.stats li { background: var(--surface); }
 .stats li:last-child { grid-column: 1 / -1; }
 @media (min-width: 700px) { .stats { grid-template-columns: repeat(5, 1fr); } .stats li:last-child { grid-column: auto; } }
 .stat {
@@ -120,13 +123,19 @@
   transition: background-color 0.15s;
 }
 .stat:hover { background: var(--paper-2); }
-.statValue { font-family: var(--display); font-size: 2.6rem; font-weight: 700; color: var(--ink); line-height: 1; font-variant-numeric: tabular-nums; }
+.statValue { font-family: var(--display); font-size: 2.8rem; font-weight: 700; color: var(--ink); line-height: 1; font-variant-numeric: tabular-nums; }
 .statLabel { color: var(--ink-2); font-size: 0.82rem; font-weight: 500; }
-.statAccent { box-shadow: inset 0 3px 0 var(--red); }
+.statAccent { box-shadow: inset 0 5px 0 var(--red); }
 .statAccent .statValue { color: var(--red-text); }
 
-.block { margin-top: 28px; padding-top: 6px; border-top: 2px solid var(--ink); }
-.blockHead { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 2px; }
+.block { margin-top: 32px; }
+/* the heading is an ink tab sitting on the block's rule, the link at the other end */
+.blockHead {
+  display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 4px 12px;
+  margin-bottom: 2px; border-bottom: 2px solid var(--ink);
+}
+.blockHead h2 { padding: 7px 14px 5px; background: var(--ink); color: var(--paper); letter-spacing: 0.04em; }
+.blockHead > span { padding-bottom: 6px; }
 .more { display: inline-flex; align-items: center; gap: 2px; min-height: 44px; color: var(--ink-2); font-size: 0.88rem; font-weight: 600; text-decoration: none; }
 .more:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
 .rows { list-style: none; margin: 0; padding: 0; }
@@ -193,17 +202,19 @@ a.row:hover strong { text-decoration: underline; text-underline-offset: 3px; }
 
 /* ── forms ── */
 
-.fieldset {
-  display: grid; gap: 14px; min-width: 0; margin: 0 0 28px; padding: 10px 0 0;
-  border: 0; border-top: 2px solid var(--ink);
-}
-/* the page title's rule already opens the first section */
-.pageHead + .fieldset { border-top: 0; padding-top: 0; }
+.fieldset { display: grid; gap: 14px; min-width: 0; margin: 0 0 30px; padding: 0; border: 0; }
+/* The legend is an ink tab on a rule, like the public section heads: ::after
+   paints paper over the rest of the line and draws the rule under it */
 .fieldset > legend {
-  float: left; width: 100%; padding: 0; margin: 0;
-  font-family: var(--display); font-weight: 700; font-size: 1.3rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--ink);
+  float: left; width: 100%; display: flex; align-items: center; margin: 0 0 4px; padding: 7px 0 5px 14px;
+  background: var(--ink); color: var(--paper);
+  font-family: var(--display); font-weight: 700; font-size: 1.3rem; line-height: 1.1; text-transform: uppercase; letter-spacing: 0.04em;
 }
-.legendNote { margin-left: 6px; color: var(--ink-2); font-family: var(--body); font-weight: 500; font-size: 0.85rem; text-transform: none; letter-spacing: 0; }
+.fieldset > legend::after {
+  content: ''; flex: 1; align-self: stretch; min-width: 24px; margin: -7px 0 -5px 14px;
+  background: var(--paper); border-bottom: 2px solid var(--ink);
+}
+.legendNote { margin-left: 8px; color: rgba(var(--paper-rgb), 0.72); font-family: var(--body); font-weight: 500; font-size: 0.85rem; text-transform: none; letter-spacing: 0; }
 .formCols { display: grid; gap: 14px; }
 @media (min-width: 600px) { .formCols { grid-template-columns: 1fr 1fr; gap: 14px 16px; } }
 .colorRow { display: flex; align-items: center; gap: 10px; }
@@ -244,7 +255,7 @@ a.row:hover strong { text-decoration: underline; text-underline-offset: 3px; }
 
 .eventList { list-style: none; margin: 0; padding: 0; display: grid; gap: 24px; }
 @media (min-width: 760px) { .eventList { grid-template-columns: 1fr 1fr; gap: 28px 32px; } }
-.eventCard { display: grid; gap: 8px; padding-top: 10px; border-top: 2px solid var(--ink); }
+.eventCard { display: grid; gap: 8px; padding-top: 10px; border-top: 3px solid var(--ink); }
 .eventCard h2 { display: flex; align-items: center; gap: 6px; }
 .eventTop { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .statusChip {
@@ -267,7 +278,7 @@ a.row:hover strong { text-decoration: underline; text-underline-offset: 3px; }
 
 .leadList { list-style: none; margin: 0; padding: 0; display: grid; gap: 24px; }
 @media (min-width: 900px) { .leadList { grid-template-columns: 1fr 1fr; gap: 28px 32px; } }
-.leadCard { display: grid; gap: 4px; padding-top: 10px; border-top: 2px solid var(--ink); }
+.leadCard { display: grid; gap: 4px; padding-top: 10px; border-top: 3px solid var(--ink); }
 .leadNew { border-top-color: var(--red); }
 .leadTop { display: flex; align-items: center; gap: 6px; }
 .leadType { display: inline-flex; align-items: center; gap: 6px; color: var(--ink); font-size: 0.85rem; font-weight: 600; }
@@ -289,8 +300,12 @@ a.row:hover strong { text-decoration: underline; text-underline-offset: 3px; }
 
 .historyDay { margin-top: 22px; }
 .historyDayHead {
-  padding-bottom: 6px; border-bottom: 2px solid var(--ink);
+  display: flex; align-items: center; padding: 6px 0 4px 12px; background: var(--ink); color: var(--paper);
   font-size: 1.2rem; text-transform: uppercase; letter-spacing: 0.04em; line-height: 1.1;
+}
+.historyDayHead::after {
+  content: ''; flex: 1; align-self: stretch; min-width: 24px; margin: -6px 0 -4px 12px;
+  background: var(--paper); border-bottom: 2px solid var(--ink);
 }
 .historyList { list-style: none; margin: 0; padding: 0; }
 .historyItem { display: grid; grid-template-columns: 68px minmax(0, 1fr); gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--rule); }
@@ -316,6 +331,7 @@ a.row:hover strong { text-decoration: underline; text-underline-offset: 3px; }
 .logoRow { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
 .rateGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); gap: 10px; }
 .rateGrid > p { grid-column: 1 / -1; }
-.dangerZone { border-top-color: var(--red); }
+.dangerZone > legend { background: var(--red); color: #fff; }
+.dangerZone > legend::after { border-bottom-color: var(--red); }
 
 .captionArea { min-height: 260px; font-size: 15px; line-height: 1.5; }

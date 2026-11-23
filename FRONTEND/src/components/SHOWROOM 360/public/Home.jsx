@@ -1,12 +1,12 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight, Phone, ExternalLink, Tag, ArrowRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Phone, ExternalLink, ArrowRight } from 'lucide-react';
 import styles from '../Showroom360.module.css';
 import { useShowroom } from '../store.js';
 import { t, timeLeft } from '../i18n.js';
 import { useNav, Link, CarPhoto, PriceTag } from '../ui.jsx';
 import {
   featuredCars, recentlySold, liveEventsWithCars, effectivePrice, monthlyFrom, carTitle, formatPeso, formatKm,
-  TRANSMISSIONS, FUELS, mapsOpenUrl, filterCars,
+  TRANSMISSIONS, FUELS, BODY_TYPES, mapsOpenUrl, filterCars,
 } from '../showroomRules.js';
 import { CarCard } from './Inventory.jsx';
 
@@ -47,7 +47,8 @@ export default function Home() {
 
   return (
     <>
-      <Featured slides={featuredCars(cars, events, now)} live={live} />
+      <Ticker items={tickerItems(lang, { live, forSale, settings, now })} />
+      <Featured slides={featuredCars(cars, events, now)} />
 
       {forSale.length > 0 && (
         <section className={styles.section} aria-labelledby="sr-latest">
@@ -125,7 +126,37 @@ export default function Home() {
   );
 }
 
-function Featured({ slides, live }) {
+/* The shop's news for the red band: live sales first, then facts from its own
+   data (never a claim the dealer didn't make). */
+function tickerItems(lang, { live, forSale, settings, now }) {
+  const items = live.map(ev => t(lang, 'ticker.event', { name: ev.name, time: timeLeft(lang, ev.endsAt, now) }));
+  if (forSale.length) items.push(forSale.length === 1 ? t(lang, 'ticker.stock1') : t(lang, 'ticker.stock', { n: forSale.length }));
+  if (forSale.some(c => c.financing)) items.push(t(lang, 'ticker.financing'));
+  if (settings.hours) items.push(t(lang, 'ticker.hours', { hours: settings.hours }));
+  if (settings.address) items.push(settings.address);
+  return items;
+}
+
+/* A band that runs the items across, looping. Screen readers get the items once;
+   it holds still under a finger or mouse, and with reduced motion. */
+function Ticker({ items }) {
+  if (!items.length) return null;
+  const run = Array.from({ length: Math.ceil(8 / items.length) }, () => items).flat();
+  return (
+    <div className={styles.ticker}>
+      <p className={styles.srOnly}>{items.join('. ')}</p>
+      <div className={styles.tickerTrack} style={{ '--ticker-s': `${run.length * 5}s` }} aria-hidden="true">
+        {[0, 1].map(copy => (
+          <div key={copy} className={styles.tickerRun}>
+            {run.map((text, k) => <span key={k} className={styles.tickerItem}>{text}</span>)}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Featured({ slides }) {
   const { events, settings } = useShowroom();
   const { lang, now } = useNav();
   const reduced = useReducedMotion();
@@ -168,17 +199,6 @@ function Featured({ slides, live }) {
               <strong>{String(i + 1).padStart(2, '0')}</strong> / {String(n).padStart(2, '0')}
             </p>
           )}
-          {live.length > 0 && (
-            <ul className={styles.eventChips}>
-              {live.map(ev => (
-                <li key={ev.id} className={styles.eventChip}>
-                  <Tag size={14} strokeWidth={2} aria-hidden="true" />
-                  <strong>{ev.name}</strong>
-                  <span>{t(lang, 'home.endsIn', { time: timeLeft(lang, ev.endsAt, now) })}</span>
-                </li>
-              ))}
-            </ul>
-          )}
         </div>
 
         <div className={styles.slides}>
@@ -195,22 +215,24 @@ function Featured({ slides, live }) {
                 aria-hidden={k !== i}
               >
                 <div className={styles.slideMedia}>
-                  <CarPhoto car={car} label={title} />
+                  <CarPhoto car={car} label={title} mark />
+                  {car.stockNo && <span className={`${styles.mediaTag} ${styles.mediaTagLeft}`} aria-hidden="true">{car.stockNo}</span>}
+                  {BODY_TYPES[car.body] && <span className={`${styles.mediaTag} ${styles.mediaTagRight}`} aria-hidden="true">{BODY_TYPES[car.body]}</span>}
                 </div>
                 <div className={styles.slideText}>
-                  {info.event && <span className={styles.saleChip}>{info.event.name}</span>}
                   <h2 className={styles.slideTitle}>{title}</h2>
                   <p className={styles.slideFacts}>
                     {[formatKm(car.odometer), TRANSMISSIONS[car.transmission], FUELS[car.fuel]].join(' · ')}
                   </p>
                   <div className={`${styles.sticker} ${info.event ? styles.stickerSale : ''}`}>
+                    <span className={styles.stickerHead}>{info.event ? info.event.name : t(lang, 'sticker.price')}</span>
                     <PriceTag info={info} wasLabel={t(lang, 'car.was')} className={styles.slidePrice} />
+                    <span className={styles.stickerTear}>
+                      {car.financing
+                        ? t(lang, 'cars.fromMo', { amount: formatPeso(monthlyFrom(info.price, settings.financing)) })
+                        : t(lang, 'cars.cashOnly')}
+                    </span>
                   </div>
-                  {car.financing && (
-                    <p className={styles.slideMonthly}>
-                      {t(lang, 'cars.fromMo', { amount: formatPeso(monthlyFrom(info.price, settings.financing)) })}
-                    </p>
-                  )}
                   <div className={styles.actions}>
                     <Link to={`/showroom/cars/${car.id}`} className={styles.btnPrimary} tabIndex={k === i ? 0 : -1}>
                       {t(lang, 'home.viewCar')}
@@ -230,13 +252,14 @@ function Featured({ slides, live }) {
             <button type="button" className={styles.roundBtn} onClick={() => go(-1)} aria-label={t(lang, 'home.prev')}>
               <ChevronLeft size={20} strokeWidth={1.75} aria-hidden="true" />
             </button>
-            <div className={styles.dots}>
+            <div className={styles.dots} data-run={auto && !hold ? '' : undefined} style={{ '--slide-ms': `${SLIDE_MS}ms` }}>
               {slides.map((car, k) => (
                 <button
                   key={car.id}
                   type="button"
                   className={styles.dot}
                   aria-current={k === i ? 'true' : undefined}
+                  data-done={k < i ? '' : undefined}
                   aria-label={t(lang, 'home.slide', { n: k + 1, total: n })}
                   onClick={() => setIndex(k)}
                 />

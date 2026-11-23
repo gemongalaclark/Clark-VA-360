@@ -1,6 +1,8 @@
-/* Showroom 360, "window sticker" look: paper, ink and one red, like the price
-   sticker and spec sheet on a car at the lot. Flat: sections are split by ink
-   rules, not cards. Shadows only on overlays (sheet, toast).
+/* Showroom 360, "window sticker" look, turned up: paper, ink and one red, like the
+   price sticker and spec sheet on a car at the lot.
+   - Section heads are ink tabs on a rule, like the black bars on a real sticker.
+   - Price stickers and the main buttons sit on a solid block shadow (--lift).
+   - Flat otherwise: no gradients or glows, no blur shadows except on overlays.
    Tokens live on .app and .toastRegion (the toast sits outside .app).
    Dark mode swaps the colour tokens only: see the block right after this one. */
 
@@ -13,7 +15,7 @@
   --paper: #f5f4ef;
   --paper-rgb: 245, 244, 239; /* see-through bars: rgba(var(--paper-rgb), 0.95) */
   --paper-2: #ebe9e1;        /* media wells, hover */
-  --surface: #fffefa;        /* inputs, sheets */
+  --surface: #fffefa;        /* inputs, sheets, cards */
   --rule: rgba(var(--ink-rgb), 0.14);
   --rule-2: rgba(var(--ink-rgb), 0.3);
   --field: rgba(var(--ink-rgb), 0.5);   /* input edges: 3.2:1 on paper */
@@ -30,6 +32,11 @@
   --note-rule: #e7c98c;
   --art-tyre: var(--ink);    /* car drawings */
   --art-rim: var(--paper);
+  --shade: var(--ink);       /* the solid block shadow */
+  --lift: 4px 4px 0 var(--shade);
+  --band: #1a1a2e;           /* a dark band in both themes: footer, admin sidebar */
+  --on-band: #f5f4ef;
+  --on-band-rgb: 245, 244, 239;
   --radius: 3px;
   --focus: 0 0 0 3px rgba(var(--ink-rgb), 0.14);
   --display: 'Barlow Condensed', 'Arial Narrow', system-ui, sans-serif;
@@ -64,6 +71,8 @@
   --note-rule: #5c4818;
   --art-tyre: #08080c;
   --art-rim: #b9b8bf;
+  --shade: #000;
+  --band: #0b0b11;
 }
 
 .app {
@@ -98,7 +107,7 @@
   border-bottom: 2px solid var(--ink);
 }
 .headerInner {
-  max-width: 1200px; margin: 0 auto; height: 60px; padding: 0 8px 0 16px;
+  max-width: 1200px; margin: 0 auto; height: 62px; padding: 0 8px 0 16px;
   display: flex; align-items: center; gap: 12px;
 }
 .brand {
@@ -107,12 +116,15 @@
   font-family: var(--display); font-weight: 700; font-size: 1.3rem; text-transform: uppercase; letter-spacing: 0.02em; line-height: 1;
 }
 .brand span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* small phones: keep a three-word shop name whole next to EN | CEB and the theme switch */
+@media (max-width: 379px) { .brand { gap: 8px; font-size: 1.12rem; } }
 .logo { flex: none; border-radius: var(--radius); object-fit: cover; }
 .logo_md { width: 36px; height: 36px; font-size: 1rem; }
 .logo_lg { width: 56px; height: 56px; font-size: 1.4rem; }
 .logoMark {
   display: grid; place-items: center; background: var(--red); color: #fff;
   font-family: var(--display); font-weight: 700; letter-spacing: 0.03em;
+  box-shadow: 2px 2px 0 var(--shade);
 }
 
 .topNav { display: none; gap: 2px; }
@@ -122,8 +134,14 @@
   transition: color 0.15s;
 }
 .navLink:hover { color: var(--ink); }
-.topNav .navLink { font-family: var(--display); font-size: 1.15rem; text-transform: uppercase; letter-spacing: 0.03em; }
-.topNav .navLink[aria-current] { color: var(--ink); box-shadow: inset 0 -3px 0 var(--red); }
+.topNav .navLink { font-family: var(--display); font-size: 1.15rem; text-transform: uppercase; letter-spacing: 0.04em; }
+.topNav .navLink::after {
+  content: ''; position: absolute; left: 12px; right: 12px; bottom: 2px; height: 3px;
+  background: var(--red); transform: scaleX(0); transform-origin: left; transition: transform 0.2s var(--ease);
+}
+.topNav .navLink:hover::after { transform: scaleX(0.4); }
+.topNav .navLink[aria-current] { color: var(--ink); }
+.topNav .navLink[aria-current]::after { transform: none; }
 .topNav .navLink svg { display: none; }
 @media (min-width: 900px) { .topNav { display: flex; } }
 
@@ -139,7 +157,7 @@
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
   display: grid; grid-template-columns: repeat(3, 1fr);
   background: rgba(var(--paper-rgb), 0.97); backdrop-filter: blur(8px);
-  border-top: 1.5px solid var(--ink); padding-bottom: env(safe-area-inset-bottom);
+  border-top: 2px solid var(--ink); padding-bottom: env(safe-area-inset-bottom);
 }
 .bottomNav .navLink {
   flex-direction: column; justify-content: center; gap: 2px; min-height: 60px; padding: 8px 4px;
@@ -147,7 +165,7 @@
 }
 .bottomNav .navLink[aria-current] { color: var(--ink); }
 .bottomNav .navLink[aria-current]::before {
-  content: ''; position: absolute; top: -1.5px; left: 30%; right: 30%; height: 3px; background: var(--red);
+  content: ''; position: absolute; top: -2px; left: 30%; right: 30%; height: 4px; background: var(--red);
 }
 @media (min-width: 900px) { .bottomNav { display: none; } }
 
@@ -156,32 +174,54 @@
   text-align: center; padding: 10px 16px; font-size: 0.9rem;
 }
 
+/* ── sale ticker (home): a red band that runs the shop's news across ── */
+
+.ticker { overflow: hidden; background: var(--red); color: #fff; border-bottom: 2px solid var(--ink); }
+.tickerTrack { display: flex; width: max-content; animation: ticker var(--ticker-s, 40s) linear infinite; }
+.ticker:hover .tickerTrack, .ticker:active .tickerTrack { animation-play-state: paused; }
+.tickerRun { display: flex; flex: none; }
+.tickerItem {
+  display: inline-flex; align-items: center; height: 38px; white-space: nowrap;
+  font-family: var(--display); font-weight: 700; font-size: 1.05rem; text-transform: uppercase; letter-spacing: 0.08em;
+}
+.tickerItem::after { content: ''; width: 7px; height: 7px; margin: 0 20px; background: currentColor; transform: rotate(45deg); }
+@keyframes ticker { to { transform: translateX(-50%); } }
+
 /* ── type & sections ── */
 
 .main { min-height: 60vh; }
 .section { max-width: 1200px; margin: 0 auto; padding: 36px 16px; }
 @media (min-width: 900px) { .section { padding: 56px 24px; } }
 
-/* A section starts with an ink rule and a condensed heading: no cards, no eyebrows */
-.ruleHead {
-  border-top: 2px solid var(--ink); padding-top: 10px; margin-bottom: 18px;
-  font-size: 1.4rem; line-height: 1.1; text-transform: uppercase; letter-spacing: 0.03em;
+/* A section starts with an ink tab on a rule, like the black bars on a window
+   sticker. One element does both: the tab is the heading's own background, and
+   ::after paints paper over the rest of the line and draws the rule under it. */
+.ruleHead, .panel > h2, .loan > h2 {
+  display: flex; align-items: center; margin: 0 0 18px; padding: 7px 0 5px 14px;
+  background: var(--ink); color: var(--paper);
+  font-size: 1.3rem; line-height: 1.1; text-transform: uppercase; letter-spacing: 0.04em;
 }
+.ruleHead::after, .panel > h2::after, .loan > h2::after {
+  content: ''; flex: 1; align-self: stretch; min-width: 24px; margin: -7px 0 -5px 14px;
+  background: var(--paper); border-bottom: 2px solid var(--ink);
+}
+/* a heading with a link beside it: the row draws the rule, the tab sits on it */
 .ruleHeadRow {
-  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0 16px;
-  border-top: 2px solid var(--ink); padding-top: 4px; margin-bottom: 14px;
+  display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 4px 16px;
+  margin-bottom: 18px; border-bottom: 2px solid var(--ink);
 }
-.ruleHeadRow .ruleHead { border: 0; padding-top: 6px; margin: 0; }
-.sectionHint { margin: -10px 0 16px; }
+.ruleHeadRow .ruleHead { margin: 0; padding-right: 14px; }
+.ruleHeadRow .ruleHead::after { content: none; }
+.sectionHint { margin: -8px 0 16px; }
 
-.h1 { font-size: clamp(2.1rem, 7vw, 2.9rem); line-height: 1; text-transform: uppercase; }
+.h1 { font-size: clamp(2.4rem, 8.5vw, 3.6rem); line-height: 0.95; text-transform: uppercase; }
 .h2 { font-size: clamp(1.6rem, 4.5vw, 2.1rem); line-height: 1.05; text-transform: uppercase; }
 .h3 { font-size: 1.3rem; line-height: 1.15; text-transform: uppercase; letter-spacing: 0.03em; }
 .statement {
-  font-family: var(--display); font-weight: 600; font-size: clamp(1.9rem, 7.5vw, 2.8rem); line-height: 1.02;
-  text-transform: uppercase; color: var(--ink); max-width: 20ch; text-wrap: balance;
+  font-family: var(--display); font-weight: 700; font-size: clamp(2.1rem, 8.5vw, 3.2rem); line-height: 0.98;
+  text-transform: uppercase; color: var(--ink); max-width: 18ch; text-wrap: balance;
 }
-.lead { color: var(--ink-2); margin-top: 14px; max-width: 60ch; }
+.lead { color: var(--ink-2); margin-top: 16px; max-width: 60ch; }
 .muted { color: var(--ink-2); font-size: 0.9rem; }
 
 /* ── buttons ── */
@@ -189,18 +229,20 @@
 .btnPrimary, .btnGhost {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   min-height: 48px; padding: 0 20px; border-radius: var(--radius); border: 1.5px solid transparent;
-  font-family: var(--display); font-weight: 700; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 0.04em; line-height: 1;
+  font-family: var(--display); font-weight: 700; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 0.05em; line-height: 1;
   text-decoration: none; white-space: nowrap; cursor: pointer;
-  transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+  transition: background-color 0.15s, border-color 0.15s, color 0.15s, transform 0.12s var(--ease), box-shadow 0.12s var(--ease);
 }
-.btnPrimary { background: var(--red); border-color: var(--red); color: #fff; }
-.btnPrimary:hover { background: var(--red-dark); border-color: var(--red-dark); }
+/* The main button sits on a block shadow and presses down into it */
+.btnPrimary { background: var(--red); border-color: var(--red); color: #fff; box-shadow: 3px 3px 0 var(--shade); }
+.btnPrimary:hover { background: var(--red-dark); border-color: var(--red-dark); transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--shade); }
+.btnPrimary:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--shade); }
 .btnGhost { background: transparent; border-color: var(--ink); color: var(--ink); }
 .btnGhost:hover { background: var(--ink); color: var(--paper); }
-.btnPrimary:active, .btnGhost:active { transform: translateY(1px); }
-.btnPrimary:disabled, .btnGhost:disabled { opacity: 0.45; cursor: not-allowed; }
+.btnGhost:active { transform: translateY(1px); }
+.btnPrimary:disabled, .btnGhost:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
 .btnBlock { width: 100%; }
-.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-top: 20px; }
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; margin-top: 22px; }
 .arrowLink {
   display: inline-flex; align-items: center; gap: 6px; min-height: 44px;
   color: var(--ink); font-weight: 600; text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 5px;
@@ -221,8 +263,17 @@
 /* ── photos, prices, tags ── */
 
 .photo { display: block; width: 100%; height: 100%; object-fit: cover; }
-.photoArt { display: grid; place-items: center; padding: 8% 9%; background: var(--paper-2); }
-.photoArt svg { width: 100%; height: auto; max-height: 100%; }
+.photoArt { position: relative; container-type: inline-size; display: grid; place-items: center; padding: 8% 9%; background: var(--paper-2); }
+.photoArt svg { position: relative; width: 100%; height: auto; max-height: 100%; }
+/* The model's name in giant outline letters behind a drawn car. Sized by its
+   length (--len) so short and long names both fill the width. Decorative. */
+.modelMark {
+  position: absolute; inset: 0; display: grid; place-items: start center; padding-top: 5%;
+  overflow: hidden; pointer-events: none; user-select: none;
+  font-family: var(--display); font-weight: 700; line-height: 1; letter-spacing: 0.02em; text-transform: uppercase; white-space: nowrap;
+  font-size: min(30cqi, calc(170cqi / var(--len, 6)));
+  color: transparent; -webkit-text-stroke: 1.5px var(--rule-2);
+}
 
 .priceTag {
   display: inline-flex; align-items: baseline; flex-wrap: wrap; gap: 0 10px;
@@ -231,17 +282,49 @@
 .priceSale { color: var(--red-text); }
 .priceWas { color: var(--ink-2); font-family: var(--body); font-weight: 400; font-size: 0.5em; }
 
-/* The window sticker: ink outline, or solid red while a sale is on */
+/* The price sticker: a label, the price, and a tear-off line with the monthly.
+   Ink outline on a block shadow, or solid red while a sale is on. */
 .sticker {
-  display: inline-flex; align-items: center; padding: 7px 14px 6px;
-  background: var(--surface); border: 2px solid var(--ink); border-radius: 2px;
+  position: relative; display: inline-grid; justify-items: start; gap: 4px; min-width: min(100%, 240px);
+  padding: 10px 18px 12px; background: var(--surface); border: 2px solid var(--ink); border-radius: 2px;
+  box-shadow: var(--lift);
 }
-.stickerSale { background: var(--red); border-color: var(--red); }
-.stickerSale .priceTag, .stickerSale .priceSale, .stickerSale .priceWas { color: #fff; }
+.stickerHead {
+  font-family: var(--display); font-weight: 600; font-size: 0.92rem; line-height: 1.2;
+  text-transform: uppercase; letter-spacing: 0.12em; color: var(--ink-2);
+}
+.stickerTear {
+  position: relative; justify-self: stretch; margin: 8px -18px 0; padding: 9px 18px 0;
+  border-top: 2px dashed var(--rule-2); color: var(--ink-2); font-size: 0.92rem; font-variant-numeric: tabular-nums;
+}
+/* half-circle bites where the tear line meets the edges: a paper circle on the
+   edge, clipped to the half inside the sticker so only the inner arc shows */
+.stickerTear::before, .stickerTear::after {
+  content: ''; position: absolute; top: -9px; width: 16px; height: 16px; border-radius: 50%;
+  background: var(--paper); border: 2px solid var(--ink);
+}
+.stickerTear::before { left: -11px; clip-path: inset(-1px -1px -1px 50%); }
+.stickerTear::after { right: -11px; clip-path: inset(-1px 50% -1px -1px); }
+.stickerSale { background: var(--red); }
+.stickerSale .priceTag, .stickerSale .priceSale, .stickerSale .priceWas, .stickerSale .stickerTear { color: #fff; }
+.stickerSale .stickerHead { color: #fff; }
+.stickerSale .stickerTear { border-top-color: rgba(255, 255, 255, 0.55); }
+
+/* A barcode with the stock number: decoration on the car page's sticker */
+.barcode {
+  display: flex; align-items: center; gap: 10px; margin-top: 2px;
+  font-family: var(--display); font-weight: 600; font-size: 0.88rem; letter-spacing: 0.16em; color: var(--ink-2);
+}
+.barcode::before {
+  content: ''; flex: none; width: 84px; height: 22px;
+  background: repeating-linear-gradient(90deg,
+    var(--ink) 0 2px, transparent 2px 4px, var(--ink) 4px 5px, transparent 5px 8px,
+    var(--ink) 8px 11px, transparent 11px 12px, var(--ink) 12px 13px, transparent 13px 16px);
+}
 
 .saleChip, .reservedChip {
   display: inline-flex; align-items: center; padding: 3px 8px 2px; border-radius: 2px;
-  font-family: var(--display); font-weight: 700; font-size: 0.88rem; text-transform: uppercase; letter-spacing: 0.04em; line-height: 1.15;
+  font-family: var(--display); font-weight: 700; font-size: 0.88rem; text-transform: uppercase; letter-spacing: 0.05em; line-height: 1.15;
 }
 .saleChip { background: var(--red); color: #fff; }
 .reservedChip { background: var(--paper); color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--ink); }
@@ -249,95 +332,112 @@
 /* ── featured ── */
 
 .featured { background: var(--paper); }
-.featuredInner { max-width: 1200px; margin: 0 auto; padding: 14px 16px 28px; }
+.featuredInner { max-width: 1200px; margin: 0 auto; padding: 18px 16px 30px; }
 .featuredTop {
-  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px;
-  padding-bottom: 10px; margin-bottom: 16px; border-bottom: 2px solid var(--ink);
+  display: flex; align-items: flex-end; justify-content: space-between; gap: 12px;
+  margin-bottom: 18px; border-bottom: 2px solid var(--ink);
 }
-.featuredTop .featuredLabel { font-size: 1.4rem; line-height: 1.1; text-transform: uppercase; letter-spacing: 0.03em; }
+.featuredTop .featuredLabel {
+  padding: 7px 14px 5px; background: var(--ink); color: var(--paper);
+  font-size: 1.3rem; line-height: 1.1; text-transform: uppercase; letter-spacing: 0.04em;
+}
 .slideCount {
-  margin-left: auto; font-family: var(--display); font-weight: 600; font-size: 1.15rem;
+  padding-bottom: 4px; font-family: var(--display); font-weight: 600; font-size: 1.15rem;
   color: var(--ink-2); font-variant-numeric: tabular-nums; letter-spacing: 0.04em;
 }
-.slideCount strong { color: var(--ink); }
-.eventChips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; flex-basis: 100%; }
-.eventChip {
-  display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px;
-  background: var(--surface); border: 1px solid var(--rule-2); border-radius: 2px; color: var(--ink-2); font-size: 0.85rem;
-}
-.eventChip svg { color: var(--red-text); }
-.eventChip strong { color: var(--ink); font-weight: 700; }
+.slideCount strong { color: var(--ink); font-size: 1.6rem; }
 
 .slides { display: grid; }
 .slide {
-  grid-area: 1 / 1; display: grid; gap: 18px; align-content: start;
+  grid-area: 1 / 1; display: grid; gap: 22px; align-content: start;
   opacity: 0; visibility: hidden;
   transition: opacity 0.45s var(--ease), visibility 0s linear 0.45s;
 }
 .slideActive { opacity: 1; visibility: visible; transition: opacity 0.45s var(--ease); }
-.slideMedia { position: relative; aspect-ratio: 16 / 10; border-radius: 2px; overflow: hidden; background: var(--paper-2); }
-.slideMedia .photoArt { background: transparent; padding: 7% 7%; }
-.slideMedia .photoArt svg { transition: transform 0.6s var(--ease); transform: translateX(-10px); }
-.slideActive .slideMedia .photoArt svg { transform: none; }
+.slideMedia {
+  position: relative; aspect-ratio: 16 / 10; border: 2px solid var(--ink); border-radius: 2px; overflow: hidden;
+  background: var(--paper-2); box-shadow: var(--lift); margin-right: 4px;
+}
+.slideMedia .photoArt { background: transparent; padding: 9% 7% 5%; }
+.slideMedia .photoArt svg { transition: transform 0.7s var(--ease), opacity 0.5s var(--ease); transform: translateX(-36px); opacity: 0; }
+.slideActive .slideMedia .photoArt svg { transform: none; opacity: 1; }
+.slideMedia .modelMark { transition: transform 0.9s var(--ease); transform: translateX(24px); }
+.slideActive .slideMedia .modelMark { transform: none; }
+/* small print in the corners of the frame */
+.mediaTag {
+  position: absolute; z-index: 1; top: 8px; padding: 2px 8px 1px; border-radius: 2px;
+  font-family: var(--display); font-weight: 600; font-size: 0.85rem; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--ink); background: rgba(var(--paper-rgb), 0.9); box-shadow: inset 0 0 0 1px var(--rule-2);
+}
+.mediaTagLeft { left: 8px; }
+.mediaTagRight { right: 8px; }
 .slide .slideTitle {
-  font-size: clamp(2.1rem, 9vw, 3.6rem); line-height: 0.98; text-transform: uppercase; margin: 8px 0 8px; text-wrap: balance;
+  font-size: clamp(2.3rem, 10vw, 4rem); line-height: 0.95; text-transform: uppercase; margin: 0 0 8px; text-wrap: balance;
 }
 .slideFacts { color: var(--ink-2); font-variant-numeric: tabular-nums; }
-.slideText .sticker { margin-top: 16px; }
-.slidePrice { font-size: 2.1rem; }
-.slideMonthly { color: var(--ink-2); margin-top: 8px; font-size: 0.95rem; font-variant-numeric: tabular-nums; }
+.slideText .sticker { margin-top: 18px; }
+.slidePrice { font-size: 2.3rem; }
 
 @media (min-width: 900px) {
-  .featuredInner { padding: 20px 24px 36px; }
-  .eventChips { flex-basis: auto; order: 1; }
-  .slideCount { order: 2; }
+  .featuredInner { padding: 24px 24px 40px; }
   .slide { grid-template-columns: 5fr 7fr; align-items: center; gap: 48px; }
   .slideMedia { order: 2; }
 }
 
-.carouselControls { display: flex; align-items: center; gap: 8px; margin-top: 22px; }
+.carouselControls { display: flex; align-items: center; gap: 8px; margin-top: 24px; }
 .roundBtn {
   width: 44px; height: 44px; flex: none; display: grid; place-items: center;
   border: 1.5px solid var(--ink); border-radius: var(--radius); background: transparent; color: var(--ink); cursor: pointer;
   transition: background-color 0.15s, color 0.15s;
 }
 .roundBtn:hover { background: var(--ink); color: var(--paper); }
-/* progress: one segment per car */
+/* progress: one segment per car. While the carousel runs, the current segment
+   fills over one slide's time (--slide-ms); held or reduced motion, it shows full. */
 .dots { flex: 1; min-width: 0; display: flex; gap: 4px; }
 .dot { position: relative; flex: 1; min-width: 12px; height: 44px; padding: 0; border: 0; background: transparent; cursor: pointer; }
-.dot::after {
+.dot::after, .dot::before {
   content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 3px; margin-top: -1.5px;
-  background: var(--rule-2); transition: background-color 0.25s;
 }
+.dot::after { background: var(--rule-2); transition: background-color 0.25s; }
+.dot::before { z-index: 1; background: var(--ink); transform: scaleX(0); transform-origin: left; }
 .dot:hover::after { background: var(--ink-2); }
-.dot[aria-current='true']::after { background: var(--ink); height: 5px; margin-top: -2.5px; }
+.dot[data-done]::before { transform: none; }
+.dot[aria-current='true']::before, .dot[aria-current='true']::after { height: 5px; margin-top: -2.5px; }
+.dot[aria-current='true']::before { transform: none; }
+.dots[data-run] .dot[aria-current='true']::before { animation: fill var(--slide-ms, 4s) linear both; }
+@keyframes fill { from { transform: scaleX(0); } to { transform: none; } }
 
 /* ── about / contact ── */
 
-.about { display: grid; gap: 28px; scroll-margin-top: 60px; }   /* clear the sticky header */
+.about { display: grid; gap: 32px; scroll-margin-top: 62px; }   /* clear the sticky header */
 @media (min-width: 900px) { .about { grid-template-columns: 1fr 1fr; align-items: start; gap: 56px; } }
-.contactList { margin: 22px 0 0; display: grid; }
+.contactList { margin: 24px 0 0; display: grid; }
 .contactList div { display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--rule); }
-.contactList div:first-child { border-top: 1px solid var(--rule); }
+.contactList div:first-child { border-top: 2px solid var(--ink); }
 .contactList dt {
-  font-family: var(--display); font-weight: 600; font-size: 1rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-2);
+  font-family: var(--display); font-weight: 600; font-size: 1rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-2);
 }
 .contactList dd { margin: 0; color: var(--ink); font-weight: 500; }
 .contactList a { color: var(--ink); font-weight: 700; font-variant-numeric: tabular-nums; text-underline-offset: 3px; }
-.mapFrame { aspect-ratio: 4 / 3; border: 1.5px solid var(--ink); border-radius: 2px; overflow: hidden; background: var(--paper-2); }
-@media (min-width: 900px) { .mapFrame { margin-top: 2px; } }
+.mapFrame {
+  aspect-ratio: 4 / 3; border: 2px solid var(--ink); border-radius: 2px; overflow: hidden; background: var(--paper-2);
+  box-shadow: var(--lift); margin-right: 4px;
+}
+@media (min-width: 900px) { .mapFrame { margin-top: 60px; } }
 .mapFrame iframe { display: block; width: 100%; height: 100%; border: 0; filter: grayscale(1) contrast(1.05); }
 
 /* ── recently sold ── */
 
 .soldRow {
-  list-style: none; margin: 0; padding: 0 0 8px;
+  list-style: none; margin: 0; padding: 0 0 10px;
   display: grid; grid-auto-flow: column; grid-auto-columns: minmax(200px, 1fr); gap: 14px;
   overflow-x: auto; scroll-snap-type: x mandatory;
 }
 @media (min-width: 900px) { .soldRow { grid-auto-columns: minmax(240px, 1fr); } }
-.soldCard { scroll-snap-align: start; }
-.soldMedia { position: relative; aspect-ratio: 16 / 10; border-radius: 2px; overflow: hidden; background: var(--paper-2); }
+.soldCard { scroll-snap-align: start; border: 1.5px solid var(--rule-2); background: var(--surface); }
+.soldCard > p { padding: 0 10px; }
+.soldCard > p:last-child { padding-bottom: 10px; }
+.soldMedia { position: relative; aspect-ratio: 16 / 10; overflow: hidden; background: var(--paper-2); border-bottom: 1.5px solid var(--rule-2); }
 .soldMedia .photo, .soldMedia .photoArt svg { filter: grayscale(1); opacity: 0.5; }
 .soldStamp {
   position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-9deg);
@@ -346,11 +446,19 @@
 }
 .cardTitle { margin-top: 10px; font-family: var(--display); font-weight: 600; font-size: 1.15rem; line-height: 1.12; color: var(--ink); }
 
-/* ── footer & empty states ── */
+/* ── footer: a dark band in both themes ── */
 
-.footer { margin-top: 24px; border-top: 2px solid var(--ink); }
-.footerInner { max-width: 1200px; margin: 0 auto; padding: 24px 16px 28px; display: grid; gap: 6px; color: var(--ink-2); font-size: 0.88rem; }
-.footerShop { color: var(--ink); font-family: var(--display); font-weight: 700; font-size: 1.15rem; text-transform: uppercase; letter-spacing: 0.03em; }
+.footer { margin-top: 32px; background: var(--band); color: rgba(var(--on-band-rgb), 0.72); border-top: 2px solid var(--ink); }
+.footerInner { max-width: 1200px; margin: 0 auto; padding: 32px 16px 36px; display: grid; gap: 6px; font-size: 0.9rem; }
+@media (min-width: 900px) { .footerInner { padding: 44px 24px; } }
+.footerShop {
+  color: var(--on-band); font-family: var(--display); font-weight: 700; font-size: clamp(2rem, 8vw, 3rem);
+  line-height: 0.95; text-transform: uppercase; letter-spacing: 0.01em; margin-bottom: 8px !important;
+}
+.footerFacts { color: var(--on-band); font-weight: 500; }
+.footerNote { color: rgba(var(--on-band-rgb), 0.72); }
+.footer .textBtn { color: rgba(var(--on-band-rgb), 0.72); }
+.footer .textBtn:hover { color: var(--on-band); }
 .footerCar { padding-bottom: 76px; }
 @media (min-width: 960px) { .footerCar { padding-bottom: 0; } }
 
@@ -368,11 +476,11 @@
 .input, .select, .textarea {
   width: 100%; min-height: 48px; padding: 10px 12px; border: 1.5px solid var(--field); border-radius: var(--radius);
   background: var(--surface); color: var(--ink); font: inherit; font-size: 16px;
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 .textarea { min-height: 96px; resize: vertical; }
 .input:hover, .select:hover, .textarea:hover { border-color: var(--ink-2); }
-.input:focus, .select:focus, .textarea:focus { outline: none; border-color: var(--ink); box-shadow: var(--focus); }
+.input:focus, .select:focus, .textarea:focus { outline: none; border-color: var(--ink); box-shadow: 3px 3px 0 var(--shade); }
 .input[aria-invalid='true'], .select[aria-invalid='true'], .textarea[aria-invalid='true'] { border-color: var(--red); }
 .error { color: var(--red-dark-text); font-size: 0.85rem; font-weight: 500; }
 .hint { color: var(--ink-2); font-size: 0.85rem; }
@@ -387,7 +495,7 @@
 .segmented button[aria-pressed='true'] { background: var(--ink); border-color: var(--ink); color: var(--paper); }
 .segmentedFill button { flex: 1; }
 
-/* ── dialog / bottom sheet ── */
+/* ── dialog / bottom sheet: an ink title bar, like a sticker's header ── */
 
 .sheet {
   width: 100%; max-width: 100%; max-height: 92vh; max-height: 92dvh; margin: auto auto 0; padding: 0; border: 0;
@@ -397,16 +505,18 @@
 .sheet::backdrop { background: rgba(26, 26, 46, 0.55); }
 .sheet[open] { animation: sheetIn 0.22s var(--ease); }
 @media (min-width: 700px) {
-  .sheet { margin: auto; width: min(520px, 92vw); border-radius: 4px; }
+  .sheet { margin: auto; width: min(520px, 92vw); border: 2px solid var(--ink); border-radius: 4px; box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.35); }
   .sheetWide { width: min(720px, 94vw); }
 }
 .sheetInner { display: flex; flex-direction: column; max-height: 92vh; max-height: 92dvh; }
 .sheetHead {
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  padding: 8px 8px 8px 20px; border-bottom: 2px solid var(--ink);
+  padding: 8px 8px 8px 20px; background: var(--ink); color: var(--paper);
 }
-.sheetHead h2 { font-size: 1.4rem; text-transform: uppercase; letter-spacing: 0.03em; line-height: 1.1; }
-.sheetBody { padding: 16px 20px 24px; overflow: auto; }
+.sheetHead h2 { color: var(--paper); font-size: 1.4rem; text-transform: uppercase; letter-spacing: 0.04em; line-height: 1.1; }
+.sheetHead .iconBtn { color: var(--paper); }
+.sheetHead .iconBtn:hover { background: rgba(var(--paper-rgb), 0.14); }
+.sheetBody { padding: 18px 20px 24px; overflow: auto; }
 @keyframes sheetIn { from { transform: translateY(24px); opacity: 0; } }
 
 /* ── toast ── */
@@ -436,20 +546,21 @@
 
 /* ── inventory ── */
 
-.inventory { max-width: 1200px; margin: 0 auto; padding: 20px 16px 48px; }
-@media (min-width: 900px) { .inventory { padding: 32px 24px 72px; } }
-.inventoryHead { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; margin-bottom: 18px; }
+.inventory { max-width: 1200px; margin: 0 auto; padding: 22px 16px 48px; }
+@media (min-width: 900px) { .inventory { padding: 36px 24px 72px; } }
+.inventoryHead { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; margin-bottom: 22px; }
 .searchRow { display: flex; gap: 8px; }
 .searchBox {
-  flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 12px;
-  background: var(--surface); border: 1.5px solid var(--ink); border-radius: var(--radius); color: var(--ink-2);
+  flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; min-height: 50px; padding: 0 12px;
+  background: var(--surface); border: 2px solid var(--ink); border-radius: var(--radius); color: var(--ink-2);
+  transition: box-shadow 0.15s;
 }
-.searchBox:focus-within { box-shadow: var(--focus); }
-.searchInput { flex: 1; min-width: 0; width: 100%; height: 45px; border: 0; outline: none; background: transparent; color: var(--ink); font: inherit; font-size: 16px; }
+.searchBox:focus-within { box-shadow: var(--lift); }
+.searchInput { flex: 1; min-width: 0; width: 100%; height: 46px; border: 0; outline: none; background: transparent; color: var(--ink); font: inherit; font-size: 16px; }
 .searchInput::placeholder { color: var(--ink-2); }
 /* the whole box shows focus; no second outline on the field inside it */
 .searchInput:focus-visible { outline: none; }
-.filterBtn { flex: none; min-height: 48px; padding: 0 14px; }
+.filterBtn { flex: none; min-height: 50px; padding: 0 14px; border-width: 2px; }
 .countBadge {
   display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 2px;
   background: var(--red); color: #fff; font-family: var(--body); font-size: 0.72rem; font-weight: 700; letter-spacing: 0;
@@ -458,7 +569,7 @@
 .filterSide { display: none; }
 @media (min-width: 900px) {
   .inventoryBody { grid-template-columns: 250px minmax(0, 1fr); gap: 32px; align-items: start; }
-  .filterSide { display: grid; gap: 10px; position: sticky; top: 84px; padding-top: 14px; border-top: 2px solid var(--ink); }
+  .filterSide { display: grid; gap: 10px; position: sticky; top: 86px; padding-top: 14px; border-top: 2px solid var(--ink); }
   .filterBtn { display: none; }
 }
 .filters { display: grid; gap: 14px; }
@@ -467,10 +578,10 @@
 .pesoBox {
   display: flex; align-items: center; gap: 4px; min-height: 48px; padding: 0 10px;
   border: 1.5px solid var(--field); border-radius: var(--radius); background: var(--surface); color: var(--ink-2);
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 .pesoBox:hover { border-color: var(--ink-2); }
-.pesoBox:focus-within { border-color: var(--ink); box-shadow: var(--focus); }
+.pesoBox:focus-within { border-color: var(--ink); box-shadow: 3px 3px 0 var(--shade); }
 .pesoInput {
   flex: 1; min-width: 0; width: 100%; height: 45px; padding: 0; border: 0; outline: none; background: transparent;
   color: var(--ink); font: inherit; font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums;
@@ -514,35 +625,59 @@
   margin-bottom: 16px; padding-bottom: 6px; border-bottom: 1px solid var(--rule);
 }
 @media (min-width: 900px) { .resultsBar { border-top: 2px solid var(--ink); padding-top: 6px; } }
-.resultsBar > p { white-space: nowrap; }
+.resultsBar > p {
+  white-space: nowrap; color: var(--ink); font-family: var(--display); font-weight: 700; font-size: 1.15rem;
+  text-transform: uppercase; letter-spacing: 0.06em;
+}
 .sortLabel { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--ink-2); font-size: 0.88rem; }
 .sortLabel span { white-space: nowrap; }
 .sortLabel .select { width: auto; min-width: 0; max-width: 100%; min-height: 44px; padding: 6px 8px; font-size: 0.9rem; border-color: transparent; background-color: transparent; font-weight: 600; color: var(--ink); }
 .sortLabel .select:hover { border-color: var(--rule-2); }
+.sortLabel .select:focus { box-shadow: none; border-color: var(--ink); }
 
-/* Two cars per row on phones, like the marketplaces buyers already scroll */
-.cardGrid { list-style: none; margin: 0; padding: 0; display: grid; gap: 24px 12px; grid-template-columns: minmax(0, 1fr); }
+/* Two cars per row on phones, like the marketplaces buyers already scroll.
+   Each car is a tag: ink edge, the price, then a tear line with the monthly. */
+.cardGrid { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px 12px; grid-template-columns: minmax(0, 1fr); }
 @media (min-width: 340px) { .cardGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (min-width: 700px) { .cardGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px 18px; } }
+@media (min-width: 700px) { .cardGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px 18px; } }
 @media (min-width: 1100px) { .cardGrid { grid-template-columns: repeat(4, minmax(0, 1fr)); } .inventoryBody .cardGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .card { min-width: 0; }
-.cardLink { display: block; height: 100%; color: inherit; text-decoration: none; }
-.cardMedia { position: relative; aspect-ratio: 4 / 3; border-radius: 2px; overflow: hidden; background: var(--paper-2); }
-.cardMedia .photoArt { padding: 12% 7%; }
+.cardLink {
+  display: flex; flex-direction: column; height: 100%; color: inherit; text-decoration: none;
+  background: var(--surface); border: 1.5px solid var(--ink); border-radius: 2px;
+  transition: transform 0.18s var(--ease), box-shadow 0.18s var(--ease);
+}
+@media (hover: hover) {
+  .cardLink:hover { transform: translate(-3px, -3px); box-shadow: var(--lift); }
+}
+.cardLink:active { transform: none; box-shadow: none; }
+.cardMedia { position: relative; aspect-ratio: 4 / 3; overflow: hidden; background: var(--paper-2); border-bottom: 1.5px solid var(--ink); }
+.cardMedia .photoArt { padding: 14% 7% 6%; }
+/* on a card the name starts below the sale / reserved badges and runs smaller */
+.cardMedia .modelMark { padding-top: 30px; font-size: min(22cqi, calc(130cqi / var(--len, 6))); -webkit-text-stroke-width: 1px; }
 .cardMedia .photoArt svg, .cardMedia .photo { transition: transform 0.35s var(--ease); }
-.cardLink:hover .cardMedia .photoArt svg { transform: translateX(5px); }
+.cardLink:hover .cardMedia .photoArt svg { transform: translateX(6px); }
 .cardLink:hover .cardMedia .photo { transform: scale(1.03); }
 .cardBadges { display: flex; flex-wrap: wrap; gap: 4px; }
-.cardMedia .cardBadges { position: absolute; top: 6px; left: 6px; right: 6px; }
-.cardBody { padding: 10px 0 0; display: grid; gap: 4px; }
+.cardMedia .cardBadges { position: absolute; z-index: 1; top: 6px; left: 6px; right: 6px; }
+.cardStock {
+  position: absolute; z-index: 1; right: 7px; bottom: 5px;
+  font-family: var(--display); font-weight: 600; font-size: 0.78rem; letter-spacing: 0.12em; color: var(--ink-2);
+}
+.cardBody { padding: 10px 10px 10px; display: grid; gap: 4px; }
 .cardBody .cardTitle {
   margin: 0; font-size: 1.15rem; line-height: 1.08;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
-.cardLink:hover .cardTitle { text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 3px; }
-.cardPrice { font-size: 1.4rem; }
+.cardPrice { font-size: 1.45rem; }
 .cardFacts { color: var(--ink-2); font-size: 0.82rem; line-height: 1.35; font-variant-numeric: tabular-nums; }
-.cardMonthly { color: var(--ink-2); font-size: 0.8rem; font-variant-numeric: tabular-nums; }
+.cardMonthly {
+  display: flex; align-items: center; justify-content: space-between; gap: 6px;
+  margin-top: auto !important; padding: 8px 10px 9px; border-top: 1.5px dashed var(--rule-2);
+  color: var(--ink); font-size: 0.8rem; font-weight: 600; font-variant-numeric: tabular-nums;
+}
+.cardMonthly svg { flex: none; color: var(--ink-2); transition: transform 0.18s var(--ease), color 0.18s; }
+.cardLink:hover .cardMonthly svg { transform: translateX(3px); color: var(--red-text); }
 
 /* ── car page ── */
 
@@ -559,19 +694,20 @@
 }
 .soldBanner a { color: var(--on-ink); text-underline-offset: 3px; }
 
-.carGrid { display: grid; gap: 20px; grid-template-areas: 'gallery' 'side' 'details'; }
+.carGrid { display: grid; gap: 22px; grid-template-areas: 'gallery' 'side' 'details'; }
 @media (min-width: 960px) {
   .carGrid {
-    grid-template-columns: minmax(0, 1.65fr) minmax(320px, 1fr);
+    grid-template-columns: minmax(0, 1.65fr) minmax(330px, 1fr);
     grid-template-areas: 'gallery side' 'details side';
-    gap: 28px 40px; align-items: start;
+    gap: 32px 40px; align-items: start;
   }
-  .carSide { position: sticky; top: 84px; }
+  .carSide { position: sticky; top: 86px; }
 }
 .gallery { grid-area: gallery; display: grid; gap: 8px; min-width: 0; }
-.galleryMain { position: relative; aspect-ratio: 16 / 10; border-radius: 2px; overflow: hidden; background: var(--paper-2); }
+.galleryMain { position: relative; aspect-ratio: 16 / 10; border: 2px solid var(--ink); border-radius: 2px; overflow: hidden; background: var(--paper-2); }
+.galleryMain .photoArt { padding: 10% 7% 6%; }
 .galleryNav {
-  position: absolute; top: 50%; width: 44px; height: 44px; margin-top: -22px; display: grid; place-items: center;
+  position: absolute; top: 50%; z-index: 1; width: 44px; height: 44px; margin-top: -22px; display: grid; place-items: center;
   border: 1.5px solid var(--ink); border-radius: var(--radius); background: rgba(var(--paper-rgb), 0.94); color: var(--ink); cursor: pointer;
 }
 .galleryNav:hover { background: var(--ink); color: var(--paper); }
@@ -588,44 +724,68 @@
 }
 .thumb[aria-current='true'] { border-color: var(--ink); opacity: 1; }
 
-.carSide { grid-area: side; display: grid; gap: 28px; min-width: 0; }
-.carSummary { display: grid; gap: 8px; }
-.carTitle { font-size: clamp(2rem, 8vw, 2.7rem); line-height: 0.98; text-transform: uppercase; text-wrap: balance; }
-.carPriceRow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 8px 0 4px; }
-.carPrice { font-size: 2.2rem; }
-.negotiable {
-  padding: 3px 8px 2px; border-radius: 2px; box-shadow: inset 0 0 0 1.5px var(--ink); color: var(--ink);
-  font-family: var(--display); font-weight: 600; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.04em;
+.carSide { grid-area: side; display: grid; gap: 30px; min-width: 0; }
+.carSummary { display: grid; gap: 14px; container-type: inline-size; }
+.carTitle { font-size: clamp(2.2rem, 9vw, 3rem); line-height: 0.95; text-transform: uppercase; text-wrap: balance; }
+/* year · km · transmission · fuel as one ruled strip: 2 × 2 in a narrow column,
+   one row from 400px. The 1.5px gaps show the ink behind as the rules. */
+.factStrip {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5px; margin: 0;
+  border: 2px solid var(--ink); border-radius: 2px; background: var(--ink);
 }
-.leadButtons { display: grid; grid-template-columns: 1fr; gap: 8px; margin-top: 4px; }
+@container (min-width: 400px) { .factStrip { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.factStrip div { min-width: 0; padding: 8px 10px 7px; background: var(--surface); }
+.factStrip dt { font-family: var(--display); font-weight: 600; font-size: 0.74rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.factStrip dd {
+  margin: 0; font-family: var(--display); font-weight: 700; font-size: 1.18rem; line-height: 1.1; color: var(--ink);
+  font-variant-numeric: tabular-nums; overflow-wrap: anywhere;
+}
+
+/* The car's window sticker: an ink (or red, on sale) header bar, the price,
+   the tear line with the monthly, the buttons and a barcode with the stock no. */
+.priceBox { border: 2px solid var(--ink); border-radius: 2px; background: var(--surface); box-shadow: var(--lift); margin-right: 4px; }
+.priceBoxHead {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 12px;
+  padding: 7px 14px 5px; background: var(--ink); color: var(--paper);
+  font-family: var(--display); font-weight: 700; font-size: 1.05rem; letter-spacing: 0.1em; text-transform: uppercase; line-height: 1.2;
+}
+.priceBoxSale .priceBoxHead { background: var(--red); color: #fff; border-bottom: 2px solid var(--ink); }
+.priceBoxBody { display: grid; gap: 10px; padding: 14px 14px 14px; }
+.carPrice { font-size: 2.6rem; }
+.priceBox .stickerTear { margin: 2px -14px 0; padding: 10px 14px 0; color: var(--ink); font-weight: 600; font-size: 0.95rem; }
+.priceBox .stickerTear::before { left: -11px; }
+.priceBox .stickerTear::after { right: -11px; }
+.priceBox .barcode { margin-top: 6px; padding-top: 12px; border-top: 1px solid var(--rule); }
+.leadButtons { display: grid; grid-template-columns: 1fr; gap: 8px; }
 @media (min-width: 440px) and (max-width: 959px), (min-width: 1180px) {
   .leadButtons { grid-template-columns: 1fr 1fr; }
   .leadButtons .btnGhost:only-child { grid-column: 1 / -1; }
 }
 .leadButtons .btnGhost { padding: 0 12px; }
-.cashOnly {
-  padding: 14px 16px; border: 1.5px dashed var(--ink); border-radius: var(--radius);
-  color: var(--ink); font-family: var(--display); font-weight: 700; font-size: 1.15rem; text-transform: uppercase; letter-spacing: 0.04em; text-align: center;
-}
 
-.inquiryBar { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 6px; margin-top: 10px; }
+.inquiryBar { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 6px; margin-top: 4px; }
 .inquiryBar button { padding: 0 8px; }
 @media (max-width: 959px) {
   .inquiryBar {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; margin: 0;
-    padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
+    padding: 8px 12px calc(8px + env(safe-area-inset-bottom)) 10px;
     background: rgba(var(--paper-rgb), 0.97); backdrop-filter: blur(8px);
-    border-top: 1.5px solid var(--ink);
+    border-top: 2px solid var(--ink);
   }
 }
 
-.carDetails { grid-area: details; display: grid; gap: 32px; min-width: 0; }
-.panel { display: grid; gap: 14px; padding-top: 10px; border-top: 2px solid var(--ink); }
+/* The details read as a numbered spec sheet: 01 Condition, 02 Specs… */
+.carDetails { grid-area: details; display: grid; gap: 36px; min-width: 0; counter-reset: sheet; }
+.panel { display: grid; gap: 4px; }
+.carDetails .panel > h2::before {
+  counter-increment: sheet; content: counter(sheet, decimal-leading-zero);
+  margin-right: 10px; color: rgba(var(--paper-rgb), 0.62);
+}
 .prose { color: var(--ink); white-space: pre-line; max-width: 70ch; }
 .specList { display: grid; grid-template-columns: 1fr 1fr; gap: 0 20px; margin: 0; }
 @media (min-width: 700px) { .specList { grid-template-columns: repeat(3, 1fr); } }
 .specList div { padding: 9px 0; border-bottom: 1px solid var(--rule); min-width: 0; }
-.specList dt { font-family: var(--display); font-weight: 600; font-size: 0.92rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-2); }
+.specList dt { font-family: var(--display); font-weight: 600; font-size: 0.92rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-2); }
 .specList dd { margin: 0; color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 
 /* Condition rows read like a spec sheet: label, dotted leader, value */
@@ -643,9 +803,10 @@
 .condUnknown .condValue { color: var(--ink-2); font-weight: 500; font-style: italic; }
 .condInfo .condValue svg { color: var(--ink-2); }
 
-.loan { display: grid; gap: 16px; padding-top: 10px; border-top: 2px solid var(--ink); }
+.loan { display: grid; gap: 16px; }
+.loan > h2 { margin-bottom: 2px; }
 .loanMonthly { display: flex; align-items: baseline; flex-wrap: wrap; gap: 2px 10px; }
-.loanBig { font-family: var(--display); font-size: 2.8rem; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; line-height: 1; }
+.loanBig { font-family: var(--display); font-size: 3.2rem; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; line-height: 1; }
 .loanRangeHead { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
 .loanOut { font-family: var(--display); font-weight: 700; font-size: 1.2rem; color: var(--ink); font-variant-numeric: tabular-nums; }
 .range {
@@ -697,7 +858,7 @@
 .leadButtons button:disabled:hover, .inquiryBar button:disabled:hover { background: transparent; color: var(--ink-2); }
 .reservedHint { max-width: 32ch; color: #fff; font-size: 1.02rem; }
 .reservedActions { display: grid; gap: 6px; justify-items: center; width: 100%; max-width: 320px; }
-.reservedActions .btnPrimary { width: 100%; }
+.reservedActions .btnPrimary { width: 100%; box-shadow: 3px 3px 0 #000; }
 .reservedView {
   min-height: 44px; padding: 10px 12px; border: 0; background: none; cursor: pointer;
   color: #fff; font-weight: 600; text-decoration: underline; text-underline-offset: 4px;
@@ -705,11 +866,26 @@
 .reservedOverlay :focus-visible { outline-color: #fff; }
 @keyframes stampIn { from { transform: scale(1.08); opacity: 0; } }
 
+/* ── scroll reveal: cars and sections rise in as they come up the screen.
+   CSS-only (scroll-driven), so browsers without it just show everything. ── */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .cardGrid > .card, .soldCard, .about > *, .carDetails > * {
+      animation: rise linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 55%;
+    }
+  }
+}
+@keyframes rise { from { opacity: 0; transform: translateY(28px); } }
+
 @media (prefers-reduced-motion: reduce) {
+  .tickerTrack { animation: none; }
   .reservedOverlay[open] { animation: none; }
-  .slide, .slideActive, .dot::after, .slideMedia .photoArt svg { transition: none; }
-  .slideMedia .photoArt svg { transform: none; }
-  .cardMedia .photoArt svg, .cardMedia .photo, .arrowLink { transition: none; }
-  .cardLink:hover .cardMedia .photoArt svg, .cardLink:hover .cardMedia .photo { transform: none; }
+  .slide, .slideActive, .dot::after, .slideMedia .photoArt svg, .slideMedia .modelMark { transition: none; }
+  .slideMedia .photoArt svg, .slideMedia .modelMark { transform: none; opacity: 1; }
+  .cardLink, .cardMedia .photoArt svg, .cardMedia .photo, .cardMonthly svg, .arrowLink, .btnPrimary, .topNav .navLink::after { transition: none; }
+  .cardLink:hover, .cardLink:hover .cardMedia .photoArt svg, .cardLink:hover .cardMedia .photo, .cardLink:hover .cardMonthly svg { transform: none; }
+  .btnPrimary:hover, .btnPrimary:active { transform: none; }
   .sheet[open], .toast { animation: none; }
 }

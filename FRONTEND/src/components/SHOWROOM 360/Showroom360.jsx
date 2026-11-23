@@ -192,8 +192,11 @@ function PublicShell() {
 
       <footer className={`${styles.footer} ${loc.view === 'car' ? styles.footerCar : ''}`}>
         <div className={styles.footerInner}>
-          <p className={styles.footerShop}>{settings.shopName}{settings.address ? ` · ${settings.address}` : ''}</p>
-          <p>{t(lang, 'footer.note')}</p>
+          <p className={styles.footerShop}>{settings.shopName}</p>
+          {(settings.address || settings.hours) && (
+            <p className={styles.footerFacts}>{[settings.address, settings.hours].filter(Boolean).join(' · ')}</p>
+          )}
+          <p className={styles.footerNote}>{t(lang, 'footer.note')}</p>
           <button type="button" className={styles.textBtn} onClick={onBackToPortfolio}>{t(lang, 'footer.madeBy')}</button>
         </div>
       </footer>

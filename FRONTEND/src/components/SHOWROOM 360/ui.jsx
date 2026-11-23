@@ -145,13 +145,18 @@ export function ShopLogo({ settings, size = 'md' }) {
     : <span className={`${styles.logo} ${styles.logoMark} ${styles[`logo_${size}`]}`} aria-hidden="true">{initials}</span>;
 }
 
-/* The car's photo, or its silhouette when it has none */
-export function CarPhoto({ car, index = 0, label, className }) {
+/* The car's photo, or its silhouette when it has none. `mark` puts the model's
+   name in giant outline letters behind the silhouette (decoration only). */
+export function CarPhoto({ car, index = 0, label, className, mark = false }) {
   const { photoUrl } = useShowroom();
   const url = photoUrl(car.photoIds?.[index]);
   if (url) return <img src={url} alt={label || ''} className={`${styles.photo} ${className || ''}`} loading="lazy" decoding="async" />;
+  const model = String(car.model || '').trim();
   return (
     <div className={`${styles.photo} ${styles.photoArt} ${className || ''}`}>
+      {mark && model && (
+        <span className={styles.modelMark} style={{ '--len': Math.max(4, model.length) }} aria-hidden="true">{model}</span>
+      )}
       <CarArt body={car.body} color={car.color} label={label} />
     </div>
   );

@@ -280,6 +280,26 @@ Clark's ask: a dark mode toggle for the whole showroom (public site and admin) t
   - Native controls and dialogs follow the theme. The Google map stays light.
 - **How:** `useTheme` sets `<html data-sr-theme>` while the showroom is open and removes it on leaving, so the portfolio is untouched. Only colour tokens change, so new UI must use the tokens and never raw colours.
 
+## Look v3: "sticker, turned up" (added 2026-11-23)
+Clark's ask: "greatly enhance the UI/UX design… cool and unique but professional", leaving the car drawings as they are. From three directions (this one, "inspection report" and "race program"), Clark picked this one and "build straight away". It's a visual change only: behaviour, copy rules, accessibility and dark mode are kept.
+- **Section heads:** ink tabs sitting on a 2px rule, like the black bars on a real window sticker. One element does both: the heading's own background is the tab, and its `::after` paints paper over the rest of the line and draws the rule. The same goes for admin block heads, form legends and History days.
+- **Block shadow:** `--lift` (4px solid, no blur) under the price stickers, the hero frame, the map, the admin stats strip and the PIN card. Main buttons sit on a 3px shadow and press into it. In dark mode the shadow is black, so the light borders carry the shape.
+- **Home:**
+  - A red ticker under the header. It shows live sales, then facts from the shop's own data only: cars in stock, bank financing if any car has it, hours and address. It holds under a finger or mouse and stays still with reduced motion. Like the carousel, it has no pause button (Clark dropped that earlier). Screen readers get the items once.
+  - The hero car sits in an ink frame, with the stock no. and body type in its corners and the model name in giant outline letters behind the drawing.
+  - The price sticker shows the sale name or "Price", the price, and a tear-off line with the monthly (or "Cash only").
+  - The carousel's current segment fills over the 4 s. It shows full while the carousel is held.
+- **Cards:** tags with an ink edge, the stock no. in the corner, the model name behind the drawing, and a dashed tear line with the monthly and an arrow. With a mouse, they lift onto the block shadow on hover.
+- **Car page:**
+  - Year, km, transmission and fuel sit in a ruled strip: 2 × 2 in a narrow column, one row from 400 px.
+  - Price, monthly, the inquiry and lead buttons and a barcode with the stock no. sit in one window sticker. Its header bar is ink, or red with the sale name. The sale badge above the title was dropped as a repeat.
+  - The details are numbered 01, 02… by a CSS counter.
+- **Footer and admin sidebar:** a dark band (`--band`) in both themes.
+- **Dialogs:** an ink title bar.
+- **Motion:** cars and sections rise in as they scroll into view. This is CSS scroll-driven only (`animation-timeline: view()`), so browsers without it just show everything. Reduced motion turns it off. It's kept off the car page's side column, so the phone inquiry bar stays fixed.
+- **Small phones:** under 380 px the shop name in the header is smaller, so "Demo Motors Cebu" fits whole next to EN | CEB. It was already cut off at 360 px before this change.
+- **New wording:** `ticker.*` and `sticker.price`. `home.endsIn` was removed, because the ticker carries the sale now. The Cebuano strings are Claude's; Clark should proofread them.
+
 ## Sample data (Claude's calls)
 - **Shop:** "Demo Motors Cebu" (obviously fictional), Mandaue City area, phone `0900 000 0000`. Messenger and Viber are left empty, so a click explains where to set them.
 - **Cars:** 12 cars from CarMark's models (Vios, Wigo, Fortuner, Montero Sport, Xpander, Innova-class MPVs, City, Civic, BR-V…). Their prices fall inside CarMark's used-price ranges for the same generation. 3 are Featured, 2 are Sold, 1 is Reserved, and their listing dates are spread so a few show as "Aging".

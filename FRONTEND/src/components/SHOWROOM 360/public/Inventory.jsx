@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useState } from 'react';
-import { Search, SlidersHorizontal, SearchX } from 'lucide-react';
+import { Search, SlidersHorizontal, SearchX, ArrowRight } from 'lucide-react';
 import styles from '../Showroom360.module.css';
 import { useShowroom } from '../store.js';
 import { t } from '../i18n.js';
@@ -223,22 +223,26 @@ export function CarCard({ car, events, now, lang, fin }) {
     <li className={styles.card}>
       <Link to={`/showroom/cars/${car.id}`} className={styles.cardLink}>
         <div className={styles.cardMedia}>
-          <CarPhoto car={car} />
+          <CarPhoto car={car} mark />
           <div className={styles.cardBadges}>
             {info.event && <span className={styles.saleChip}>{info.event.name}</span>}
             {car.status === 'reserved' && <span className={styles.reservedChip}>{t(lang, 'car.reserved')}</span>}
           </div>
+          {car.stockNo && <span className={styles.cardStock} aria-hidden="true">{car.stockNo}</span>}
         </div>
         <div className={styles.cardBody}>
           <h3 className={styles.cardTitle}>{title}</h3>
           <PriceTag info={info} wasLabel={t(lang, 'car.was')} className={styles.cardPrice} />
           <p className={styles.cardFacts}>{[formatKm(car.odometer), TRANSMISSIONS[car.transmission], FUELS[car.fuel]].join(' · ')}</p>
-          <p className={styles.cardMonthly}>
+        </div>
+        <p className={styles.cardMonthly}>
+          <span>
             {car.financing
               ? t(lang, 'cars.fromMo', { amount: formatPeso(monthlyFrom(info.price, fin)) })
               : t(lang, 'cars.cashOnly')}
-          </p>
-        </div>
+          </span>
+          <ArrowRight size={16} strokeWidth={2} aria-hidden="true" />
+        </p>
       </Link>
     </li>
   );

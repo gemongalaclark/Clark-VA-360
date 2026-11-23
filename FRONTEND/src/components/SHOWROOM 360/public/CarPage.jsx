@@ -5,7 +5,7 @@ import { useShowroom } from '../store.js';
 import { t } from '../i18n.js';
 import { useNav, Link, CarPhoto, PriceTag } from '../ui.jsx';
 import {
-  effectivePrice, carTitle, formatKm, COLORS, BODY_TYPES, TRANSMISSIONS, FUELS, DRIVES,
+  effectivePrice, carTitle, formatKm, formatPeso, monthlyFrom, COLORS, BODY_TYPES, TRANSMISSIONS, FUELS, DRIVES,
 } from '../showroomRules.js';
 import ConditionCard from './ConditionCard.jsx';
 import LoanCalc from './LoanCalc.jsx';
@@ -35,6 +35,12 @@ export default function CarPage({ id }) {
   const sold = car.status === 'sold';
   const reserved = car.status === 'reserved';
 
+  const facts = [
+    ['spec.year', car.year],
+    ['spec.odometer', formatKm(car.odometer)],
+    ['spec.transmission', TRANSMISSIONS[car.transmission]],
+    ['spec.fuel', FUELS[car.fuel]],
+  ];
   const specs = [
     ['spec.year', car.year],
     ['spec.odometer', formatKm(car.odometer)],
@@ -67,41 +73,58 @@ export default function CarPage({ id }) {
 
         <aside className={styles.carSide}>
           <div className={styles.carSummary}>
-            <div className={styles.cardBadges}>
-              {info.event && <span className={styles.saleChip}>{info.event.name}</span>}
-              {car.status === 'reserved' && <span className={styles.reservedChip}>{t(lang, 'car.reserved')}</span>}
-            </div>
-            <h1 className={styles.carTitle}>{title}</h1>
-            <p className={styles.cardFacts}>
-              {[formatKm(car.odometer), TRANSMISSIONS[car.transmission], FUELS[car.fuel], car.stockNo].join(' · ')}
-            </p>
-            <div className={styles.carPriceRow}>
-              <div className={`${styles.sticker} ${info.event ? styles.stickerSale : ''}`}>
-                <PriceTag info={info} wasLabel={t(lang, 'car.was')} className={styles.carPrice} />
+            {/* a sale is named on the sticker's red header below */}
+            {reserved && (
+              <div className={styles.cardBadges}>
+                <span className={styles.reservedChip}>{t(lang, 'car.reserved')}</span>
               </div>
-              {car.negotiable && !sold && <span className={styles.negotiable}>{t(lang, 'car.negotiable')}</span>}
-            </div>
-
-            {!sold && (
-              <>
-                <InquiryBar car={car} info={info} disabled={reserved} />
-                <div className={styles.leadButtons}>
-                  <button type="button" className={styles.btnGhost} onClick={() => setLead('test-drive')} disabled={reserved}>
-                    <CalendarCheck size={18} strokeWidth={1.75} aria-hidden="true" />{t(lang, 'lead.testDrive')}
-                  </button>
-                  {car.status === 'available' && (
-                    <button type="button" className={styles.btnGhost} onClick={() => setLead('reserve')}>
-                      <BookmarkCheck size={18} strokeWidth={1.75} aria-hidden="true" />{t(lang, 'lead.reserve')}
-                    </button>
-                  )}
-                </div>
-                {reserved && <p className={styles.reservedNote}>{t(lang, 'car.reservedNoContact')}</p>}
-              </>
             )}
+            <h1 className={styles.carTitle}>{title}</h1>
+            <dl className={styles.factStrip}>
+              {facts.map(([key, value]) => (
+                <div key={key}><dt>{t(lang, key)}</dt><dd>{value}</dd></div>
+              ))}
+            </dl>
+          </div>
+
+          {/* The car's window sticker: price, monthly, the ways to ask, the stock no. */}
+          <div className={`${styles.priceBox} ${info.event ? styles.priceBoxSale : ''}`}>
+            <p className={styles.priceBoxHead}>
+              <span>{info.event ? info.event.name : t(lang, 'sticker.price')}</span>
+              {car.negotiable && !sold && <span>{t(lang, 'car.negotiable')}</span>}
+            </p>
+            <div className={styles.priceBoxBody}>
+              <PriceTag info={info} wasLabel={t(lang, 'car.was')} className={styles.carPrice} />
+              {!sold && (
+                <p className={styles.stickerTear}>
+                  {car.financing
+                    ? t(lang, 'cars.fromMo', { amount: formatPeso(monthlyFrom(info.price, settings.financing)) })
+                    : t(lang, 'cars.cashOnly')}
+                </p>
+              )}
+              {!sold && (
+                <>
+                  <InquiryBar car={car} info={info} disabled={reserved} />
+                  <div className={styles.leadButtons}>
+                    <button type="button" className={styles.btnGhost} onClick={() => setLead('test-drive')} disabled={reserved}>
+                      <CalendarCheck size={18} strokeWidth={1.75} aria-hidden="true" />{t(lang, 'lead.testDrive')}
+                    </button>
+                    {car.status === 'available' && (
+                      <button type="button" className={styles.btnGhost} onClick={() => setLead('reserve')}>
+                        <BookmarkCheck size={18} strokeWidth={1.75} aria-hidden="true" />{t(lang, 'lead.reserve')}
+                      </button>
+                    )}
+                  </div>
+                  {reserved && <p className={styles.reservedNote}>{t(lang, 'car.reservedNoContact')}</p>}
+                </>
+              )}
+              {car.stockNo && (
+                <p className={styles.barcode}><span className={styles.srOnly}>{t(lang, 'spec.stock')} </span>{car.stockNo}</p>
+              )}
+            </div>
           </div>
 
           {!sold && car.financing && <LoanCalc key={info.price} price={info.price} fin={settings.financing} />}
-          {!sold && !car.financing && <p className={styles.cashOnly}>{t(lang, 'cars.cashOnly')}</p>}
         </aside>
 
         <div className={styles.carDetails}>
@@ -188,7 +211,7 @@ function Gallery({ car, title, lang }) {
           if (total > 1 && Math.abs(dx) > 40) go(dx < 0 ? 1 : -1);
         }}
       >
-        <CarPhoto car={car} index={i} label={total > 1 ? `${title}, ${t(lang, 'car.photo', { n: i + 1, total })}` : title} />
+        <CarPhoto car={car} index={i} label={total > 1 ? `${title}, ${t(lang, 'car.photo', { n: i + 1, total })}` : title} mark />
         {total > 1 && (
           <>
             <button type="button" className={`${styles.galleryNav} ${styles.galleryPrev}`} onClick={() => go(-1)} aria-label={t(lang, 'car.prevPhoto')}>

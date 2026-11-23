@@ -10,8 +10,10 @@ const EN = {
   'nav.home': 'Home', 'nav.cars': 'Cars', 'nav.contact': 'Contact', 'nav.menu': 'Pages',
   'lang.switch': 'Language',
   'theme.toDark': 'Switch to dark mode', 'theme.toLight': 'Switch to light mode',
+  'ticker.event': '{name} ends in {time}', 'ticker.stock': '{n} cars in stock', 'ticker.stock1': '1 car in stock',
+  'ticker.financing': 'Bank financing available', 'ticker.hours': 'Open {hours}', 'sticker.price': 'Price',
 
-  'home.featured': 'Featured cars', 'home.seeAll': 'See all cars', 'home.endsIn': 'Ends in {time}',
+  'home.featured': 'Featured cars', 'home.seeAll': 'See all cars',
   'home.prev': 'Previous car', 'home.next': 'Next car',
   'home.slide': 'Car {n} of {total}', 'home.viewCar': 'View this car',
   'home.about': 'About the shop', 'home.call': 'Call', 'home.hours': 'Open', 'home.address': 'Find us',
@@ -77,8 +79,10 @@ const CEB = {
   'nav.home': 'Home', 'nav.cars': 'Mga sakyanan', 'nav.contact': 'Kontak', 'nav.menu': 'Mga panid',
   'lang.switch': 'Pinulongan',
   'theme.toDark': 'Ilisan ngadto sa dark mode', 'theme.toLight': 'Ilisan ngadto sa light mode',
+  'ticker.event': '{name} mahuman sa {time}', 'ticker.stock': '{n} ka sakyanan nga available', 'ticker.stock1': '1 ka sakyanan nga available',
+  'ticker.financing': 'Pwede ma-finance sa bangko', 'ticker.hours': 'Abli {hours}', 'sticker.price': 'Presyo',
 
-  'home.featured': 'Pinili nga sakyanan', 'home.seeAll': 'Tan-awa tanan', 'home.endsIn': 'Mahuman sa {time}',
+  'home.featured': 'Pinili nga sakyanan', 'home.seeAll': 'Tan-awa tanan',
   'home.prev': 'Miagi nga sakyanan', 'home.next': 'Sunod nga sakyanan',
   'home.slide': 'Sakyanan {n} sa {total}', 'home.viewCar': 'Tan-awa ni nga sakyanan',
   'home.about': 'Mahitungod sa among shop', 'home.call': 'Tawag', 'home.hours': 'Abli', 'home.address': 'Asa mi',
