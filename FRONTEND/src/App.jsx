@@ -23,6 +23,7 @@ const PROJECT_APPS = {
   balanse: lazy(() => import('./components/BALANSE/Balanse')),
   jobtracker: lazy(() => import('./components/Clark VA 360 Job Tracker/JobTracker')),
   clarkflow: lazy(() => import('./components/CLARKFLOW 360/ClarkFlow360')),
+  carmark: lazy(() => import('./components/CARMARK 360/CarMark360')),
   services: lazy(() => import('./components/ServicesPage')),
   projects: lazy(() => import('./components/ProjectsPage')),
 };
@@ -55,6 +56,7 @@ function checkRoute() {
   if (path.startsWith('/onboardbase') || hash.includes('onboardbase')) return 'onboardbase';
   if (path.startsWith('/balanse') || hash.includes('balanse')) return 'balanse';
   if (path.startsWith('/job-tracker') || hash.includes('job-tracker')) return 'jobtracker';
+  if (path.startsWith('/carmark')) return 'carmark';
   if (path.startsWith('/services')) return 'services';
   if (path.startsWith('/projects')) return 'projects';
   return 'portfolio';

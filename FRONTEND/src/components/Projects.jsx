@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight, ExternalLink, Sparkles, Calendar, ArrowUpRight, ArrowRight, Zap, Rocket, ClipboardCheck, ShieldCheck, BookOpen, X, Briefcase, Wallet, Target, Gamepad2, Send, Bookmark, MailCheck } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ExternalLink, Sparkles, Calendar, ArrowUpRight, ArrowRight, Zap, Rocket, ClipboardCheck, ShieldCheck, BookOpen, X, Briefcase, Wallet, Target, Gamepad2, Send, Bookmark, MailCheck, CarFront, MapPin } from 'lucide-react';
 import { projects, docs, openProject, HOME_FEATURED_IDS } from './projectsData';
 import styles from './Projects.module.css';
 
@@ -206,6 +206,20 @@ export function ProjectCard({ project, onDocs }) {
               <div className={styles.graphicBadgeRow}>
                 <span className={styles.graphicAiPill}><Sparkles size={11} /> Gemini AI</span>
                 <span className={styles.teamsyncRolePill}>Gmail triage</span>
+              </div>
+            </div>
+          </div>
+        ) : project.id === 10 ? (
+          <div className={styles.teamsyncGraphic}>
+            <div className={styles.teamsyncGlow} />
+            <div className={styles.teamsyncGraphicInner}>
+              <div className={styles.teamsyncIconWrap}>
+                <CarFront size={30} className={styles.teamsyncIcon} />
+              </div>
+              <span className={styles.teamsyncTitle}>CarMark 360</span>
+              <div className={styles.graphicBadgeRow}>
+                <span className={styles.graphicAiPill}><MapPin size={11} /> Cebu dealers</span>
+                <span className={styles.teamsyncRolePill}>Variant compare</span>
               </div>
             </div>
           </div>

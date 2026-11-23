@@ -5,6 +5,7 @@ export const GROUPS = [
   { id: 'career', label: 'Career Tools' },
   { id: 'finance', label: 'Finance' },
   { id: 'marketplaces', label: 'Marketplaces' },
+  { id: 'cars', label: 'Cars' },
 ];
 
 /* Shown on the homepage carousel, in this order */
@@ -118,6 +119,19 @@ export const projects = [
     placeholder: false,
     spotlight: false,
     badge: 'Private VA Tool',
+  },
+  {
+    id: 10,
+    group: 'cars',
+    category: 'Used-Car Guide',
+    title: 'CarMark 360',
+    description: 'Mobile guide for secondhand-car buyers in Cebu: compare any two variants side by side, see each generation’s rough used price and the problems to check (flood damage first), find trusted dealers on Google Maps, and tick through a before-you-buy checklist.',
+    tags: ['React', 'Mobile-first', 'Google Maps', 'Researched data'],
+    image: null,
+    liveUrl: '/carmark',
+    githubUrl: null,
+    placeholder: false,
+    spotlight: false,
   },
   {
     id: 9,
@@ -278,6 +292,25 @@ export const docs = {
       'Nothing is sent until a person reads it and presses Send.',
       'Replies stay in the same Gmail thread, so clients see a normal conversation.',
       'Safe: Google access is encrypted, and Gmail can be disconnected at any time.',
+    ],
+  },
+  10: {
+    what: 'CarMark 360 is a free helper for people buying a secondhand car in Cebu. It explains how one variant differs from another, like an Xpander GLS and an Xpander Cross, what usually goes wrong with each model year, and roughly how much it sells for. No account needed.',
+    use: [
+      'Open Compare and pick Car A and Car B: the model, the generation (the years it was sold) and the variant.',
+      'See what each car has that the other doesn’t, then the specs side by side with the differences highlighted.',
+      'Read “Before you buy”: the problems to check on that generation, like flood damage on a Fortuner or a worn CVT on a Vios.',
+      'Open Models to read every generation of a car, with its rough used price and what changed.',
+      'Open Dealers to find trusted dealers on the map and get directions in Google Maps.',
+      'Take the Checklist with you when you look at a car: flood signs, papers, test drive. Your ticks are saved on your phone.',
+    ],
+    purpose: 'Most people buy used cars from Facebook posts and dealer lots without knowing what the variant names mean, what breaks on that model year, or what a fair price is. After Typhoon Tino flooded half of Cebu City in 2025, flooded cars are a real risk too.',
+    help: [
+      'Know exactly what extra you pay for in a higher variant.',
+      'Spot the common problems of a model year before you pay, not after.',
+      'Bargain with a rough price range in hand.',
+      'Avoid flooded cars and paper scams with a step-by-step checklist.',
+      'Share a comparison link with family before deciding.',
     ],
   },
 };

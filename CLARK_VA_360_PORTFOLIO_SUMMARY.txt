@@ -7,6 +7,7 @@ Updated: November 16, 2026 (new VA-focused CV, Verse of the Day, Job Tracker and
 BALANSE changes since November 9).
 Updated: November 23, 2026 (projects grouped by category; new /projects page).
 Updated: November 23, 2026 (fixed the code items in section 10).
+Updated: November 23, 2026 (new Cars category and the CarMark 360 used-car guide).
 Live site: https://www.clarkva360.site   (older address: clarkportfolio.vercel.app)
 
 
@@ -16,7 +17,7 @@ TABLE OF CONTENTS
   2. About Clark (the owner): background, education, experience, certifications, skills
   3. The website, section by section
   4. Services and pricing (the "passes")
-  5. The projects (8 live apps + 1 placeholder), in full detail
+  5. The projects (9 live apps + 1 placeholder), in full detail
        5.1 Google Calendar AUTO Scheduler
        5.2 TeamSync Workspace
        5.3 OnboardBase
@@ -25,7 +26,8 @@ TABLE OF CONTENTS
        5.6 KalakalGG
        5.7 Clark VA 360 Job Tracker
        5.8 ClarkFlow 360
-       5.9 "Coming Soon"
+       5.9 CarMark 360
+      5.10 "Coming Soon"
   6. Every automation on the site (master list)
   7. Every AI (Google Gemini) feature (master list)
   8. Technical architecture and tech stack
@@ -44,7 +46,7 @@ graduate who is moving into remote work as a Virtual Assistant (VA). The tagline
 It does three jobs at once:
   • A personal brand site: intro, about, skills, CV, contact and booking.
   • A sales page: fixed-price "passes" (bundles) for websites and automations.
-  • A working showcase: eight real web apps that visitors can open and use, most of
+  • A working showcase: nine real web apps that visitors can open and use, most of
     them with live AI (Google Gemini) and real automations (database triggers,
     scheduled jobs, Make.com webhooks, email sending, Gmail and Google Calendar).
 
@@ -248,11 +250,12 @@ Contact details published on the site
   • A standalone page with every project as a card grid: 3 per row on desktop, 2 on
     tablets, 1 on phones. Same cards and "How it works" guides as the homepage.
   • Category tabs, each with a project count, group the projects by what they do:
-      All                          8 projects (+ the "Coming Soon" card)
+      All                          9 projects (+ the "Coming Soon" card)
       Productivity & Automation    Auto Scheduler, TeamSync, OnboardBase, ClarkFlow 360
       Career Tools                 BuhayVA Copilot, Job Tracker
       Finance                      BALANSE
-      Marketplaces                 KalakalGG (planned car dealer apps go here too)
+      Marketplaces                 KalakalGG
+      Cars                         CarMark 360 (future car apps go here too)
     On phones the tab row swipes sideways.
   • The chosen tab is kept in the link (e.g. /projects?group=marketplaces), so a
     filtered view can be shared. An unknown group shows All.
@@ -879,7 +882,69 @@ SECURITY AND RELIABILITY DETAILS
     new client's tone.
 
 --------------------------------------------------------------------------------
-5.9 "COMING SOON"
+5.9 CARMARK 360                               Route: /carmark
+    Group: Cars · Category: Used-Car Guide
+    Tags: React, Mobile-first, Google Maps, Researched data
+--------------------------------------------------------------------------------
+WHAT IT IS
+  A free, mobile-first guide for real secondhand-car buyers in Cebu. No login, no
+  backend: everything comes from data files in the repo. The name rhymes with Clark.
+  Bottom tab bar on phones (top bar on desktop) with four pages.
+
+PAGES
+  1. Compare (/carmark): pick Car A and Car B by model → generation → variant, any
+     model against any other. Shows what each has that the other doesn't, a spec table
+     side by side (differences highlighted, "Only differences" toggle, "Both have"
+     list), each generation's rough used price, and the problems to check on each.
+     The pair is kept in the link (?a=<variant>&b=<variant>) and can be shared.
+     A first visit starts empty ("Choose car A / B") with six one-tap popular
+     comparisons; cars are picked in a sheet: model, then year, then variant.
+  2. Models (/carmark/models?m=<model>): every generation of a model, newest first,
+     with years, what changed, rough used price, its variants (tap one to compare
+     it) and "Check before you buy", plus the sources used.
+  3. Dealers (/carmark/dealers): trusted Cebu dealers that Clark types in by hand,
+     on one map that shows every dealer as a numbered red pin on a quiet grey street
+     map (Esri Light Gray Canvas tiles drawn by the app itself: no API key, no map
+     library). Pins that would overlap merge into a dark bubble with the count; tap
+     it to zoom in. Zoom buttons and "Show all"; tapping a pin highlights its card
+     and shows its name, tapping a card zooms to that dealer, and the area filter
+     refits the map. Each card has "Google Maps", "Directions",
+     Call and Facebook buttons. Shows "Dealer list coming soon"
+     until dealers are added. Below it: why a dealership is safer than a private
+     owner, and 13 questions to ask a dealer (price, condition with an OBD scan,
+     why it was sold, flood and accident history, papers, service history, last
+     PMS, battery, tyres, matching window glass, rust under the seats, changes in
+     the engine bay), each with what a good answer looks like.
+  4. Checklist (/carmark/checklist): 32 tick-boxes for any used car in five groups:
+     flood damage (Typhoon Tino, Nov 2025, flooded half of Cebu City), mileage and
+     past use, papers (OR/CR, encumbrance, pasalo, PNP-HPG clearance, deed of sale,
+     recalls), look and test drive, paying safely. Ticks are saved on the phone.
+
+THE CAR DATA (the "doc")
+  • File: FRONTEND/src/components/CARMARK 360/carData.js. 15 models: Mitsubishi
+    Xpander (incl. Cross) and Montero Sport; Toyota Fortuner, Vios, Wigo, HiAce,
+    Avanza, Veloz, Yaris Cross; Hyundai Stargazer; Honda City, Civic, BR-V, CR-V,
+    Brio. 34 generations from about 2012 on, 135 variants.
+  • Each generation has years, a summary, a rough used asking-price range (Carmudi,
+    Philkotse and Automart listings, November 2026) and problems marked "Big risk" or
+    "Check". Each model lists its sources (Top Gear PH, AutoDeal, Philkotse, official
+    brand pages and others).
+  • Variants inherit their generation's specs and features and add their own, so the
+    differences are worked out, not typed twice. A 360° camera counts as a reverse
+    camera and CarPlay as a touchscreen. Where sources disagreed, a feature was left
+    out rather than guessed.
+  • Dealers: FRONTEND/src/components/CARMARK 360/dealerList.js (instructions at the
+    top: name, area, address and the dealer's Google Maps share link). Pins live in
+    dealerPins.js, made by running:
+      node "FRONTEND/src/components/CARMARK 360/resolvePins.mjs"
+    after adding dealers. It follows each share link, saves the shop's pin, and warns
+    when two dealers use the same link.
+  • Checks: node --test "FRONTEND/src/components/CARMARK 360/carmarkRules.test.js"
+    (17 tests: comparison rules, price format, map links, the dealer map maths and
+    pins, and that every model, generation, variant and dealer is complete).
+
+--------------------------------------------------------------------------------
+5.10 "COMING SOON"
 --------------------------------------------------------------------------------
   A placeholder card: "In the pipeline — Building out my portfolio one project at a
   time." with an "In planning" chip.
@@ -1002,6 +1067,7 @@ FRONTEND
       /balanse                  BALANSE
       /job-tracker              Job Tracker (+ /job-tracker/s/<code> public showcase)
       /clarkflow                ClarkFlow 360
+      /carmark                  CarMark 360 (+ /carmark/models, /dealers, /checklist)
       kalakalgg.clarkva360.site KalakalGG (external)
 
 BACKEND
