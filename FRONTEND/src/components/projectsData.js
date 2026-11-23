@@ -84,7 +84,7 @@ export const projects = [
     group: 'marketplaces',
     category: 'Marketplace',
     title: 'KalakalGG',
-    description: 'Buy-and-sell marketplace for CODM and MLBB accounts in pesos, with ID-verified sellers, live trade chat, official middlemen, badges earned from completed deals and a public Scammer Wall.',
+    description: 'Buy-and-sell marketplace for game accounts (MLBB, CODM, Valorant, Genshin and more) in pesos, with ID-verified sellers, live trade chat, official middlemen, badges earned from completed deals and a public Scammer Wall.',
     tags: ['React', 'Supabase', 'Realtime', 'Row Level Security'],
     image: null,
     liveUrl: 'https://kalakalgg.clarkva360.site',

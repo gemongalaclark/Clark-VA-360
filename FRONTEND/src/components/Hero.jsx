@@ -5,7 +5,7 @@ import styles from './Hero.module.css';
 
 const highlights = [
   { value: '4 yrs', label: 'IT study' },
-  { value: '1+ yr', label: 'Internship' },
+  { value: '4 mo', label: 'Internship' },
   { value: '15+', label: 'VA tools' },
 ];
 
@@ -108,7 +108,7 @@ export default function Hero() {
 
           {/* ── Top-right: meta + socials ── */}
           <aside className={`${styles.open} ${styles.meta} ${styles.r}`} style={{ '--rd': '0.65s' }}>
-            <p className={styles.metaLine}><MapPin size={13} aria-hidden="true" /> Philippines · BSIT Graduate</p>
+            <p className={styles.metaLine}><MapPin size={13} aria-hidden="true" /> Cebu, Philippines · BSIT Graduate</p>
             <p className={styles.metaLine}>Portfolio · 2026</p>
             <a className={styles.metaLink} href="mailto:gemongalaclark.official@gmail.com">
               <Mail size={13} aria-hidden="true" /> gemongalaclark.official@gmail.com

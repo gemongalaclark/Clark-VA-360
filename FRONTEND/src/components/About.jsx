@@ -3,7 +3,7 @@ import styles from './About.module.css';
 
 const stats = [
   { value: '4',    label: 'Years of IT Study',  Icon: GraduationCap },
-  { value: '1+',   label: 'Year Internship',    Icon: Briefcase },
+  { value: '4',    label: 'Month Internship',   Icon: Briefcase },
   { value: '15+',  label: 'VA Tools Mastered',  Icon: Wrench },
   { value: '100%', label: 'Dedication',         Icon: Target },
 ];

@@ -50,8 +50,9 @@ export default function UploadModal({
       return;
     }
 
-    if (file.size > 25 * 1024 * 1024) {
-      setErrorMessage('File size exceeds 25MB limit. Please upload a smaller document.');
+    // The live scheduler-scan function rejects anything over about 5 MB
+    if (file.size > 5 * 1024 * 1024) {
+      setErrorMessage('File size exceeds 5MB limit. Please upload a smaller document.');
       return;
     }
 

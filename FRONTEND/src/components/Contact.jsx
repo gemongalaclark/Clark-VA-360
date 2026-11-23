@@ -130,7 +130,7 @@ export default function Contact() {
               </a>
               <div className={styles.contactItem}>
                 <span className={styles.contactIcon}><MapPin size={18} /></span>
-                Philippines
+                Cebu, Philippines
               </div>
             </div>
 

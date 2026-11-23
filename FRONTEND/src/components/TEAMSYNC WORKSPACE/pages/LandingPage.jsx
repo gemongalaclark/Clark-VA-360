@@ -135,7 +135,7 @@ export default function LandingPage({ onSignIn, onSignUp, onBackToPortfolio }) {
       </section>
 
       <footer className={styles.footer}>
-        <p>© 2025 TeamSync Workspace — Built by <strong>Clark VA 360</strong></p>
+        <p>© {new Date().getFullYear()} TeamSync Workspace — Built by <strong>Clark VA 360</strong></p>
         <button className={styles.footerBack} onClick={onBackToPortfolio}>
           ← Back to Portfolio
         </button>

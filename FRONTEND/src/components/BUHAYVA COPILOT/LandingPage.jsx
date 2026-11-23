@@ -7,7 +7,7 @@ const FLOW = [
   { icon: ClipboardPaste, title: 'Paste or 1-click', text: 'Paste a job post, or send it from the Upwork / OLJ tab with the bookmarklet.' },
   { icon: Database, title: 'Supabase', text: 'The job is saved under your account. Row Level Security keeps it private.' },
   { icon: Workflow, title: 'Make.com', text: 'A webhook verifies your session, then pulls your master resume and the job.' },
-  { icon: Bot, title: 'Gemini 2.5 Flash', text: 'Scores the fit, finds hidden attention checks and red flags, drafts the pitch.' },
+  { icon: Bot, title: 'Google Gemini', text: 'Scores the fit, finds hidden attention checks and red flags, drafts the pitch.' },
   { icon: KanbanSquare, title: 'Application CRM', text: 'Copy the pitch, apply, then track it from Applied to Offer.' },
 ];
 

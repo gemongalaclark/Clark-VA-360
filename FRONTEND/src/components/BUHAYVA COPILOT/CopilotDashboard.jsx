@@ -229,7 +229,7 @@ export default function CopilotDashboard({ api, mode, profile, onProfileSaved, i
           </button>
           <p className={styles.muted}>
             {mode === 'demo'
-              ? 'Demo mode uses a local rule-based analyzer. Live mode uses Gemini 2.5 Flash.'
+              ? 'Demo mode uses a local rule-based analyzer. Live mode uses Google Gemini.'
               : 'Gemini usually answers in 10–30 seconds. You can queue several jobs.'}
           </p>
         </form>
