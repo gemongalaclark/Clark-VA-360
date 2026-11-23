@@ -225,9 +225,9 @@ export const MODELS = [
           { id: 'fortuner-2021:g-mt', name: '2.4 G 4x2 MT' },
           { id: 'fortuner-2021:g-at', name: '2.4 G 4x2 AT', specs: { transmission: '6-speed automatic' } },
           { id: 'fortuner-2021:v-at', name: '2.4 V 4x2 AT', specs: { transmission: '6-speed automatic', wheels: '18-inch alloy' }, features: ['ledHead', 'leather', 'pushStart', 'autoAC', 'touchscreen', 'carplay', 'reverseCam'] },
-          { id: 'fortuner-2021:q-at', name: '2.8 Q 4x2 AT', specs: { engine: '2.8L diesel (1GD-FTV)', power: '201 hp · 500 Nm', transmission: '6-speed automatic', wheels: '18-inch alloy' }, features: ['ledHead', 'leather', 'pushStart', 'autoAC', 'touchscreen', 'carplay', 'reverseCam', 'powerTailgate'] },
-          { id: 'fortuner-2021:ltd-4x4', name: '2.8 LTD 4x4 AT', specs: { engine: '2.8L diesel (1GD-FTV)', power: '201 hp · 500 Nm', transmission: '6-speed automatic', drive: '4x4 with low range', wheels: '18-inch alloy' }, features: ['ledHead', 'leather', 'pushStart', 'autoAC', 'touchscreen', 'carplay', 'camera360', 'powerTailgate'] },
-          { id: 'fortuner-2021:grs-4x4', name: '2.8 GR Sport 4x4 AT', years: '2022–present', specs: { engine: '2.8L diesel (1GD-FTV)', power: '201 hp · 500 Nm', transmission: '6-speed automatic', drive: '4x4 with low range', wheels: '18-inch alloy' }, features: ['ledHead', 'leather', 'pushStart', 'autoAC', 'touchscreen', 'carplay', 'camera360', 'powerTailgate', 'bodyKit', 'sportTuned'] },
+          { id: 'fortuner-2021:q-at', name: '2.8 Q 4x2 AT', specs: { engine: '2.8L diesel (1GD-FTV)', power: '201 hp · 500 Nm', transmission: '6-speed automatic', wheels: '18-inch alloy' }, features: ['ledHead', 'leather', 'pushStart', 'autoAC', 'touchscreen', 'carplay', 'reverseCam', 'powerTailgate', 'adas'] },
+          { id: 'fortuner-2021:ltd-4x4', name: '2.8 LTD 4x4 AT', specs: { engine: '2.8L diesel (1GD-FTV)', power: '201 hp · 500 Nm', transmission: '6-speed automatic', drive: '4x4 with low range', wheels: '18-inch alloy' }, features: ['ledHead', 'leather', 'pushStart', 'autoAC', 'touchscreen', 'carplay', 'camera360', 'powerTailgate', 'adas'] },
+          { id: 'fortuner-2021:grs-4x4', name: '2.8 GR Sport 4x4 AT', years: '2022–present', specs: { engine: '2.8L diesel (1GD-FTV)', power: '201 hp · 500 Nm', transmission: '6-speed automatic', drive: '4x4 with low range', wheels: '18-inch alloy' }, features: ['ledHead', 'leather', 'pushStart', 'autoAC', 'touchscreen', 'carplay', 'camera360', 'powerTailgate', 'adas', 'bodyKit', 'sportTuned'] },
         ],
         problems: [
           { level: 'high', title: 'Flood damage', detail: 'Young, expensive Fortuners flooded in Typhoon Tino can be cleaned up and resold at a "too good" price. Do every flood check in the checklist and ask the seller\'s insurer whether a flood claim was ever filed.' },
@@ -321,9 +321,9 @@ export const MODELS = [
         },
         variants: [
           { id: 'montero-2024:glx-mt', name: 'GLX 2WD MT', specs: { wheels: '16-inch alloy' } },
-          { id: 'montero-2024:gls-at', name: 'GLS 2WD AT', specs: { transmission: '8-speed automatic' }, features: ['sideAirbags', 'touchscreen', 'carplay', 'pushStart', 'reverseCam'] },
-          { id: 'montero-2024:black-2wd', name: 'Black Series 2WD AT', specs: { transmission: '8-speed automatic' }, features: ['sideAirbags', 'touchscreen', 'carplay', 'pushStart', 'leather', 'powerSeat', 'autoAC', 'ledHead', 'adas', 'bsm', 'powerTailgate', 'camera360'] },
-          { id: 'montero-2024:black-4x4', name: 'Black Series 4WD AT', specs: { transmission: '8-speed automatic', drive: '4x4 with low range' }, features: ['sideAirbags', 'touchscreen', 'carplay', 'pushStart', 'leather', 'powerSeat', 'autoAC', 'ledHead', 'adas', 'bsm', 'powerTailgate', 'camera360', 'diffLock'] },
+          { id: 'montero-2024:gls-at', name: 'GLS 2WD AT', specs: { transmission: '8-speed automatic' }, features: ['sideAirbags', 'touchscreen', 'carplay', 'pushStart', 'reverseCam', 'paddles'] },
+          { id: 'montero-2024:black-2wd', name: 'Black Series 2WD AT', specs: { transmission: '8-speed automatic' }, features: ['sideAirbags', 'touchscreen', 'carplay', 'pushStart', 'leather', 'powerSeat', 'autoAC', 'ledHead', 'adas', 'bsm', 'powerTailgate', 'camera360', 'paddles'] },
+          { id: 'montero-2024:black-4x4', name: 'Black Series 4WD AT', specs: { transmission: '8-speed automatic', drive: '4x4 with low range' }, features: ['sideAirbags', 'touchscreen', 'carplay', 'pushStart', 'leather', 'powerSeat', 'autoAC', 'ledHead', 'adas', 'bsm', 'powerTailgate', 'camera360', 'paddles', 'diffLock'] },
         ],
         problems: [
           { level: 'high', title: 'Pasalo and bank loans', detail: 'Most are still financed. Get the bank\'s written consent or a release of chattel mortgage before paying.' },
@@ -577,7 +577,7 @@ export const MODELS = [
           { id: 'avanza-2022:j-mt', name: '1.3 J MT' },
           { id: 'avanza-2022:e-mt', name: '1.3 E MT', features: ['touchscreen'] },
           { id: 'avanza-2022:e-cvt', name: '1.3 E CVT', specs: { transmission: 'CVT' }, features: ['touchscreen'] },
-          { id: 'avanza-2022:g-cvt', name: '1.5 G CVT', specs: { engine: '1.5L gas (2NR-VE)', power: '105 hp · 138 Nm', transmission: 'CVT', wheels: '16-inch alloy' }, features: ['touchscreen', 'alloy', 'pushStart', 'reverseCam'] },
+          { id: 'avanza-2022:g-cvt', name: '1.5 G CVT', specs: { engine: '1.5L gas (2NR-VE)', power: '105 hp · 138 Nm', transmission: 'CVT', wheels: '16-inch alloy' }, features: ['touchscreen', 'alloy', 'pushStart', 'reverseCam', 'sideAirbags', 'bsm'] },
         ],
         problems: [FLEET('Avanza'), CVT, { level: 'high', title: 'Flood damage', detail: 'Do every flood check.' }],
       },
@@ -599,10 +599,10 @@ export const MODELS = [
         price: { min: 850000, max: 1100000 },
         base: {
           specs: { engine: '1.5L gas (2NR-VE)', power: '105 hp · 138 Nm', transmission: 'CVT', drive: 'Front-wheel drive', fuel: 'Gasoline', seats: '7', wheels: '17-inch alloy' },
-          features: ['abs', 'airbags2', 'sideAirbags', 'rearAC', 'stability', 'hillStart', 'alloy', 'touchscreen', 'pushStart', 'ledHead'],
+          features: ['abs', 'airbags2', 'sideAirbags', 'rearAC', 'stability', 'hillStart', 'alloy', 'touchscreen', 'pushStart', 'ledHead', 'autoAC'],
         },
         variants: [
-          { id: 'veloz-2022:e-cvt', name: '1.5 E CVT', years: '2023–present' },
+          { id: 'veloz-2022:e-cvt', name: '1.5 E CVT', years: '2024–present' },
           { id: 'veloz-2022:g-cvt', name: '1.5 G CVT', features: ['carplay', 'reverseCam'] },
           { id: 'veloz-2022:v-cvt', name: '1.5 V CVT', features: ['carplay', 'reverseCam', 'adas', 'bsm', 'camera360'] },
         ],
@@ -683,13 +683,13 @@ export const MODELS = [
         price: { min: 1000000, max: 1450000, note: 'G at the low end, hybrids at the top.' },
         base: {
           specs: { engine: '1.5L gas (2NR-VE)', power: 'about 105 hp · 138 Nm', transmission: 'CVT', drive: 'Front-wheel drive', fuel: 'Gasoline', seats: '5', wheels: '17-inch alloy' },
-          features: ['abs', 'airbags2', 'sideAirbags', 'stability', 'hillStart', 'alloy', 'touchscreen', 'carplay', 'pushStart', 'reverseCam', 'ledHead'],
+          features: ['abs', 'airbags2', 'sideAirbags', 'stability', 'hillStart', 'alloy', 'touchscreen', 'carplay', 'pushStart', 'reverseCam', 'ledHead', 'autoAC'],
         },
         variants: [
           { id: 'yariscross-2023:g', name: '1.5 G CVT' },
-          { id: 'yariscross-2023:v', name: '1.5 V CVT', specs: { wheels: '18-inch alloy' }, features: ['adas', 'bsm'] },
-          { id: 'yariscross-2023:s-hev', name: '1.5 S HEV', specs: { engine: '1.5L gas + electric motor (2NR-VEX)', power: '111 PS combined', transmission: 'e-CVT', fuel: 'Hybrid (gasoline)', wheels: '18-inch alloy' }, features: ['adas', 'bsm', 'evMode', 'sunroof'] },
-          { id: 'yariscross-2023:se-hev', name: '1.5 SE HEV', years: '2024–present', specs: { engine: '1.5L gas + electric motor (2NR-VEX)', power: '111 PS combined', transmission: 'e-CVT', fuel: 'Hybrid (gasoline)', wheels: '18-inch alloy' }, features: ['adas', 'bsm', 'evMode', 'sunroof'] },
+          { id: 'yariscross-2023:v', name: '1.5 V CVT', specs: { wheels: '18-inch alloy' }, features: ['adas', 'bsm', 'camera360', 'powerTailgate', 'leather'] },
+          { id: 'yariscross-2023:s-hev', name: '1.5 S HEV', specs: { engine: '1.5L gas + electric motor (2NR-VEX)', power: '111 PS combined', transmission: 'e-CVT', fuel: 'Hybrid (gasoline)', wheels: '18-inch alloy' }, features: ['adas', 'bsm', 'camera360', 'powerTailgate', 'leather', 'evMode', 'sunroof'] },
+          { id: 'yariscross-2023:se-hev', name: '1.5 SE HEV', years: '2024–present', specs: { engine: '1.5L gas + electric motor (2NR-VEX)', power: '111 PS combined', transmission: 'e-CVT', fuel: 'Hybrid (gasoline)', wheels: '18-inch alloy' }, features: ['adas', 'bsm', 'camera360', 'powerTailgate', 'leather', 'evMode', 'sunroof'] },
         ],
         problems: [
           { level: 'high', title: 'Flood damage is worse on a hybrid', detail: 'The hybrid battery and high-voltage wiring sit low in the car. A flooded hybrid can be dangerous and very costly. Do every flood check and have Toyota check the hybrid system.' },
@@ -846,9 +846,9 @@ export const MODELS = [
         },
         variants: [
           { id: 'brv-2022:s-mt', name: '1.5 S MT' },
-          { id: 'brv-2022:s-cvt', name: '1.5 S CVT', specs: { transmission: 'CVT' } },
-          { id: 'brv-2022:v-cvt', name: '1.5 V CVT', specs: { transmission: 'CVT', wheels: '17-inch alloy' }, features: ['pushStart', 'touchscreen', 'carplay', 'reverseCam', 'ledHead'] },
-          { id: 'brv-2022:vx-cvt', name: '1.5 VX CVT Honda Sensing', specs: { transmission: 'CVT', wheels: '17-inch alloy' }, features: ['pushStart', 'touchscreen', 'carplay', 'reverseCam', 'ledHead', 'adas', 'sideAirbags', 'autoAC'] },
+          { id: 'brv-2022:s-cvt', name: '1.5 S CVT', specs: { transmission: 'CVT' }, features: ['fog'] },
+          { id: 'brv-2022:v-cvt', name: '1.5 V CVT', specs: { transmission: 'CVT', wheels: '17-inch alloy' }, features: ['pushStart', 'touchscreen', 'carplay', 'reverseCam', 'ledHead', 'fog', 'leather', 'autoAC'] },
+          { id: 'brv-2022:vx-cvt', name: '1.5 VX CVT Honda Sensing', specs: { transmission: 'CVT', wheels: '17-inch alloy' }, features: ['pushStart', 'touchscreen', 'carplay', 'reverseCam', 'ledHead', 'adas', 'sideAirbags', 'autoAC', 'fog', 'leather', 'paddles'] },
         ],
         problems: [CVT, { level: 'check', title: 'Warranty and PMS', detail: 'Confirm dealer PMS and remaining warranty with Honda.' }, { level: 'high', title: 'Flood damage', detail: 'Do every flood check.' }],
       },
@@ -890,13 +890,13 @@ export const MODELS = [
         summary: 'All-new from mid-2023 with a 1.5 turbo gas or 2.0 e:HEV hybrid, and Honda Sensing on every variant. The diesel was dropped.',
         price: { min: 1650000, max: 2400000 },
         base: {
-          specs: { engine: '1.5L turbo gas', power: '190 hp · 243 Nm', transmission: 'CVT', drive: 'Front-wheel drive', fuel: 'Gasoline', seats: '5', wheels: '18-inch alloy' },
+          specs: { engine: '1.5L turbo gas', power: '190 hp · 243 Nm', transmission: 'CVT', drive: 'Front-wheel drive', fuel: 'Gasoline', seats: '7', wheels: '18-inch alloy' },
           features: ['abs', 'airbags2', 'sideAirbags', 'stability', 'hillStart', 'adas', 'alloy', 'pushStart', 'autoAC', 'touchscreen', 'carplay', 'ledHead', 'leather', 'powerTailgate'],
         },
         variants: [
           { id: 'crv-2024:v', name: 'V 1.5 Turbo FWD CVT' },
           { id: 'crv-2024:vx-awd', name: 'VX 1.5 Turbo AWD CVT', specs: { drive: 'All-wheel drive' }, features: ['sunroof', 'powerSeat'] },
-          { id: 'crv-2024:rs-ehev', name: 'RS e:HEV', specs: { engine: '2.0L gas + electric motors', transmission: 'e-CVT', fuel: 'Hybrid (gasoline)' }, features: ['sunroof', 'powerSeat', 'evMode', 'camera360'] },
+          { id: 'crv-2024:rs-ehev', name: 'RS e:HEV', specs: { engine: '2.0L gas + electric motors', transmission: 'e-CVT', fuel: 'Hybrid (gasoline)', seats: '5' }, features: ['sunroof', 'powerSeat', 'evMode', 'camera360'] },
         ],
         problems: [
           { level: 'check', title: 'Oil dilution (1.5 turbo)', detail: 'Check the oil level and smell for fuel; ask for on-time oil changes.' },
@@ -926,7 +926,8 @@ export const MODELS = [
         variants: [
           { id: 'brio-2019:s-mt', name: '1.2 S MT' },
           { id: 'brio-2019:v-cvt', name: '1.2 V CVT', specs: { transmission: 'CVT', wheels: '14-inch alloy' }, features: ['alloy', 'touchscreen'] },
-          { id: 'brio-2019:rs-cvt', name: '1.2 RS CVT', specs: { transmission: 'CVT', wheels: '15-inch alloy' }, features: ['alloy', 'touchscreen', 'carplay', 'bodyKit', 'fog'] },
+          { id: 'brio-2019:rs-cvt', name: '1.2 RS CVT', years: '2019–2023', specs: { transmission: 'CVT', wheels: '15-inch alloy' }, features: ['alloy', 'touchscreen', 'bodyKit', 'fog'] },
+          { id: 'brio-2019:rs-cvt-2023', name: '1.2 RS CVT (refreshed)', years: '2023–present', specs: { transmission: 'CVT', wheels: '15-inch alloy' }, features: ['alloy', 'touchscreen', 'carplay', 'bodyKit', 'fog', 'ledHead'] },
         ],
         problems: [
           CVT,
