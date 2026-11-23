@@ -24,6 +24,7 @@ const PROJECT_APPS = {
   jobtracker: lazy(() => import('./components/Clark VA 360 Job Tracker/JobTracker')),
   clarkflow: lazy(() => import('./components/CLARKFLOW 360/ClarkFlow360')),
   carmark: lazy(() => import('./components/CARMARK 360/CarMark360')),
+  showroom: lazy(() => import('./components/SHOWROOM 360/Showroom360')),
   services: lazy(() => import('./components/ServicesPage')),
   projects: lazy(() => import('./components/ProjectsPage')),
 };
@@ -57,6 +58,7 @@ function checkRoute() {
   if (path.startsWith('/balanse') || hash.includes('balanse')) return 'balanse';
   if (path.startsWith('/job-tracker') || hash.includes('job-tracker')) return 'jobtracker';
   if (path.startsWith('/carmark')) return 'carmark';
+  if (path.startsWith('/showroom')) return 'showroom';
   if (path.startsWith('/services')) return 'services';
   if (path.startsWith('/projects')) return 'projects';
   return 'portfolio';
