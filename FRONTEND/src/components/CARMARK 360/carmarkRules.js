@@ -2,7 +2,7 @@
 import { MODELS, SPEC_ROWS } from './carData.js';
 
 /* Features that come with another one, so a car is never shown as "lacking" them */
-const IMPLIES = { camera360: ['reverseCam'], carplay: ['touchscreen'] };
+const IMPLIES = { camera360: ['reverseCam'], carplay: ['touchscreen'], curtainAirbags: ['sideAirbags'] };
 
 /* A variant = its generation's base specs and features, plus its own */
 export function resolveVariant(model, gen, variant) {

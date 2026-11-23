@@ -932,7 +932,7 @@ THE CAR DATA (the "doc")
   • File: FRONTEND/src/components/CARMARK 360/carData.js. 15 models: Mitsubishi
     Xpander (incl. Cross) and Montero Sport; Toyota Fortuner, Vios, Wigo, HiAce,
     Avanza, Veloz, Yaris Cross; Hyundai Stargazer; Honda City, Civic, BR-V, CR-V,
-    Brio. 34 generations from about 2012 on, 136 variants.
+    Brio. 34 generations from about 2012 on, 143 variants.
   • Each generation has years, a summary, a rough used asking-price range (Carmudi,
     Philkotse and Automart listings, November 2026) and problems marked "Big risk" or
     "Check". Each model lists its sources (Top Gear PH, AutoDeal, Philkotse, official
