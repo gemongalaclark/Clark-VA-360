@@ -10,6 +10,7 @@ import Projects from './components/Projects';
 import Services from './components/Services';
 import Contact from './components/Contact';
 import Footer from './components/Footer';
+import { projectsReturnUrl } from './components/projectsData';
 import './App.css';
 
 /* Each project app is its own download, fetched only when it is opened,
@@ -23,11 +24,14 @@ const PROJECT_APPS = {
   jobtracker: lazy(() => import('./components/Clark VA 360 Job Tracker/JobTracker')),
   clarkflow: lazy(() => import('./components/CLARKFLOW 360/ClarkFlow360')),
   services: lazy(() => import('./components/ServicesPage')),
+  projects: lazy(() => import('./components/ProjectsPage')),
 };
 
 /* The portfolio pages share one chat bot; project apps have their own layouts. */
 const ChatBot = lazy(() => import('./components/ChatBot'));
-const CHAT_ROUTES = ['portfolio', 'services'];
+/* Portfolio pages that are not project apps */
+const LISTING_ROUTES = ['services', 'projects'];
+const CHAT_ROUTES = ['portfolio', 'services', 'projects'];
 
 function checkRoute() {
   if (typeof window === 'undefined') return 'portfolio';
@@ -52,6 +56,7 @@ function checkRoute() {
   if (path.startsWith('/balanse') || hash.includes('balanse')) return 'balanse';
   if (path.startsWith('/job-tracker') || hash.includes('job-tracker')) return 'jobtracker';
   if (path.startsWith('/services')) return 'services';
+  if (path.startsWith('/projects')) return 'projects';
   return 'portfolio';
 }
 
@@ -86,8 +91,10 @@ export default function App() {
   }, [route]);
 
   const goToPortfolio = () => {
-    window.history.pushState({}, '', '/');
-    setRoute('portfolio');
+    /* A project opened from /projects returns there (same tab), not to the homepage */
+    const fromList = !LISTING_ROUTES.includes(route) && projectsReturnUrl();
+    window.history.pushState({}, '', fromList || '/');
+    setRoute(fromList ? 'projects' : 'portfolio');
   };
 
   const ProjectApp = PROJECT_APPS[route];

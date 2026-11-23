@@ -1,0 +1,49 @@
+/* ── /projects page: category tabs + card grid ── */
+.page { min-height: calc(100vh - var(--navbar-height)); }
+
+.tabs {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;
+  margin: 0 auto 40px;
+}
+.tab {
+  display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0;
+  padding: 9px 16px; border-radius: 9999px;
+  border: 1.5px solid #ecd9d9; background: #fff; color: var(--text-dark);
+  font-family: inherit; font-size: 0.88rem; font-weight: 600; white-space: nowrap; cursor: pointer;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+}
+.tab:hover { border-color: var(--red-primary); color: var(--red-primary); }
+.tab:focus-visible { outline: 2px solid var(--red-primary); outline-offset: 3px; }
+.tabCount {
+  min-width: 22px; padding: 1px 7px; border-radius: 9999px;
+  background: #f3efef; color: var(--text-muted); font-size: 0.74rem; font-weight: 700; text-align: center;
+}
+.tabActive, .tabActive:hover { background: var(--red-primary); border-color: var(--red-primary); color: #fff; }
+.tabActive .tabCount { background: rgba(255,255,255,0.22); color: #fff; }
+
+.grid {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px;
+  align-items: stretch;
+}
+
+@media (max-width: 900px) {
+  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+  .grid { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+  /* Tabs swipe sideways instead of wrapping into a block; bleed to the screen edges */
+  .tabs {
+    flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto;
+    margin: 0 -16px 28px; padding: 2px 16px 6px; /* matches .container padding at this width */
+    scrollbar-width: none; -webkit-overflow-scrolling: touch;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+}
+
+/* ── Dark theme ── */
+:global(html[data-theme='dark']) .tab { background: var(--dk-raised); border-color: var(--dk-border-strong); }
+:global(html[data-theme='dark']) .tab:hover { border-color: var(--red-primary); }
+:global(html[data-theme='dark']) .tabCount { background: rgba(255,255,255,0.08); }
+:global(html[data-theme='dark']) .tabActive,
+:global(html[data-theme='dark']) .tabActive:hover { background: var(--red-primary); border-color: var(--red-primary); color: #fff; }
+:global(html[data-theme='dark']) .tabActive .tabCount { background: rgba(255,255,255,0.22); color: #fff; }
