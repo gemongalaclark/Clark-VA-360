@@ -10,7 +10,7 @@ import Projects from './components/Projects';
 import Services from './components/Services';
 import Contact from './components/Contact';
 import Footer from './components/Footer';
-import { projectsReturnUrl } from './components/projectsData';
+import { projectsReturnUrl, projectsReturnScroll } from './components/projectsData';
 import './App.css';
 
 /* Each project app is its own download, fetched only when it is opened,
@@ -81,7 +81,10 @@ export default function App() {
     const prev = prevRoute.current;
     prevRoute.current = route;
     if (prev === route) return;
-    if (route !== 'portfolio') {
+    if (route === 'projects' && !LISTING_ROUTES.includes(prev) && prev !== 'portfolio') {
+      /* Back from an app opened on /projects: land on the card the visitor left from */
+      window.scrollTo({ top: projectsReturnScroll(), left: 0, behavior: 'instant' });
+    } else if (route !== 'portfolio') {
       window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     } else {
       const el = document.getElementById(prev === 'services' ? 'services' : 'projects');

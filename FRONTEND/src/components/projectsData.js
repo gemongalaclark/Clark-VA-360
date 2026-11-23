@@ -285,13 +285,16 @@ export const docs = {
 /* The /projects view (with its ?group= tab) an app was opened from, so the app's
    "Back to portfolio" can return there. null = opened from anywhere else. */
 let returnUrl = null;
+let returnScroll = 0;
 export const projectsReturnUrl = () => returnUrl;
+export const projectsReturnScroll = () => returnScroll;
 
 export const openProject = (url) => {
   /* Projects hosted on their own domain (e.g. KalakalGG) open in a new tab */
   if (!url.startsWith('/')) return window.open(url, '_blank', 'noopener,noreferrer');
   const here = window.location.pathname;
   returnUrl = here.startsWith('/projects') ? here + window.location.search : null;
+  returnScroll = returnUrl ? window.scrollY : 0;
   window.history.pushState({}, '', url);
   window.dispatchEvent(new PopStateEvent('popstate'));
 };
