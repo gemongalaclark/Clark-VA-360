@@ -835,3 +835,6 @@
 :global(html[data-theme='dark']) .docsClose:hover { border-color: var(--red-primary); }
 :global(html[data-theme='dark']) .docsActions { border-top-color: var(--dk-border); }
 :global(html[data-theme='dark']) .docsOpen:hover { background: #c92e2e; }
+
+/* "View all projects" under the homepage carousel */
+.moreRow { display: flex; justify-content: center; margin-top: 40px; }
