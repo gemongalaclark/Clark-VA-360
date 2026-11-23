@@ -915,10 +915,18 @@ PAGES
      why it was sold, flood and accident history, papers, service history, last
      PMS, battery, tyres, matching window glass, rust under the seats, changes in
      the engine bay), each with what a good answer looks like.
-  4. Checklist (/carmark/checklist): 32 tick-boxes for any used car in five groups:
-     flood damage (Typhoon Tino, Nov 2025, flooded half of Cebu City), mileage and
-     past use, papers (OR/CR, encumbrance, pasalo, PNP-HPG clearance, deed of sale,
-     recalls), look and test drive, paying safely. Ticks are saved on the phone.
+  4. Checklist (/carmark/checklist): works only after the buyer picks a car. They
+     choose the model, then the generation (for example Montero Sport 3rd gen,
+     2016–2019). Compare ("Going to see the …?") and each generation on Models
+     link straight to that car's checklist (/carmark/checklist?g=<generation>).
+     First come 8–12 checks made for that generation (FRONTEND/src/components/
+     CARMARK 360/carChecks.js: timing belts, injectors, CVT, 8-speed AT, 4x4,
+     hybrid system, cameras and driver assists, ex-Grab signs, recalls). Then 32
+     checks every used car needs, in five groups: flood damage (Typhoon Tino, Nov
+     2025, flooded half of Cebu City), mileage and past use, papers (OR/CR,
+     encumbrance, pasalo, PNP-HPG clearance, deed of sale, recalls), look and test
+     drive, paying safely. Ticks are saved on the phone, separately for each
+     generation. The Checklist tab reopens the last car during the visit.
 
 THE CAR DATA (the "doc")
   • File: FRONTEND/src/components/CARMARK 360/carData.js. 15 models: Mitsubishi

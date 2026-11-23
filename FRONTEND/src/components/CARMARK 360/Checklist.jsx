@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
-import { RotateCcw, ArrowUpRight } from 'lucide-react';
+import { RotateCcw, ArrowUpRight, ArrowLeft, ArrowRight, CarFront } from 'lucide-react';
 import styles from './CarMark360.module.css';
 import { Hero, Card } from './ui';
+import { MODELS } from './carData';
+import { GEN_CHECKS } from './carChecks';
+import { findGeneration } from './carmarkRules';
 
-/* Checks for any used car. Ids are stored on the phone, so keep them stable. */
+/* Checks for any used car, shown after the car's own checks. Ids are stored on the phone, so keep them stable. */
 const SECTIONS = [
   {
     id: 'flood', title: 'Flood damage',
@@ -69,19 +72,98 @@ const SECTIONS = [
   },
 ];
 
-const KEY = 'carmark-checklist';
-const total = SECTIONS.reduce((n, s) => n + s.items.length, 0);
+const MAKES = [...new Set(MODELS.map(m => m.make))];
 
-const load = () => {
-  try { return new Set(JSON.parse(localStorage.getItem(KEY)) || []); } catch { return new Set(); }
+/* The car last opened here, so the Checklist tab reopens it during this visit */
+let lastGen = null;
+export const lastChecklistSearch = () => (lastGen ? `?g=${lastGen}` : '');
+
+/* Ticks are saved per generation, so two cars never share them */
+const keyFor = (genId) => `carmark-checklist:${genId}`;
+const load = (genId) => {
+  try { return new Set(JSON.parse(localStorage.getItem(keyFor(genId))) || []); } catch { return new Set(); }
 };
 
-export default function Checklist() {
-  const [done, setDone] = useState(load);
+export default function Checklist({ navigate }) {
+  const q = new URLSearchParams(window.location.search);
+  const found = findGeneration(q.get('g'));
+  if (!found) return <CarPick navigate={navigate} model={MODELS.find(m => m.id === q.get('m'))} />;
+  return <CarChecklist navigate={navigate} model={found.model} gen={found.gen} />;
+}
+
+/* Step 1 and 2: pick the model, then the generation */
+function CarPick({ navigate, model }) {
+  const link = (url) => ({ href: url, onClick: (e) => { e.preventDefault(); navigate(url); } });
+
+  if (model) {
+    return (
+      <div className={styles.page}>
+        <Hero
+          eyebrow="Checklist"
+          title={`Which ${model.name}?`}
+          sub="Pick the generation. Not sure? Check the year model on the CR, then find the range it falls in."
+        >
+          <a className={styles.heroBtn} {...link('/carmark/checklist')}>
+            <ArrowLeft size={17} aria-hidden="true" /> All models
+          </a>
+        </Hero>
+        <Card title={`${model.make} ${model.name}`}>
+          <ul className={styles.popular}>
+            {[...model.generations].reverse().map(g => (
+              <li key={g.id}>
+                <button type="button" onClick={() => navigate(`/carmark/checklist?g=${g.id}`)}>
+                  <strong>{g.label}</strong>
+                  <span>{g.years} · {GEN_CHECKS[g.id].items.length} checks for this car</span>
+                  <ArrowRight size={18} aria-hidden="true" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className={styles.page}>
+      <Hero
+        eyebrow="Checklist"
+        title="Which car are you checking?"
+        sub="Pick the model and generation. You get the checks made for that car, plus the flood, papers and test-drive checks every used car needs."
+      />
+      {MAKES.map(make => (
+        <section key={make} className={styles.makeGroup}>
+          <h2 className={styles.groupLabel}>{make}</h2>
+          <ul className={styles.modelGrid}>
+            {MODELS.filter(m => m.make === make).map(m => (
+              <li key={m.id}>
+                <a className={styles.modelCard} {...link(`/carmark/checklist?m=${m.id}`)}>
+                  <span className={styles.modelBody}>{m.body}</span>
+                  <strong>{m.name}</strong>
+                  <span className={styles.modelYears}>{m.generations.length} {m.generations.length === 1 ? 'generation' : 'generations'}</span>
+                  <ArrowRight size={16} className={styles.modelArrow} aria-hidden="true" />
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
+    </div>
+  );
+}
+
+/* The checklist for one generation */
+function CarChecklist({ navigate, model, gen }) {
+  const own = GEN_CHECKS[gen.id];
+  const sections = [{ id: 'car', title: `For this ${model.name}`, intro: own.intro, items: own.items }, ...SECTIONS];
+  const total = sections.reduce((n, s) => n + s.items.length, 0);
+  const [done, setDone] = useState(() => load(gen.id));
+
+  useEffect(() => { lastGen = gen.id; }, [gen.id]);
 
   useEffect(() => {
-    try { localStorage.setItem(KEY, JSON.stringify([...done])); } catch { /* not saved */ }
-  }, [done]);
+    try { localStorage.setItem(keyFor(gen.id), JSON.stringify([...done])); } catch { /* not saved */ }
+  }, [done, gen.id]);
 
   const toggle = (id) => setDone(prev => {
     const next = new Set(prev);
@@ -89,6 +171,7 @@ export default function Checklist() {
     return next;
   });
 
+  const changeUrl = `/carmark/checklist?m=${model.id}`;
   const pct = Math.round((done.size / total) * 100);
   const R = 34;
   const C = 2 * Math.PI * R;
@@ -97,9 +180,12 @@ export default function Checklist() {
     <div className={styles.page}>
       <Hero
         eyebrow="Checklist"
-        title="Before you buy"
-        sub="Go through this while you look at any used car. Your ticks are saved on this phone."
+        title={`${model.name} ${gen.label}`}
+        sub={`${model.make} · ${gen.years}. Go through this while you look at the car. Your ticks are saved on this phone.`}
       >
+        <a href={changeUrl} className={styles.heroBtn} onClick={(e) => { e.preventDefault(); navigate(changeUrl); }}>
+          <CarFront size={17} aria-hidden="true" /> Change car
+        </a>
         <div className={styles.ringRow}>
           <svg className={styles.ring} viewBox="0 0 80 80" role="img" aria-label={`${done.size} of ${total} checked`}>
             <circle cx="40" cy="40" r={R} className={styles.ringTrack} />
@@ -108,15 +194,15 @@ export default function Checklist() {
           </svg>
           <div className={styles.ringText}>
             <strong>{done.size} of {total} checked</strong>
-            <span>{done.size === total ? 'All done. Good luck with the deal!' : 'Flood checks first: they matter most in Cebu.'}</span>
+            <span>{done.size === total ? 'All done. Good luck with the deal!' : `Start with the ${model.name} checks, then flood signs and papers.`}</span>
             <button type="button" className={styles.ghostBtn} onClick={() => setDone(new Set())} disabled={!done.size}>
-              <RotateCcw size={14} aria-hidden="true" /> Start over for a new car
+              <RotateCcw size={14} aria-hidden="true" /> Start over for another unit
             </button>
           </div>
         </div>
       </Hero>
 
-      {SECTIONS.map((s, i) => {
+      {sections.map((s, i) => {
         const ticked = s.items.filter(([id]) => done.has(`${s.id}.${id}`)).length;
         return (
           <Card

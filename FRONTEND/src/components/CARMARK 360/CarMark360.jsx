@@ -4,7 +4,7 @@ import styles from './CarMark360.module.css';
 import Compare, { lastCompareSearch } from './Compare';
 import Models from './Models';
 import Dealers from './Dealers';
-import Checklist from './Checklist';
+import Checklist, { lastChecklistSearch } from './Checklist';
 
 const TABS = [
   { id: 'compare', label: 'Compare', path: '/carmark', Icon: ArrowLeftRight },
@@ -41,7 +41,8 @@ export default function CarMark360({ onBackToPortfolio }) {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, []);
 
-  const openTab = (tab) => navigate(tab.id === 'compare' ? `${tab.path}${lastCompareSearch()}` : tab.path);
+  const LAST = { compare: lastCompareSearch, checklist: lastChecklistSearch };
+  const openTab = (tab) => navigate(`${tab.path}${LAST[tab.id]?.() || ''}`);
 
   const nav = (cls) => (
     <nav className={cls} aria-label="CarMark 360 pages">
@@ -79,7 +80,7 @@ export default function CarMark360({ onBackToPortfolio }) {
         {loc.tab === 'compare' && <Compare key={loc.search} navigate={navigate} />}
         {loc.tab === 'models' && <Models key={loc.search} navigate={navigate} />}
         {loc.tab === 'dealers' && <Dealers />}
-        {loc.tab === 'checklist' && <Checklist />}
+        {loc.tab === 'checklist' && <Checklist key={loc.search} navigate={navigate} />}
       </main>
 
       <footer className={styles.footer}>

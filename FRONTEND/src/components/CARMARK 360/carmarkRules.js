@@ -30,6 +30,15 @@ export function allVariants() {
 
 export const findVariant = (id) => allVariants().find(v => v.id === id) || null;
 
+/* A generation by id, with its model: { model, gen } or null */
+export function findGeneration(id) {
+  for (const model of MODELS) {
+    const gen = model.generations.find(g => g.id === id);
+    if (gen) return { model, gen };
+  }
+  return null;
+}
+
 export function diffVariants(a, b) {
   const rows = SPEC_ROWS
     .filter(({ key }) => a.specs[key] || b.specs[key])

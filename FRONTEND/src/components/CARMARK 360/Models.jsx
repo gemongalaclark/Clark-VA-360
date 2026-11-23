@@ -99,6 +99,17 @@ export default function Models({ navigate }) {
 
             <h3 className={styles.miniHead}>Check before you buy</h3>
             <ProblemList problems={g.problems} />
+            <a
+              href={`/carmark/checklist?g=${g.id}`}
+              className={styles.ctaLink}
+              onClick={(e) => { e.preventDefault(); navigate(`/carmark/checklist?g=${g.id}`); }}
+            >
+              <span>
+                <strong>Going to see one?</strong>
+                Open the checklist for the {model.name} {g.label}.
+              </span>
+              <ArrowRight size={18} aria-hidden="true" />
+            </a>
           </li>
         ))}
       </ol>

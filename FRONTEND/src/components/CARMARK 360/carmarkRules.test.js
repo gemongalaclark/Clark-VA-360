@@ -3,11 +3,12 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { FEATURES, SPEC_ROWS, MODELS, POPULAR_PAIRS } from './carData.js';
 import {
-  allVariants, findVariant, resolveVariant, diffVariants, formatPeso, priceRange,
+  allVariants, findVariant, findGeneration, resolveVariant, diffVariants, formatPeso, priceRange,
   mapsOpenUrl, directionsUrl, project, fitView, visibleTiles, withPins, pinFromMapsLink, clusterPins,
 } from './carmarkRules.js';
 import { DEALERS } from './dealerList.js';
 import { PINS } from './dealerPins.js';
+import { GEN_CHECKS } from './carChecks.js';
 
 /* A tiny model so the rule tests don't depend on the real data */
 const TOY = {
@@ -200,4 +201,26 @@ test('every variant uses known features and specs', () => {
     for (const k of ['engine', 'transmission', 'drive', 'fuel']) assert.ok(v.specs[k], `${v.id}: missing ${k}`);
     assert.equal(new Set(v.features).size, v.features.length, `${v.id}: duplicate feature`);
   }
+});
+
+test('findGeneration returns the model and generation, or null', () => {
+  const found = findGeneration('montero-2016');
+  assert.equal(found.model.id, 'montero');
+  assert.equal(found.gen.id, 'montero-2016');
+  assert.equal(findGeneration('nope-1999'), null);
+  assert.equal(findGeneration(null), null);
+});
+
+test('every generation has its own checklist with unique check ids', () => {
+  const genIds = MODELS.flatMap(m => m.generations.map(g => g.id));
+  for (const id of genIds) {
+    const c = GEN_CHECKS[id];
+    assert.ok(c, `${id} needs checks`);
+    assert.ok(c.intro, `${id} needs an intro`);
+    assert.ok(c.items.length >= 8, `${id} needs at least 8 checks`);
+    const ids = c.items.map(([k]) => k);
+    assert.equal(new Set(ids).size, ids.length, `${id}: duplicate check id`);
+    for (const [k, text] of c.items) assert.ok(k && text && text.length > 20, `${id}: check ${k} needs text`);
+  }
+  for (const id of Object.keys(GEN_CHECKS)) assert.ok(genIds.includes(id), `checks for unknown generation ${id}`);
 });

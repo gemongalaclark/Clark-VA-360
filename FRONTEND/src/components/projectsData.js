@@ -302,7 +302,7 @@ export const docs = {
       'Read “Before you buy”: the problems to check on that generation, like flood damage on a Fortuner or a worn CVT on a Vios.',
       'Open Models to read every generation of a car, with its rough used price and what changed.',
       'Open Dealers to find trusted dealers on the map and get directions in Google Maps.',
-      'Take the Checklist with you when you look at a car: flood signs, papers, test drive. Your ticks are saved on your phone.',
+      'Open the Checklist, pick the car and generation you are going to see, and tick through the checks made for it, then flood signs, papers and the test drive. Your ticks are saved on your phone.',
     ],
     purpose: 'Most people buy used cars from Facebook posts and dealer lots without knowing what the variant names mean, what breaks on that model year, or what a fair price is. After Typhoon Tino flooded half of Cebu City in 2025, flooded cars are a real risk too.',
     help: [

@@ -144,7 +144,8 @@ function Results({ a, b, navigate }) {
   const sameGen = a.gen.id === b.gen.id;
   const rows = onlyDiff ? diff.rows.filter(r => !r.same) : diff.rows;
   const featureRows = [...diff.onlyA.map(f => [f, true, false]), ...diff.onlyB.map(f => [f, false, true])];
-  const shown = [a, b][problemTab];
+  const checkCar = sameGen ? a : [a, b][problemTab];
+  const checkUrl = `/carmark/checklist?g=${checkCar.gen.id}`;
 
   /* Short names when both are the same model ("GLS AT"), full names otherwise */
   const nameOf = (v) => (a.model.id === b.model.id ? v.name : v.fullName);
@@ -241,15 +242,15 @@ function Results({ a, b, navigate }) {
             ))}
           </div>
         )}
-        <ProblemList problems={(sameGen ? a : shown).gen.problems} />
+        <ProblemList problems={checkCar.gen.problems} />
         <a
-          href="/carmark/checklist"
+          href={checkUrl}
           className={styles.ctaLink}
-          onClick={(e) => { e.preventDefault(); navigate('/carmark/checklist'); }}
+          onClick={(e) => { e.preventDefault(); navigate(checkUrl); }}
         >
           <span>
-            <strong>Going to see the car?</strong>
-            Open the checklist: flood signs, papers, test drive.
+            <strong>Going to see the {checkCar.model.name}?</strong>
+            Open its checklist: checks for the {checkCar.gen.label}, flood signs, papers, test drive.
           </span>
           <ArrowRight size={18} aria-hidden="true" />
         </a>

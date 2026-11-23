@@ -187,7 +187,7 @@ export const MODELS = [
           { level: 'high', title: 'Injectors (2KD / 1KD)', detail: 'Worn injectors cause rough idle, knocking and black or white smoke, and a full set is expensive. Watch a cold start and ask for injector service receipts.' },
           { level: 'high', title: 'Timing belt', detail: 'These engines use a rubber timing belt. If it snaps, the engine is badly damaged. Ask for proof it was replaced (usually around 100,000 km); if there is none, budget for it.' },
           { level: 'check', title: '4-speed automatic', detail: 'Check for slipping, flare or late shifts when warm. Ask when the ATF was last changed.' },
-          { level: 'check', title: 'Rust and chassis', detail: 'Look under the car at the chassis rails, rear floor and leaf-spring hangers, especially on units from coastal towns.' },
+          { level: 'check', title: 'Rust and chassis', detail: 'Look under the car at the chassis rails, rear floor and rear suspension mounts, especially on units from coastal towns.' },
         ],
       },
       {

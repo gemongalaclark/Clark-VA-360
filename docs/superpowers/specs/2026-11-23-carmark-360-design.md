@@ -23,3 +23,13 @@ Buyers in Cebu shop Facebook listings and dealer lots without knowing what separ
 - Data lives in `carData.js`; variants inherit their generation's base specs/features and add their own, so differences are computed, not typed twice.
 - Prices are rough asking-price ranges from Carmudi / Philkotse / Automart listings (Nov 2026), labelled as estimates. Features are the main differences from launch spec sheets; where sources disagreed, the feature was left out rather than guessed.
 - Light theme only, own styling, mobile first.
+
+## Update: checklist per generation (2026-11-23)
+
+- **Ask:** the Checklist works only after the buyer picks a specific car (model + generation), with a thorough checklist for every generation.
+- **Approaches:** (A) car-specific checks first, then the shared checks every used car needs, or (B) a fully separate list per generation. Clark picked A: the papers and payment checks stay identical and correct, and the research goes where cars differ.
+- **Built:**
+  - `/carmark/checklist` shows a model picker, `?m=<model>` shows the generation picker, and `?g=<generation>` shows the checklist.
+  - Compare's "Going to see the …?" link and every generation on Models open `?g=` directly.
+  - Each generation has 8–12 checks in carChecks.js, followed by the 32 shared checks.
+  - Ticks are saved per generation (`carmark-checklist:<generation>`), and the Checklist tab reopens the last car during the visit.
