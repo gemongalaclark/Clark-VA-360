@@ -3,7 +3,7 @@ import { ArrowLeft, Sparkles } from 'lucide-react';
 import { useTheme } from '../lib/theme';
 import Cursor from './Cursor';
 import { ProjectCard, DocsModal } from './Projects';
-import { GROUPS, projects } from './projectsData';
+import { GROUPS, projects, rememberProjectsView } from './projectsData';
 import pageStyles from './Services.module.css';
 import cardStyles from './Projects.module.css';
 import styles from './ProjectsPage.module.css';
@@ -33,6 +33,7 @@ export default function ProjectsPage({ onBackToPortfolio }) {
   const pick = (id) => {
     setGroup(id);
     window.history.replaceState({}, '', id ? `/projects?group=${id}` : '/projects');
+    rememberProjectsView();
   };
 
   const tabs = [{ id: null, label: 'All', count: realProjects.length }, ...GROUPS.map(g => ({ ...g, count: countIn(g.id) }))];
@@ -83,9 +84,12 @@ export default function ProjectsPage({ onBackToPortfolio }) {
             ))}
           </div>
 
-          <p className={cardStyles.hint}>
-            <Sparkles size={14} /> Tip: open the Auto Scheduler to test drive the Gemini AI schedule scanner.
-          </p>
+          {/* The tip points at the Auto Scheduler card, so only where that card is shown */}
+          {(!group || group === 'productivity') && (
+            <p className={cardStyles.hint}>
+              <Sparkles size={14} /> Tip: open the Auto Scheduler to test drive the Gemini AI schedule scanner.
+            </p>
+          )}
 
           {docsProject && <DocsModal project={docsProject} onClose={() => setDocsProject(null)} />}
         </div>

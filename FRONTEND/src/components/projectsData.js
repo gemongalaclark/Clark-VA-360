@@ -288,6 +288,11 @@ let returnUrl = null;
 let returnScroll = 0;
 export const projectsReturnUrl = () => returnUrl;
 export const projectsReturnScroll = () => returnScroll;
+/* Switching tabs updates it too, so browser back/forward around an app returns to the latest tab */
+export const rememberProjectsView = () => {
+  returnUrl = window.location.pathname + window.location.search;
+  returnScroll = window.scrollY;
+};
 
 export const openProject = (url) => {
   /* Projects hosted on their own domain (e.g. KalakalGG) open in a new tab */

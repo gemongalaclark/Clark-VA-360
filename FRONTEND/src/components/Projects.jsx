@@ -286,7 +286,8 @@ export function ProjectCard({ project, onDocs }) {
   );
 }
 
-const homeProjects = HOME_FEATURED_IDS.map(id => projects.find(p => p.id === id));
+/* filter(Boolean): an id left here after its project is deleted is skipped, not a crash */
+const homeProjects = HOME_FEATURED_IDS.map(id => projects.find(p => p.id === id)).filter(Boolean);
 
 export default function Projects() {
   const [currentIndex, setCurrentIndex] = useState(0);
