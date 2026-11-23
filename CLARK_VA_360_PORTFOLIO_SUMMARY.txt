@@ -5,6 +5,7 @@ Compiled: November 9, 2026, from the full source code of the Clark-VA-360 reposi
 (FRONTEND + BACKEND) and the KalakalGG repository's README.
 Updated: November 16, 2026 (new VA-focused CV, Verse of the Day, Job Tracker and
 BALANSE changes since November 9).
+Updated: November 23, 2026 (projects grouped by category; new /projects page).
 Live site: https://www.clarkva360.site   (older address: clarkportfolio.vercel.app)
 
 
@@ -188,9 +189,11 @@ Contact details published on the site
   pills by category (with counts); filtering dims the other tools instead of hiding
   them. Each category has its own accent colour.
 
-3.9 My Projects
-  • A carousel showing 3 cards on desktop, 2 on tablets, 1 on phones, with arrows,
-    swipe support, page dots and a "01 / 07" style counter.
+3.9 My Projects (homepage teaser)
+  • A carousel of 4 featured projects, in this order: TeamSync Workspace,
+    ClarkFlow 360, KalakalGG, BALANSE. It shows 3 cards on desktop, 2 on tablets,
+    1 on phones, with arrows, swipe support, page dots and a "01 / 02" style counter.
+  • "View all projects" under the carousel opens the /projects page (section 3.15).
   • Each card: category, title, short description, technology tags, an "Open Web App"
     hover button, an arrow to open in a new tab, "How it works" and "View project".
   • Ribbons: "Featured AI Project" (Auto Scheduler), "Full-System Project" (TeamSync),
@@ -198,8 +201,6 @@ Contact details published on the site
   • "How it works" opens a plain-language guide (written so a 12-year-old can follow)
     with four parts: What is it? / How do I use it? / What is it for? / How can it
     help? Every project has one (see section 5).
-  • Tip under the carousel: "open the Auto Scheduler to test drive the Gemini AI
-    schedule scanner."
 
 3.10 My Services (homepage teaser)
   Shows the first two website passes (Basic and Advanced Website) on a "battle pass"
@@ -224,7 +225,7 @@ Contact details published on the site
   "Built with ❤️".
 
 3.13 "Clark's AI Assistant" (floating chat bot)
-  • A floating avatar button with an "AI" badge, on the homepage and /services. The
+  • A floating avatar button with an "AI" badge, on the homepage, /services and /projects. The
     conversation carries over when moving between those two pages.
   • Header: "Clark's AI Assistant — AI, not Clark. May make mistakes."
   • Starter questions: "What services does Clark offer?", "What projects has Clark
@@ -242,7 +243,25 @@ Contact details published on the site
   feature per pass. The ticks are calculated from the pass data itself, so the table
   can never disagree with the cards ("Everything in X" is expanded automatically).
 
-3.15 Legal pages
+3.15 /projects page (all projects)
+  • A standalone page with every project as a card grid: 3 per row on desktop, 2 on
+    tablets, 1 on phones. Same cards and "How it works" guides as the homepage.
+  • Category tabs, each with a project count, group the projects by what they do:
+      All                          8 projects (+ the "Coming Soon" card)
+      Productivity & Automation    Auto Scheduler, TeamSync, OnboardBase, ClarkFlow 360
+      Career Tools                 BuhayVA Copilot, Job Tracker
+      Finance                      BALANSE
+      Marketplaces                 KalakalGG (planned car dealer apps go here too)
+    On phones the tab row swipes sideways.
+  • The chosen tab is kept in the link (e.g. /projects?group=marketplaces), so a
+    filtered view can be shared. An unknown group shows All.
+  • The "Coming Soon" card shows only on the All tab.
+  • Tip under the grid: "open the Auto Scheduler to test drive the Gemini AI
+    schedule scanner."
+  • Adding a project: one entry in FRONTEND/src/components/projectsData.js with its
+    group; list its id in HOME_FEATURED_IDS to also show it on the homepage.
+
+3.16 Legal pages
   /privacy-policy.html and /terms-of-service.html (last updated October 17, 2026).
   Written for the Google Calendar Auto Scheduler (needed for Google sign-in
   approval). Key points: only the calendar.events scope is requested; events are
@@ -252,13 +271,15 @@ Contact details published on the site
   within 7 days; not for children under 13; the service is "as is" and the user must
   check AI results.
 
-3.16 Behind-the-scenes site features
+3.17 Behind-the-scenes site features
   • Auto-update: if a newer version of the site has been deployed, an open tab
     reloads itself (at most once per new version) when you come back to it.
   • Caching (vercel.json): built files are cached for a year; pages are always
     re-checked, so visitors never see an old version.
   • Each project app is loaded on demand, so the homepage stays light.
-  • Coming back from a project returns you to the Projects section (or Services).
+  • Coming back from a project returns you to where you opened it: the /projects
+    page (same tab), or the homepage Projects section. Leaving /services or
+    /projects returns you to that homepage section.
 
 
 ================================================================================
@@ -972,6 +993,7 @@ FRONTEND
     and each app is lazy-loaded:
       /                         portfolio
       /services                 all services
+      /projects                 all projects, by category (?group=<id>)
       /auto-scheduler           Google Calendar AUTO Scheduler
       /teamsync-workspace       TeamSync Workspace
       /onboardbase              OnboardBase
