@@ -231,7 +231,7 @@ function Results({ a, b, navigate }) {
 
       <Card title="Before you buy">
         {sameGen ? (
-          <p className={styles.lead}>Both are the {a.model.name} {a.gen.label}, {a.gen.years}.</p>
+          <p className={styles.lead}>Both are the {a.model.name} {a.gen.label} ({a.gen.years}), so they share the same things to check.</p>
         ) : (
           <div className={styles.segmented} role="tablist" aria-label="Problems to check">
             {[a, b].map((v, i) => (
