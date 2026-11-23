@@ -268,6 +268,18 @@ Clark's ask: "greatly enhance the UI/UX design for the whole webpage, not making
   - Lists as ruled rows, not cards.
 - **Kept:** all behaviour, copy, i18n, accessibility rules and reduced-motion handling. This is a visual change, not a feature change.
 
+### Dark mode (added 2026-11-23)
+Clark's ask: a dark mode toggle for the whole showroom (public site and admin) that starts from the device's setting.
+- **Default:** follows the device's light/dark setting, live.
+- **Toggle:** a sun/moon icon button next to EN | CEB in the public header and in the admin top bar on phones. On desktop the admin shows it as "Dark mode / Light mode" in the sidebar footer. The button is named for what it switches to ("Switch to dark mode").
+- **Remembered:** the choice is saved in this browser (`showroom360:theme`). Flipping back to match the device forgets it, so the site follows the device again. This was Claude's call.
+- **Look:** the same sticker at night. It's tonal, not inverted: warm paper-white ink on a blue-black lot.
+  - Red fills stay #cb2525, because white on them is still 5.5:1.
+  - Red text uses a lighter red, because #cb2525 is only 3.3:1 on the dark paper.
+  - Car drawings swap to light outlines and dark tyres.
+  - Native controls and dialogs follow the theme. The Google map stays light.
+- **How:** `useTheme` sets `<html data-sr-theme>` while the showroom is open and removes it on leaving, so the portfolio is untouched. Only colour tokens change, so new UI must use the tokens and never raw colours.
+
 ## Sample data (Claude's calls)
 - **Shop:** "Demo Motors Cebu" (obviously fictional), Mandaue City area, phone `0900 000 0000`. Messenger and Viber are left empty, so a click explains where to set them.
 - **Cars:** 12 cars from CarMark's models (Vios, Wigo, Fortuner, Montero Sport, Xpander, Innova-class MPVs, City, Civic, BR-V…). Their prices fall inside CarMark's used-price ranges for the same generation. 3 are Featured, 2 are Sold, 1 is Reserved, and their listing dates are spread so a few show as "Aging".

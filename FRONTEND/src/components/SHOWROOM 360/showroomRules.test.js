@@ -8,7 +8,7 @@ import {
   messengerUrl, viberUrl, toIntlMobile, mapsOpenUrl, parseShowroomPath,
   clampDownPct, newPhotoId, orphanPhotoIds, saveErrorKind, liveEventsWithCars,
   priceBounds, priceFilter, parsePesoInput, priceAtPosition, positionOfPrice, PRICE_POSITIONS,
-  roleForPin, canOpen,
+  roleForPin, canOpen, themeFor, themeToSave,
 } from './showroomRules.js';
 import { makeSeed, normalizeData, DEFAULT_SETTINGS } from './seedData.js';
 import { t, DICT } from './i18n.js';
@@ -467,4 +467,19 @@ test('older saved settings get the default superadmin PIN', () => {
   const { superPin, ...old } = DEFAULT_SETTINGS;
   assert.equal(superPin, '0361');
   assert.equal(normalizeData({ settings: old }).settings.superPin, '0361');
+});
+
+test('dark mode follows the device until the visitor picks one', () => {
+  assert.equal(themeFor(null, true), 'dark');
+  assert.equal(themeFor(null, false), 'light');
+  assert.equal(themeFor('light', true), 'light');
+  assert.equal(themeFor('dark', false), 'dark');
+  assert.equal(themeFor('purple', true), 'dark'); // junk in storage: back to the device
+});
+
+test('flipping back to the device setting forgets the choice', () => {
+  assert.equal(themeToSave('dark', false), 'dark');
+  assert.equal(themeToSave('light', true), 'light');
+  assert.equal(themeToSave('light', false), null);
+  assert.equal(themeToSave('dark', true), null);
 });

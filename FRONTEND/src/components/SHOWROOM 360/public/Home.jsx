@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight, Phone, ExternalLink, Tag, ArrowRight } from 'lucide-react';
 import styles from '../Showroom360.module.css';
 import { useShowroom } from '../store.js';
@@ -34,8 +34,11 @@ export default function Home() {
   const { cars, events, settings } = useShowroom();
   const { lang, now } = useNav();
 
-  useEffect(() => {
-    if (window.location.hash === '#contact') document.getElementById('contact')?.scrollIntoView();
+  /* Arriving from another page: jump straight to the contact section before the
+     first paint. 'instant' overrides the portfolio's smooth scrolling, which would
+     otherwise glide down from the top while the nav still says Home. */
+  useLayoutEffect(() => {
+    if (window.location.hash === '#contact') document.getElementById('contact')?.scrollIntoView({ behavior: 'instant' });
   }, []);
 
   const sold = recentlySold(cars);

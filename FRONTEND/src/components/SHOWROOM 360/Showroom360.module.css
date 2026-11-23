@@ -1,27 +1,69 @@
 /* Showroom 360, "window sticker" look: paper, ink and one red, like the price
    sticker and spec sheet on a car at the lot. Flat: sections are split by ink
    rules, not cards. Shadows only on overlays (sheet, toast).
-   Tokens live on .app and .toastRegion (the toast sits outside .app). */
+   Tokens live on .app and .toastRegion (the toast sits outside .app).
+   Dark mode swaps the colour tokens only: see the block right after this one. */
 
 .app,
 .toastRegion {
+  color-scheme: light;
   --ink: #1a1a2e;
+  --ink-rgb: 26, 26, 46;
   --ink-2: #55555f;          /* secondary text: 6.9:1 on paper */
   --paper: #f5f4ef;
+  --paper-rgb: 245, 244, 239; /* see-through bars: rgba(var(--paper-rgb), 0.95) */
   --paper-2: #ebe9e1;        /* media wells, hover */
   --surface: #fffefa;        /* inputs, sheets */
-  --rule: rgba(26, 26, 46, 0.14);
-  --rule-2: rgba(26, 26, 46, 0.3);
-  --field: rgba(26, 26, 46, 0.5);       /* input edges: 3.2:1 on paper */
-  --red: #cb2525;
+  --rule: rgba(var(--ink-rgb), 0.14);
+  --rule-2: rgba(var(--ink-rgb), 0.3);
+  --field: rgba(var(--ink-rgb), 0.5);   /* input edges: 3.2:1 on paper */
+  --red: #cb2525;            /* fills behind white text */
   --red-dark: #a91d1d;
+  --red-text: #cb2525;       /* red used as text or icon */
+  --red-dark-text: #a91d1d;
   --red-tint: #f8e4e1;
   --yes: #1d6b3a;
+  --on-ink: #fff;            /* text on an ink block (toast, sold banner) */
+  --on-ink-rgb: 255, 255, 255;
+  --note-bg: #fbeed3;
+  --note-text: #6f3b06;
+  --note-rule: #e7c98c;
+  --art-tyre: var(--ink);    /* car drawings */
+  --art-rim: var(--paper);
   --radius: 3px;
-  --focus: 0 0 0 3px rgba(26, 26, 46, 0.14);
+  --focus: 0 0 0 3px rgba(var(--ink-rgb), 0.14);
   --display: 'Barlow Condensed', 'Arial Narrow', system-ui, sans-serif;
   --body: 'Inter', system-ui, sans-serif;
   --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+/* Dark mode: the same sticker at night. Tonal, not inverted: warm paper-white
+   ink on a blue-black lot. Red fills stay #cb2525 (white on it is 5.5:1); red
+   text gets a lighter red, since #cb2525 is only 3.3:1 on the dark paper.
+   Contrast on paper: ink 15.3, ink-2 7.6, red text 7.3, yes 9.7, input edge 4.0.
+   useTheme (ui.jsx) sets <html data-sr-theme> from the device or the toggle. */
+:global(html[data-sr-theme='dark']) { color-scheme: dark; background: #14141c; }
+:global(html[data-sr-theme='dark']) .app,
+:global(html[data-sr-theme='dark']) .toastRegion {
+  color-scheme: dark;
+  --ink: #ecebe4;
+  --ink-rgb: 236, 235, 228;
+  --ink-2: #a7a6ae;
+  --paper: #14141c;
+  --paper-rgb: 20, 20, 28;
+  --paper-2: #20202a;
+  --surface: #1b1b24;
+  --red-text: #ff7b72;
+  --red-dark-text: #ff7b72;
+  --red-tint: #3d1c21;
+  --yes: #6fd08f;
+  --on-ink: #14141c;
+  --on-ink-rgb: 20, 20, 28;
+  --note-bg: #30260f;
+  --note-text: #f1d08c;
+  --note-rule: #5c4818;
+  --art-tyre: #08080c;
+  --art-rim: #b9b8bf;
 }
 
 .app {
@@ -51,7 +93,7 @@
 
 .header {
   position: sticky; top: 0; z-index: 30;
-  background: rgba(245, 244, 239, 0.95);
+  background: rgba(var(--paper-rgb), 0.95);
   backdrop-filter: blur(8px);
   border-bottom: 2px solid var(--ink);
 }
@@ -96,7 +138,7 @@
 .bottomNav {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
   display: grid; grid-template-columns: repeat(3, 1fr);
-  background: rgba(245, 244, 239, 0.97); backdrop-filter: blur(8px);
+  background: rgba(var(--paper-rgb), 0.97); backdrop-filter: blur(8px);
   border-top: 1.5px solid var(--ink); padding-bottom: env(safe-area-inset-bottom);
 }
 .bottomNav .navLink {
@@ -110,7 +152,7 @@
 @media (min-width: 900px) { .bottomNav { display: none; } }
 
 .notice {
-  background: #fbeed3; color: #6f3b06; border-bottom: 1px solid #e7c98c;
+  background: var(--note-bg); color: var(--note-text); border-bottom: 1px solid var(--note-rule);
   text-align: center; padding: 10px 16px; font-size: 0.9rem;
 }
 
@@ -164,7 +206,7 @@
   color: var(--ink); font-weight: 600; text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 5px;
   transition: color 0.15s, gap 0.15s;
 }
-.arrowLink:hover { color: var(--red); gap: 10px; }
+.arrowLink:hover { color: var(--red-text); gap: 10px; }
 .textBtn {
   justify-self: start; min-height: 44px; padding: 10px 0; border: 0; background: none;
   color: var(--ink-2); text-decoration: underline; text-underline-offset: 3px; cursor: pointer;
@@ -186,7 +228,7 @@
   display: inline-flex; align-items: baseline; flex-wrap: wrap; gap: 0 10px;
   font-family: var(--display); font-weight: 700; font-variant-numeric: tabular-nums; color: var(--ink); line-height: 1.05;
 }
-.priceSale { color: var(--red); }
+.priceSale { color: var(--red-text); }
 .priceWas { color: var(--ink-2); font-family: var(--body); font-weight: 400; font-size: 0.5em; }
 
 /* The window sticker: ink outline, or solid red while a sale is on */
@@ -223,7 +265,7 @@
   display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px;
   background: var(--surface); border: 1px solid var(--rule-2); border-radius: 2px; color: var(--ink-2); font-size: 0.85rem;
 }
-.eventChip svg { color: var(--red); }
+.eventChip svg { color: var(--red-text); }
 .eventChip strong { color: var(--ink); font-weight: 700; }
 
 .slides { display: grid; }
@@ -299,8 +341,8 @@
 .soldMedia .photo, .soldMedia .photoArt svg { filter: grayscale(1); opacity: 0.5; }
 .soldStamp {
   position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-9deg);
-  padding: 2px 12px 0; border: 3px solid var(--red); border-radius: 4px; background: rgba(245, 244, 239, 0.72);
-  color: var(--red); font-family: var(--display); font-weight: 700; font-size: 1.6rem; letter-spacing: 0.12em; line-height: 1.1;
+  padding: 2px 12px 0; border: 3px solid var(--red); border-radius: 4px; background: rgba(var(--paper-rgb), 0.72);
+  color: var(--red-text); font-family: var(--display); font-weight: 700; font-size: 1.6rem; letter-spacing: 0.12em; line-height: 1.1;
 }
 .cardTitle { margin-top: 10px; font-family: var(--display); font-weight: 600; font-size: 1.15rem; line-height: 1.12; color: var(--ink); }
 
@@ -332,7 +374,7 @@
 .input:hover, .select:hover, .textarea:hover { border-color: var(--ink-2); }
 .input:focus, .select:focus, .textarea:focus { outline: none; border-color: var(--ink); box-shadow: var(--focus); }
 .input[aria-invalid='true'], .select[aria-invalid='true'], .textarea[aria-invalid='true'] { border-color: var(--red); }
-.error { color: var(--red-dark); font-size: 0.85rem; font-weight: 500; }
+.error { color: var(--red-dark-text); font-size: 0.85rem; font-weight: 500; }
 .hint { color: var(--ink-2); font-size: 0.85rem; }
 .segmented { display: flex; flex-wrap: wrap; gap: 6px; }
 .segmented button {
@@ -380,14 +422,14 @@
 @media (min-width: 900px) { :global(body:has([data-savebar])) .toastRegion { bottom: 90px; } }
 .toast {
   pointer-events: auto; display: flex; align-items: center; gap: 10px;
-  padding: 8px 8px 8px 16px; border-radius: var(--radius); background: var(--ink); color: #fff;
+  padding: 8px 8px 8px 16px; border-radius: var(--radius); background: var(--ink); color: var(--on-ink);
   border-left: 4px solid var(--red);
   box-shadow: 0 10px 30px rgba(26, 26, 46, 0.3); animation: toastIn 0.2s var(--ease);
 }
 .toast span { flex: 1; font-size: 0.92rem; line-height: 1.4; }
 .toast button {
   min-height: 44px; padding: 0 12px; border: 0; border-radius: 2px;
-  background: rgba(255, 255, 255, 0.14); color: #fff; font: inherit; font-weight: 600; cursor: pointer;
+  background: rgba(var(--on-ink-rgb), 0.14); color: var(--on-ink); font: inherit; font-weight: 600; cursor: pointer;
 }
 .toast .toastClose { width: 44px; padding: 0; display: grid; place-items: center; background: transparent; }
 @keyframes toastIn { from { transform: translateY(8px); opacity: 0; } }
@@ -515,7 +557,7 @@
   display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; margin-bottom: 16px; padding: 12px 16px;
   background: var(--ink); color: var(--paper); border-radius: var(--radius); border-left: 4px solid var(--red);
 }
-.soldBanner a { color: #fff; text-underline-offset: 3px; }
+.soldBanner a { color: var(--on-ink); text-underline-offset: 3px; }
 
 .carGrid { display: grid; gap: 20px; grid-template-areas: 'gallery' 'side' 'details'; }
 @media (min-width: 960px) {
@@ -530,7 +572,7 @@
 .galleryMain { position: relative; aspect-ratio: 16 / 10; border-radius: 2px; overflow: hidden; background: var(--paper-2); }
 .galleryNav {
   position: absolute; top: 50%; width: 44px; height: 44px; margin-top: -22px; display: grid; place-items: center;
-  border: 1.5px solid var(--ink); border-radius: var(--radius); background: rgba(245, 244, 239, 0.94); color: var(--ink); cursor: pointer;
+  border: 1.5px solid var(--ink); border-radius: var(--radius); background: rgba(var(--paper-rgb), 0.94); color: var(--ink); cursor: pointer;
 }
 .galleryNav:hover { background: var(--ink); color: var(--paper); }
 .galleryPrev { left: 8px; }
@@ -572,7 +614,7 @@
   .inquiryBar {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; margin: 0;
     padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
-    background: rgba(245, 244, 239, 0.97); backdrop-filter: blur(8px);
+    background: rgba(var(--paper-rgb), 0.97); backdrop-filter: blur(8px);
     border-top: 1.5px solid var(--ink);
   }
 }
@@ -597,7 +639,7 @@
 .condValue { display: inline-flex; align-items: center; gap: 6px; color: var(--ink); font-weight: 700; font-size: 0.92rem; text-align: right; }
 .condValue svg { flex: none; }
 .condYes .condValue svg { color: var(--yes); }
-.condNo .condValue { color: var(--red-dark); }
+.condNo .condValue { color: var(--red-dark-text); }
 .condUnknown .condValue { color: var(--ink-2); font-weight: 500; font-style: italic; }
 .condInfo .condValue svg { color: var(--ink-2); }
 

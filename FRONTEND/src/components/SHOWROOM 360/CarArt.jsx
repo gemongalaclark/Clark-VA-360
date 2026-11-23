@@ -41,8 +41,12 @@ const SHAPES = {
   },
 };
 
-const INK = '#1a1a2e';
-const PAPER = '#f5f4ef';
+/* Theme colours (tokens on .app), so the drawings follow dark mode. Set through
+   style, since SVG attributes don't take var(). */
+const INK = { stroke: 'var(--ink)' };
+const GLASS = { fill: 'var(--paper)', stroke: 'var(--ink)' };
+const LAMP = { fill: 'var(--art-rim)', stroke: 'var(--ink)' };
+const TYRE = { fill: 'var(--art-tyre)', stroke: 'var(--ink)' };
 
 /* Drawn like a spec-sheet line drawing: ink outline, a wash of the car's paint,
    door and sill lines clipped to the body, solid tyres on a ground line. */
@@ -55,21 +59,22 @@ export default function CarArt({ body, color, label, className }) {
   return (
     <svg viewBox="0 0 320 126" className={className} {...a11y} focusable="false">
       <defs><clipPath id={clip}><path d={s.body} /></clipPath></defs>
-      <line x1="4" y1="120" x2="316" y2="120" stroke={INK} strokeWidth="1.25" opacity="0.45" />
+      <line x1="4" y1="120" x2="316" y2="120" style={INK} strokeWidth="1.25" opacity="0.45" />
       <path d={s.body} fill={paint} fillOpacity="0.5" />
-      <path d={s.glass} fill={PAPER} fillOpacity="0.75" stroke={INK} strokeWidth="1.5" strokeLinejoin="round" />
-      <g clipPath={`url(#${clip})`} stroke={INK} strokeWidth="1.5">
+      <path d={s.glass} style={GLASS} fillOpacity="0.75" strokeWidth="1.5" strokeLinejoin="round" />
+      <g clipPath={`url(#${clip})`} style={INK} strokeWidth="1.5">
         {s.pillars.map(x => <line key={x} x1={x} y1="20" x2={x} y2="96" />)}
         <line x1="0" y1="88" x2="320" y2="88" opacity="0.5" />
       </g>
-      <path d={s.body} fill="none" stroke={INK} strokeWidth="2" strokeLinejoin="round" />
-      <rect x={headX} y={s.head[1]} width="10" height="5" rx="1" fill={PAPER} stroke={INK} strokeWidth="1.25" />
+      <path d={s.body} fill="none" style={INK} strokeWidth="2" strokeLinejoin="round" />
+      <rect x={headX} y={s.head[1]} width="10" height="5" rx="1" style={LAMP} strokeWidth="1.25" />
       <rect x={s.tail[0]} y={s.tail[1]} width="6" height="6" rx="1" fill="#cb2525" />
       {s.wheels.map(x => (
         <g key={x}>
-          <circle cx={x} cy="100" r="19.5" fill={INK} />
-          <circle cx={x} cy="100" r="10.5" fill={PAPER} />
-          <circle cx={x} cy="100" r="3" fill={INK} />
+          {/* r 18.5 + half the 2px edge = the old 19.5 solid tyre; the edge shows the tyre on dark paper */}
+          <circle cx={x} cy="100" r="18.5" style={TYRE} strokeWidth="2" />
+          <circle cx={x} cy="100" r="10.5" style={{ fill: 'var(--art-rim)' }} />
+          <circle cx={x} cy="100" r="3" style={{ fill: 'var(--art-tyre)' }} />
         </g>
       ))}
     </svg>

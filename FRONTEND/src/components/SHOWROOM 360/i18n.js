@@ -9,6 +9,7 @@ const KEY = 'showroom360:lang';
 const EN = {
   'nav.home': 'Home', 'nav.cars': 'Cars', 'nav.contact': 'Contact', 'nav.menu': 'Pages',
   'lang.switch': 'Language',
+  'theme.toDark': 'Switch to dark mode', 'theme.toLight': 'Switch to light mode',
 
   'home.featured': 'Featured cars', 'home.seeAll': 'See all cars', 'home.endsIn': 'Ends in {time}',
   'home.prev': 'Previous car', 'home.next': 'Next car',
@@ -75,6 +76,7 @@ const EN = {
 const CEB = {
   'nav.home': 'Home', 'nav.cars': 'Mga sakyanan', 'nav.contact': 'Kontak', 'nav.menu': 'Mga panid',
   'lang.switch': 'Pinulongan',
+  'theme.toDark': 'Ilisan ngadto sa dark mode', 'theme.toLight': 'Ilisan ngadto sa light mode',
 
   'home.featured': 'Pinili nga sakyanan', 'home.seeAll': 'Tan-awa tanan', 'home.endsIn': 'Mahuman sa {time}',
   'home.prev': 'Miagi nga sakyanan', 'home.next': 'Sunod nga sakyanan',

@@ -11,7 +11,7 @@ import {
 import s from '../Showroom360.module.css';
 import a from './Admin.module.css';
 import { useShowroom } from '../store.js';
-import { useNav, Link, ShopLogo } from '../ui.jsx';
+import { useNav, Link, ShopLogo, ThemeToggle } from '../ui.jsx';
 import Dashboard from './Dashboard.jsx';
 import CarsAdmin from './CarsAdmin.jsx';
 import CarForm from './CarForm.jsx';
@@ -41,7 +41,7 @@ const readRole = () => {
 
 export default function Admin() {
   const { settings, leads, persistent, setActor } = useShowroom();
-  const { loc } = useNav();
+  const { loc, theme } = useNav();
   const [role, setRole] = useState(readRole);
 
   /* Every change made from here is stamped with this role in the history */
@@ -103,6 +103,7 @@ export default function Admin() {
           <a href="/showroom" target="_blank" rel="noopener noreferrer" className={a.sideLink}>
             <ExternalLink size={18} strokeWidth={1.75} aria-hidden="true" />View site
           </a>
+          <ThemeToggle className={a.sideLink}>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</ThemeToggle>
           <button type="button" className={a.sideLink} onClick={lock}>
             <Lock size={18} strokeWidth={1.75} aria-hidden="true" />Lock
           </button>
@@ -122,6 +123,7 @@ export default function Admin() {
             <HistoryIcon size={20} strokeWidth={1.75} aria-hidden="true" />
           </Link>
         )}
+        <ThemeToggle className={s.iconBtn} />
         <a href="/showroom" target="_blank" rel="noopener noreferrer" className={s.iconBtn} aria-label="View site (new tab)">
           <ExternalLink size={20} strokeWidth={1.75} aria-hidden="true" />
         </a>

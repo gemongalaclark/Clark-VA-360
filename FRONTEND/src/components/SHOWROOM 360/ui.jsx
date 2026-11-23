@@ -1,9 +1,9 @@
 /* Small pieces shared by the public site and the admin */
-import { createContext, useCallback, useContext, useEffect, useId, useRef, useState } from 'react';
-import { X } from 'lucide-react';
+import { createContext, useCallback, useContext, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
+import { X, Moon, Sun } from 'lucide-react';
 import styles from './Showroom360.module.css';
 import { useShowroom } from './store.js';
-import { formatPeso, saveErrorKind } from './showroomRules.js';
+import { formatPeso, saveErrorKind, themeFor, themeToSave } from './showroomRules.js';
 import { t } from './i18n.js';
 import CarArt from './CarArt.jsx';
 
@@ -19,6 +19,59 @@ export function Link({ to, children, ...rest }) {
     navigate(to);
   };
   return <a href={to} onClick={onClick} {...rest}>{children}</a>;
+}
+
+/* ── dark mode ── */
+
+const THEME_KEY = 'showroom360:theme';
+const DARK_QUERY = '(prefers-color-scheme: dark)';
+
+/* Follows the device until the visitor flips the switch (kept in this browser).
+   The theme is put on <html data-sr-theme> so the page background, the toast and
+   every dialog pick it up; it's removed when the showroom closes. */
+export function useTheme() {
+  const [deviceDark, setDeviceDark] = useState(() => !!window.matchMedia?.(DARK_QUERY).matches);
+  const [saved, setSaved] = useState(() => { try { return localStorage.getItem(THEME_KEY); } catch { return null; } });
+  const theme = themeFor(saved, deviceDark);
+
+  useEffect(() => {
+    const mq = window.matchMedia?.(DARK_QUERY);
+    if (!mq) return undefined;
+    const on = () => setDeviceDark(mq.matches);
+    mq.addEventListener('change', on);
+    return () => mq.removeEventListener('change', on);
+  }, []);
+
+  useLayoutEffect(() => {
+    const root = document.documentElement;
+    root.dataset.srTheme = theme;
+    return () => { delete root.dataset.srTheme; };
+  }, [theme]);
+
+  const toggleTheme = useCallback(() => {
+    const next = themeToSave(theme === 'dark' ? 'light' : 'dark', deviceDark);
+    setSaved(next);
+    try {
+      if (next) localStorage.setItem(THEME_KEY, next); else localStorage.removeItem(THEME_KEY);
+    } catch { /* private mode: keep it for this visit only */ }
+  }, [theme, deviceDark]);
+
+  return [theme, toggleTheme];
+}
+
+/* Icon button that names what it switches to. `children` adds a visible label (admin sidebar). */
+export function ThemeToggle({ className, children }) {
+  const { theme, toggleTheme, lang, loc } = useNav();
+  const dark = theme === 'dark';
+  const label = loc.view === 'admin'
+    ? (dark ? 'Switch to light mode' : 'Switch to dark mode')
+    : t(lang, dark ? 'theme.toLight' : 'theme.toDark');
+  const Icon = dark ? Sun : Moon;
+  return (
+    <button type="button" className={className} onClick={toggleTheme} aria-label={label} title={label}>
+      <Icon size={children ? 18 : 20} strokeWidth={1.75} aria-hidden="true" />{children}
+    </button>
+  );
 }
 
 /* ── toasts ── */

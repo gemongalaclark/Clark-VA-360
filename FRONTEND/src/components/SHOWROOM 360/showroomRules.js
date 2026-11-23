@@ -366,6 +366,15 @@ export function roleForPin(pin, settings) {
 
 export const canOpen = (role, page) => role === 'superadmin' || (role === 'admin' && !SUPER_ONLY.has(page));
 
+/* ── dark mode: the device's setting until the visitor flips the switch ── */
+
+export const themeFor = (saved, deviceDark) =>
+  saved === 'light' || saved === 'dark' ? saved : deviceDark ? 'dark' : 'light';
+
+/* What to remember after a flip: nothing when it matches the device again,
+   so the site goes back to following the device */
+export const themeToSave = (next, deviceDark) => (next === (deviceDark ? 'dark' : 'light') ? null : next);
+
 export const viberUrl = (number, text) =>
   `viber://chat?number=${encodeURIComponent(toIntlMobile(number))}&draft=${encodeURIComponent(text)}`;
 

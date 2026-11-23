@@ -1,9 +1,9 @@
-import { Component, lazy, Suspense, useCallback, useEffect, useState } from 'react';
+import { Component, lazy, Suspense, useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import { Home as HomeIcon, CarFront, Phone, SearchX } from 'lucide-react';
 import styles from './Showroom360.module.css';
 import { ShowroomContext, useShowroomStore, useShowroom } from './store.js';
 import { useLang, t } from './i18n.js';
-import { NavContext, useNav, ToastProvider, ShopLogo } from './ui.jsx';
+import { NavContext, useNav, ToastProvider, ShopLogo, useTheme, ThemeToggle } from './ui.jsx';
 import { parseShowroomPath } from './showroomRules.js';
 import Home from './public/Home.jsx';
 import Inventory from './public/Inventory.jsx';
@@ -63,6 +63,7 @@ export default function Showroom360({ onBackToPortfolio }) {
   const store = useShowroomStore();
   const [loc, setLoc] = useState(readLocation);
   const [lang, setLang] = useLang();
+  const [theme, toggleTheme] = useTheme();
   const now = useNow();
 
   useEffect(() => {
@@ -88,7 +89,7 @@ export default function Showroom360({ onBackToPortfolio }) {
 
   return (
     <ShowroomContext.Provider value={store}>
-      <NavContext.Provider value={{ loc, navigate, lang, setLang, now, onBackToPortfolio }}>
+      <NavContext.Provider value={{ loc, navigate, lang, setLang, theme, toggleTheme, now, onBackToPortfolio }}>
         <ToastProvider>
           <CrashGuard onReset={store.resetDemo}>
             {loc.view === 'admin' ? (
@@ -105,12 +106,16 @@ export default function Showroom360({ onBackToPortfolio }) {
   );
 }
 
-/* True while the home page's contact section sits across the middle of the screen */
+/* True while the home page's contact section sits across the middle of the screen.
+   Measured before the first paint, so arriving at /showroom#contact from another
+   page never shows Home for a moment (Home jumps to #contact first: children's
+   layout effects run before this one). */
 function useContactInView(onHome) {
   const [inView, setInView] = useState(false);
-  useEffect(() => {
-    setInView(false);
-    const el = onHome && document.getElementById('contact');
+  useLayoutEffect(() => {
+    const el = onHome ? document.getElementById('contact') : null;
+    const box = el?.getBoundingClientRect();
+    setInView(!!box && box.top < window.innerHeight * 0.55 && box.bottom > window.innerHeight * 0.45);
     if (!el || typeof IntersectionObserver === 'undefined') return undefined;
     const io = new IntersectionObserver(([entry]) => setInView(entry.isIntersecting), { rootMargin: '-45% 0px -45% 0px' });
     io.observe(el);
@@ -166,6 +171,7 @@ function PublicShell() {
               <button key={id} type="button" aria-pressed={lang === id} onClick={() => setLang(id)}>{label}</button>
             ))}
           </div>
+          <ThemeToggle className={styles.iconBtn} />
         </div>
       </header>
 
