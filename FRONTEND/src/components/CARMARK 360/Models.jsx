@@ -63,19 +63,19 @@ export default function Models({ navigate }) {
   return (
     <div className={styles.page}>
       <Hero
-        eyebrow={(
-          <a
-            href="/carmark/models"
-            className={styles.heroBack}
-            onClick={(e) => { e.preventDefault(); navigate('/carmark/models'); }}
-          >
-            <ArrowLeft size={14} aria-hidden="true" /> All models · {model.make}
-          </a>
-        )}
+        eyebrow={`Models · ${model.make}`}
         title={model.name}
         sub={model.body}
         stats={[['Years', span(model)], ['Generations', model.generations.length], ['Used price', priceSpan(model)]]}
-      />
+      >
+        <a
+          href="/carmark/models"
+          className={styles.heroBtn}
+          onClick={(e) => { e.preventDefault(); navigate('/carmark/models'); }}
+        >
+          <ArrowLeft size={17} aria-hidden="true" /> All models
+        </a>
+      </Hero>
 
       <ol className={styles.timeline}>
         {[...model.generations].reverse().map((g, i) => (
