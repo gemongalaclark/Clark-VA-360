@@ -241,7 +241,9 @@
 .btnGhost:hover { background: var(--ink); color: var(--paper); }
 .btnGhost:active { transform: translateY(1px); }
 .btnPrimary:disabled, .btnGhost:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
-.btnBlock { width: 100%; }
+/* a full-width button may wrap: a long label (the waitlist button, in Bisaya too) would
+   otherwise push the page wider than a phone, and Chrome then shifts every pop-up right */
+.btnBlock { width: 100%; white-space: normal; text-align: center; line-height: 1.15; padding-block: 8px; }
 .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; margin-top: 22px; }
 .arrowLink {
   display: inline-flex; align-items: center; gap: 6px; min-height: 44px;
