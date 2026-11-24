@@ -4,8 +4,9 @@
    If IndexedDB is unavailable (some private windows), everything still works in
    memory and `persistent` is false so the UI can say changes won't be kept. */
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { makeSeed, normalizeData } from './seedData.js';
+import { makeSeed, normalizeData, applySamplePhotos } from './seedData.js';
 import { newPhotoId, orphanPhotoIds } from './showroomRules.js';
+import { isSamplePhoto, samplePhotoUrl } from './samplePhotos.js';
 import {
   carEntry, carDeletedEntry, eventEntry, eventDeletedEntry, settingsEntry, leadEntry, resetEntry,
   addToHistory, normalizeHistory,
@@ -189,6 +190,12 @@ export function useShowroomStore() {
         const loaded = await b.load();
         if (!loaded.settings) await b.reset(makeSeed(new Date()));
         else {
+          /* A demo saved before the sample photos shipped gets them, once (not logged in History) */
+          if (!loaded.settings.samplePhotos) {
+            const { cars } = applySamplePhotos(normalizeData(loaded), new Date());
+            for (const car of cars) await b.put('cars', car);
+            await b.putSettings({ ...loaded.settings, samplePhotos: 1 });
+          }
           /* Clear photos left behind by forms that were never saved (older than a day) */
           const orphans = orphanPhotoIds(await b.photoIds(), normalizeData(loaded), new Date());
           if (orphans.length) await b.delPhotos(orphans);
@@ -246,12 +253,18 @@ export function useShowroomStore() {
       urls.current.set(id, URL.createObjectURL(blob));
       return id;
     },
+    /* sample photos ship with the site, so there is nothing saved to delete */
     removePhotos: (ids) => {
-      ids.forEach(id => fresh.current.delete(id));
-      return ids.length ? commit(b => b.delPhotos(ids)) : Promise.resolve();
+      const saved = ids.filter(id => !isSamplePhoto(id));
+      saved.forEach(id => fresh.current.delete(id));
+      return saved.length ? commit(b => b.delPhotos(saved)) : Promise.resolve();
     },
-    photoUrl: (id) => (id && urls.current.get(id)) || null,
-    async photoBlob(id) { return backend.current.photo(id); },
+    photoUrl: (id) => samplePhotoUrl(id) || (id && urls.current.get(id)) || null,
+    async photoBlob(id) {
+      if (!isSamplePhoto(id)) return backend.current.photo(id);
+      const url = samplePhotoUrl(id);
+      try { return url ? await (await fetch(url)).blob() : null; } catch { return null; }
+    },
     resetDemo: () => commit(b => b.reset(makeSeed(new Date()), stamp(resetEntry(new Date())))),
   };
 

@@ -4,7 +4,8 @@ import styles from './Showroom360.module.css';
 import { ShowroomContext, useShowroomStore, useShowroom } from './store.js';
 import { useLang, t } from './i18n.js';
 import { NavContext, useNav, ToastProvider, ShopLogo, useTheme, ThemeToggle } from './ui.jsx';
-import { parseShowroomPath } from './showroomRules.js';
+import { parseShowroomPath, carTitle } from './showroomRules.js';
+import { sampleCredit } from './samplePhotos.js';
 import Home from './public/Home.jsx';
 import Inventory from './public/Inventory.jsx';
 import CarPage from './public/CarPage.jsx';
@@ -125,8 +126,12 @@ function useContactInView(onHome) {
 }
 
 function PublicShell() {
-  const { settings, persistent } = useShowroom();
+  const { settings, persistent, cars } = useShowroom();
   const { loc, navigate, lang, setLang, onBackToPortfolio } = useNav();
+  /* every bundled sample photo still on a car, for the credits in the footer */
+  const credits = cars.flatMap(car => car.photoIds
+    .map(id => ({ id, car, credit: sampleCredit(id) }))
+    .filter(x => x.credit));
   const atContact = useContactInView(loc.view === 'home');
 
   const go = (url) => (e) => { e.preventDefault(); navigate(url); };
@@ -197,6 +202,20 @@ function PublicShell() {
             <p className={styles.footerFacts}>{[settings.address, settings.hours].filter(Boolean).join(' · ')}</p>
           )}
           <p className={styles.footerNote}>{t(lang, 'footer.note')}</p>
+          {credits.length > 0 && (
+            <details className={styles.credits}>
+              <summary>{t(lang, 'photo.credits')}</summary>
+              <p>{t(lang, 'photo.creditsHint')}</p>
+              <ul>
+                {credits.map(({ id, car, credit }) => (
+                  <li key={`${car.id}-${id}`}>
+                    {carTitle(car)}, {t(lang, `angle.${id.split('-').pop()}`)}:{' '}
+                    <a href={credit.source} target="_blank" rel="noopener noreferrer">{credit.author}</a>, {credit.license}
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
           <button type="button" className={styles.textBtn} onClick={onBackToPortfolio}>{t(lang, 'footer.madeBy')}</button>
         </div>
       </footer>

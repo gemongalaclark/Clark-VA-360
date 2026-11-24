@@ -1,6 +1,8 @@
 // Run: node --test "FRONTEND/src/components/SHOWROOM 360/showroomRules.test.js"
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import { SAMPLE_ANGLES, isSamplePhoto, samplePhotoUrl, sampleCredit } from './samplePhotos.js';
 import {
   carTitle, formatPeso, nextStockNo, eventStatus, effectivePrice, featuredCars, recentlySold,
   loanQuote, monthlyFrom, filterCars, parseQuery, toQuery, daysInStock, AGING_DAYS,
@@ -10,7 +12,7 @@ import {
   priceBounds, priceFilter, parsePesoInput, priceAtPosition, positionOfPrice, PRICE_POSITIONS,
   roleForPin, canOpen, themeFor, themeToSave,
 } from './showroomRules.js';
-import { makeSeed, normalizeData, DEFAULT_SETTINGS } from './seedData.js';
+import { makeSeed, normalizeData, applySamplePhotos, DEFAULT_SETTINGS } from './seedData.js';
 import { t, DICT } from './i18n.js';
 import { MODELS } from '../CARMARK 360/carData.js';
 
@@ -280,6 +282,71 @@ test('the sample Christmas Sale is live and valid', () => {
   assert.ok(events[0].items.every(i => cars.find(c => c.id === i.carId).status === 'available'));
   assert.deepEqual(leads, []);
   assert.deepEqual(settings.financing, DEFAULT_FINANCING);
+});
+
+test('every sample car has a front, back, left and right photo, each credited and bundled', () => {
+  const { cars } = makeSeed(NOW);
+  for (const c of cars) {
+    assert.equal(c.photoIds.length, 4, c.stockNo);
+    c.photoIds.forEach((id, i) => {
+      assert.ok(isSamplePhoto(id) && id.endsWith(`-${SAMPLE_ANGLES[i]}`), `${c.stockNo} photo ${i}: ${id}`);
+      const credit = sampleCredit(id);
+      assert.ok(credit?.author && credit.license && credit.source.startsWith('https://commons.wikimedia.org/'), `${id} credit`);
+      const url = samplePhotoUrl(id);
+      assert.ok(fs.existsSync(new URL(`../../../public${url}`, import.meta.url)), `${url} is not in FRONTEND/public`);
+    });
+  }
+});
+
+/* a demo saved before the photos shipped: sample cars with no photos, the old colours, no marker */
+const OLD_COLORS = { 'car-01': 'silver', 'car-03': 'red', 'car-04': 'black', 'car-05': 'pearl', 'car-07': 'blue', 'car-08': 'brown', 'car-09': 'red', 'car-10': 'pearl', 'car-12': 'white' };
+const savedBeforePhotos = () => {
+  const seed = makeSeed(NOW);
+  const { samplePhotos, ...settings } = seed.settings;
+  return { ...seed, settings, cars: seed.cars.map(c => ({ ...c, photoIds: [], color: OLD_COLORS[c.id] || c.color })) };
+};
+
+test('a demo saved before the photos gets them once, keeping the dealer\'s own changes', () => {
+  const old = savedBeforePhotos();
+  const byId = (data, id) => data.cars.find(c => c.id === id);
+  byId(old, 'car-02').photoIds = ['p-own'];          // the dealer added a photo
+  byId(old, 'car-05').color = 'red';                 // the dealer changed a colour
+  byId(old, 'car-06').model = 'Mirage';              // the dealer turned it into another car
+  const { data, cars } = applySamplePhotos(normalizeData(old, NOW), NOW);
+  const seed = makeSeed(NOW);
+  assert.deepEqual(byId(data, 'car-01').photoIds, byId(seed, 'car-01').photoIds);
+  assert.equal(byId(data, 'car-01').color, 'black');
+  assert.deepEqual(byId(data, 'car-02').photoIds, ['p-own']);
+  assert.deepEqual(byId(data, 'car-05').photoIds, byId(seed, 'car-05').photoIds);
+  assert.equal(byId(data, 'car-05').color, 'red');
+  assert.deepEqual(byId(data, 'car-06').photoIds, []);
+  assert.equal(cars.length, 10);
+  assert.equal(data.settings.samplePhotos, 1);
+  const again = applySamplePhotos(data, NOW);
+  assert.equal(again.cars.length, 0);
+  assert.equal(again.data, data);
+});
+
+test('photos a dealer removes after that stay removed', () => {
+  const { data } = applySamplePhotos(normalizeData(savedBeforePhotos(), NOW), NOW);
+  const emptied = { ...data, cars: data.cars.map(c => (c.id === 'car-01' ? { ...c, photoIds: [] } : c)) };
+  const { data: after, cars } = applySamplePhotos(normalizeData(emptied, NOW), NOW);
+  assert.equal(cars.length, 0);
+  assert.deepEqual(after.cars.find(c => c.id === 'car-01').photoIds, []);
+});
+
+test('a fresh or reset demo already has its photos', () => {
+  const seed = normalizeData(makeSeed(NOW), NOW);
+  assert.equal(seed.settings.samplePhotos, 1);
+  assert.equal(applySamplePhotos(seed, NOW).cars.length, 0);
+});
+
+test('only sample ids point at bundled photos', () => {
+  assert.equal(samplePhotoUrl('p-1700000000000-abc'), null);
+  assert.equal(samplePhotoUrl('sample:not-a-photo'), null);
+  assert.equal(samplePhotoUrl(undefined), null);
+  assert.equal(isSamplePhoto('p-1700000000000-abc'), false);
+  assert.equal(sampleCredit('p-1700000000000-abc'), null);
 });
 
 test('sample data names no real phone number', () => {

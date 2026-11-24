@@ -457,6 +457,15 @@
 }
 .footerFacts { color: var(--on-band); font-weight: 500; }
 .footerNote { color: rgba(var(--on-band-rgb), 0.72); }
+/* sample photo credits, folded away in the footer */
+.credits { margin-top: 6px; color: rgba(var(--on-band-rgb), 0.72); font-size: 0.82rem; }
+.credits summary {
+  display: inline-flex; align-items: center; min-height: 44px; cursor: pointer; color: var(--on-band); font-weight: 600;
+  text-decoration: underline; text-underline-offset: 3px;
+}
+.credits p { color: rgba(var(--on-band-rgb), 0.72); margin-bottom: 8px; }
+.credits ul { margin: 0; padding: 0 0 0 18px; display: grid; gap: 4px; }
+.credits a { color: var(--on-band); text-underline-offset: 2px; }
 .footer .textBtn { color: rgba(var(--on-band-rgb), 0.72); }
 .footer .textBtn:hover { color: var(--on-band); }
 .footerCar { padding-bottom: 76px; }
@@ -660,9 +669,11 @@
 .cardLink:hover .cardMedia .photo { transform: scale(1.03); }
 .cardBadges { display: flex; flex-wrap: wrap; gap: 4px; }
 .cardMedia .cardBadges { position: absolute; z-index: 1; top: 6px; left: 6px; right: 6px; }
+/* a small paper chip, so it reads over a photo as well as over a drawing */
 .cardStock {
-  position: absolute; z-index: 1; right: 7px; bottom: 5px;
-  font-family: var(--display); font-weight: 600; font-size: 0.78rem; letter-spacing: 0.12em; color: var(--ink-2);
+  position: absolute; z-index: 1; right: 6px; bottom: 6px; padding: 1px 6px 0; border-radius: 2px;
+  background: rgba(var(--paper-rgb), 0.9); color: var(--ink);
+  font-family: var(--display); font-weight: 600; font-size: 0.78rem; letter-spacing: 0.12em;
 }
 .cardBody { padding: 10px 10px 10px; display: grid; gap: 4px; }
 .cardBody .cardTitle {
@@ -717,6 +728,10 @@
   position: absolute; right: 8px; bottom: 8px; padding: 2px 8px 1px; border-radius: 2px;
   background: var(--ink); color: var(--paper); font-family: var(--display); font-weight: 600; font-size: 0.95rem; letter-spacing: 0.04em; font-variant-numeric: tabular-nums;
 }
+/* licence credit for a bundled sample photo, right under it */
+.photoCredit { margin-top: -2px !important; color: var(--ink-2); font-size: 0.78rem; line-height: 1.4; overflow-wrap: anywhere; }
+.photoCredit a { color: inherit; text-underline-offset: 2px; }
+.photoCredit a:hover { color: var(--ink); }
 .thumbs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; }
 .thumb {
   flex: none; width: 84px; aspect-ratio: 16 / 10; padding: 0; border: 2px solid transparent; border-radius: 2px;

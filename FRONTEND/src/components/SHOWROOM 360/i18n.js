@@ -12,6 +12,9 @@ const EN = {
   'theme.toDark': 'Switch to dark mode', 'theme.toLight': 'Switch to light mode',
   'ticker.event': '{name} ends in {time}', 'ticker.stock': '{n} cars in stock', 'ticker.stock1': '1 car in stock',
   'ticker.financing': 'Bank financing available', 'ticker.hours': 'Open {hours}', 'sticker.price': 'Price',
+  'photo.credit': 'Photo:', 'photo.credits': 'Photo credits',
+  'photo.creditsHint': 'The sample cars’ photos are from Wikimedia Commons, used under each photographer’s free licence.',
+  'angle.front': 'front', 'angle.back': 'back', 'angle.left': 'left side', 'angle.right': 'right side',
 
   'home.featured': 'Featured cars', 'home.seeAll': 'See all cars',
   'home.prev': 'Previous car', 'home.next': 'Next car',
@@ -81,6 +84,9 @@ const CEB = {
   'theme.toDark': 'Ilisan ngadto sa dark mode', 'theme.toLight': 'Ilisan ngadto sa light mode',
   'ticker.event': '{name} mahuman sa {time}', 'ticker.stock': '{n} ka sakyanan nga available', 'ticker.stock1': '1 ka sakyanan nga available',
   'ticker.financing': 'Pwede ma-finance sa bangko', 'ticker.hours': 'Abli {hours}', 'sticker.price': 'Presyo',
+  'photo.credit': 'Hulagway:', 'photo.credits': 'Kredito sa mga hulagway',
+  'photo.creditsHint': 'Ang mga hulagway sa sample nga sakyanan gikan sa Wikimedia Commons, gigamit ubos sa libre nga lisensya sa matag photographer.',
+  'angle.front': 'atubangan', 'angle.back': 'likod', 'angle.left': 'wala nga kilid', 'angle.right': 'tuo nga kilid',
 
   'home.featured': 'Pinili nga sakyanan', 'home.seeAll': 'Tan-awa tanan',
   'home.prev': 'Miagi nga sakyanan', 'home.next': 'Sunod nga sakyanan',

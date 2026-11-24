@@ -7,6 +7,7 @@ import { useNav, Link, CarPhoto, PriceTag } from '../ui.jsx';
 import {
   effectivePrice, carTitle, formatKm, formatPeso, monthlyFrom, COLORS, BODY_TYPES, TRANSMISSIONS, FUELS, DRIVES,
 } from '../showroomRules.js';
+import { sampleCredit } from '../samplePhotos.js';
 import ConditionCard from './ConditionCard.jsx';
 import LoanCalc from './LoanCalc.jsx';
 import InquiryBar from './InquiryBar.jsx';
@@ -200,6 +201,7 @@ function Gallery({ car, title, lang }) {
   const touchX = useRef(null);
   const i = Math.min(index, total - 1);
   const go = (d) => setIndex(v => (Math.min(v, total - 1) + d + total) % total);
+  const credit = sampleCredit(car.photoIds[i]);
 
   return (
     <div className={styles.gallery}>
@@ -224,6 +226,12 @@ function Gallery({ car, title, lang }) {
           </>
         )}
       </div>
+      {credit && (
+        <p className={styles.photoCredit}>
+          {t(lang, 'photo.credit')}{' '}
+          <a href={credit.source} target="_blank" rel="noopener noreferrer">{credit.author}</a>, {credit.license}
+        </p>
+      )}
       {total > 1 && (
         <div className={styles.thumbs}>
           {car.photoIds.map((pid, k) => (

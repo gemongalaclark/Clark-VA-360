@@ -300,6 +300,21 @@ Clark's ask: "greatly enhance the UI/UX design… cool and unique but profession
 - **Small phones:** under 380 px the shop name in the header is smaller, so "Demo Motors Cebu" fits whole next to EN | CEB. It was already cut off at 360 px before this change.
 - **New wording:** `ticker.*` and `sticker.price`. `home.endsIn` was removed, because the ticker carries the sale now. The Cebuano strings are Claude's; Clark should proofread them.
 
+## Sample car photos (added 2026-11-24)
+Clark's ask: hardcode photos for the sample cars, showing front, back, left side and right side.
+- **Source (Clark's pick):** free-licence photos from Wikimedia Commons: CC BY-SA, CC BY, CC0 or public domain. Official brand photos were turned down because they're copyrighted. Dealer listing photos were ruled out because they're copyrighted and would show real dealers and plates.
+- **Always four (Clark's pick):** where no single car has all four angles, the gallery mixes cars of the same model (and roughly the same generation). Colour, wheels or facelift can therefore change between photos. True side profiles are rare on Commons, so "left" and "right" are often three-quarter views where that side dominates.
+- **Files:** 48 WebPs at 1280 px (about 7 MB), with camera metadata stripped, in `FRONTEND/public/images/showroom/<car>-<angle>.webp`. Sample cars use the photo ids `sample:<car>-<angle>`. `samplePhotos.js` maps those ids to files and credits.
+- **Store:** `photoUrl` resolves sample ids. `photoBlob` fetches them for the Facebook post download. Removing a sample photo only drops the reference, because there's no saved blob to delete.
+- **Credits** (required by the licences):
+  - Under each sample photo on the car page: photographer (linked to the Commons file) and licence.
+  - A fold-out "Photo credits" list in the footer covering every sample photo still on a car.
+- **Colours:** sample car colours were changed to match each car's front photo.
+- **Old saved data (Clark: "apply these photos"):** a demo saved before the photos shipped gets them automatically on its next load, once. `applySamplePhotos` gives each sample car its set only if the car still has no photos and is the same make and model. Its colour moves to the new sample colour only if it's still the old one, so a dealer's own photos and colour changes are kept. `settings.samplePhotos: 1` marks it done, so photos a dealer removes later stay removed; fresh and reset demos are born with the marker. It isn't logged in History.
+- **Tests:**
+  - Every seed car has four sample photos in front/back/left/right order, each with a credit and a file in `public`.
+  - Only `sample:` ids resolve to bundled files.
+
 ## Sample data (Claude's calls)
 - **Shop:** "Demo Motors Cebu" (obviously fictional), Mandaue City area, phone `0900 000 0000`. Messenger and Viber are left empty, so a click explains where to set them.
 - **Cars:** 12 cars from CarMark's models (Vios, Wigo, Fortuner, Montero Sport, Xpander, Innova-class MPVs, City, Civic, BR-V…). Their prices fall inside CarMark's used-price ranges for the same generation. 3 are Featured, 2 are Sold, 1 is Reserved, and their listing dates are spread so a few show as "Aging".

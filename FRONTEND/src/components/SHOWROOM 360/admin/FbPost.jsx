@@ -29,7 +29,7 @@ export default function FbPost({ car, onClose }) {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `${car.stockNo}-${k + 1}.jpg`;
+      link.download = `${car.stockNo}-${k + 1}.${blob.type === 'image/webp' ? 'webp' : 'jpg'}`;
       document.body.appendChild(link);
       link.click();
       link.remove();
