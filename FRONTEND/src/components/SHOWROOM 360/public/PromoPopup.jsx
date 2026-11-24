@@ -1,65 +1,82 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import { Copy, Ticket } from 'lucide-react';
+import { Copy, Check, X, Gift } from 'lucide-react';
 import styles from '../Showroom360.module.css';
 import { useShowroom, newId } from '../store.js';
 import { t } from '../i18n.js';
-import { useNav, Sheet } from '../ui.jsx';
+import { useNav } from '../ui.jsx';
 import { saveErrorKind } from '../showroomRules.js';
 import {
   activePromo, pickPrize, wheelSlices, landingAngle, newCode, voucherPrefix, isEmail, claimFor, voucherExpires, VOUCHER_DAYS,
+  voucherStatus,
 } from '../promoRules.js';
-import Wheel from './Wheel.jsx';
+import Wheel, { sliceFill } from './Wheel.jsx';
 
-/* The promo "ad": while a live event carries a live promo, the wheel opens once per
-   visit (sessionStorage) on whatever public page the buyer lands on. One spin per
-   person in this browser (localStorage keeps the result, so closing it can't buy a
-   second spin); a claim needs a name and an email no one has used on this promo. */
+/* The promo: while a live event carries a live promo, a floating gift button sits on the
+   home page (Clark, 2026-11-24: no pop-up opening by itself). Tapping it opens the wheel
+   where the buyer left off: the wheel, the claim form after a spin, or their voucher once
+   claimed; the button's sticker says which (SPIN / CLAIM / MY CODE). One spin per person
+   in this browser (localStorage keeps the result, so closing it can't buy a second spin);
+   a claim needs a name and an email no one has used on this promo.
+   Layout: a dark header with the wheel, then the step on paper. The dialog is pinned to
+   the top and only grows downward, so the wheel never moves between steps. */
 
-const seenKey = (id) => `showroom360:promoSeen:${id}`;
 const spinKey = (id) => `showroom360:spin:${id}`;
 const claimKey = (id) => `showroom360:claim:${id}`;
 const read = (store, key) => { try { return JSON.parse(store.getItem(key) || 'null'); } catch { return null; } };
 const write = (store, key, value) => { try { store.setItem(key, JSON.stringify(value)); } catch { /* private mode: fine for this visit */ } };
 const reducedMotion = () => !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 const longDate = (d) => d.toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' });
+const SPIN_MS = 4400;
 
 export default function PromoPopup() {
   const { events, promos, claims, settings, saveClaim } = useShowroom();
-  const { lang, now, navigate } = useNav();
+  const { lang, now, navigate, loc } = useNav();
   const found = activePromo(events, promos, now);
   const promo = found?.promo || null;
   const [open, setOpen] = useState(false);
+  const fab = useRef(null);
+  /* the dialog leaves the page as it closes, so hand focus back to the button ourselves */
+  const close = () => { setOpen(false); requestAnimationFrame(() => fab.current?.focus()); };
 
-  /* Decide once per promo, a moment after landing (and never on top of another dialog,
-     such as the reserved-car notice) */
-  useEffect(() => {
-    if (!promo) return undefined;
-    if (read(sessionStorage, seenKey(promo.id)) || read(localStorage, claimKey(promo.id))) return undefined;
-    let tries = 0;
-    const id = setInterval(() => {
-      tries += 1;
-      if (document.querySelector('dialog[open]') && tries < 30) return;
-      clearInterval(id);
-      write(sessionStorage, seenKey(promo.id), 1);
-      setOpen(true);
-    }, 1200);
-    return () => clearInterval(id);
-  }, [promo?.id]);
-
-  if (!promo || !open) return null;
+  if (!promo) return null;
+  /* where this buyer is: read fresh each render, so closing the wheel updates the sticker */
+  const step = read(localStorage, claimKey(promo.id)) ? 'code' : read(localStorage, spinKey(promo.id)) ? 'claim' : 'spin';
   return (
-    <PromoSheet
-      key={promo.id} promo={promo} event={found.event} claims={claims} settings={settings} saveClaim={saveClaim}
-      lang={lang} navigate={navigate} onClose={() => setOpen(false)}
-    />
+    <>
+      {/* home page only; it stays while the wheel is open, so closing returns focus to it */}
+      {loc.view === 'home' && (
+        <button
+          ref={fab}
+          type="button"
+          className={styles.promoFab}
+          onClick={() => setOpen(true)}
+          aria-haspopup="dialog"
+          aria-label={step === 'code' ? t(lang, 'promo.fabMine') : t(lang, 'promo.fab', { event: found.event?.name || promo.name })}
+        >
+          <Gift size={28} strokeWidth={1.9} aria-hidden="true" className={styles.promoFabIcon} />
+          <span className={styles.promoFabTag} aria-hidden="true">{t(lang, `promo.tag.${step}`)}</span>
+        </button>
+      )}
+      {open && (
+        <PromoDialog
+          key={promo.id} promo={promo} event={found.event} claims={claims} settings={settings} saveClaim={saveClaim}
+          lang={lang} navigate={navigate} onClose={close}
+        />
+      )}
+    </>
   );
 }
 
-function PromoSheet({ promo, event, claims, settings, saveClaim, lang, navigate, onClose }) {
+function PromoDialog({ promo, event, claims, settings, saveClaim, lang, navigate, onClose }) {
   const uid = useId();
+  const ref = useRef(null);
   const saved = read(localStorage, spinKey(promo.id));
   const savedPrize = saved && promo.prizes.find(p => p.id === saved.prizeId);
-  const [stage, setStage] = useState(savedPrize ? 'won' : 'intro');
+  /* already claimed in this browser: show their voucher again (the saved claim, or what
+     this browser kept of it) */
+  const mine = read(localStorage, claimKey(promo.id));
+  const kept = mine && (claims.find(c => c.voucher === mine.voucher) || (mine.prizeLabel ? mine : null));
+  const [stage, setStage] = useState(kept ? 'claimed' : savedPrize ? 'won' : 'intro');
   const [prize, setPrize] = useState(savedPrize || null);
   const [returning] = useState(!!savedPrize);
   const [rotation, setRotation] = useState(() => (savedPrize ? landingAngle(wheelSlices(promo.prizes), savedPrize.id, 0.5) : 0));
@@ -67,10 +84,16 @@ function PromoSheet({ promo, event, claims, settings, saveClaim, lang, navigate,
   const [form, setForm] = useState({ name: '', email: '' });
   const [errors, setErrors] = useState({});
   const [busy, setBusy] = useState(false);
-  const [claim, setClaim] = useState(null);
+  const [claim, setClaim] = useState(kept || null);
   const [copied, setCopied] = useState(false);
   const timer = useRef(null);
-  useEffect(() => () => clearTimeout(timer.current), []);
+  const headingId = `${uid}-heading`;
+
+  useEffect(() => {
+    const d = ref.current;
+    if (d && !d.open) d.showModal();
+    return () => { clearTimeout(timer.current); if (d?.open) d.close(); };
+  }, []);
 
   const spin = () => {
     const won = pickPrize(promo.prizes, Math.random());
@@ -87,7 +110,7 @@ function PromoSheet({ promo, event, claims, settings, saveClaim, lang, navigate,
     setSpinning(true);
     /* let the browser paint the start position before turning */
     requestAnimationFrame(() => requestAnimationFrame(() => setRotation(turn)));
-    timer.current = setTimeout(() => { setSpinning(false); setStage('won'); }, 4400);
+    timer.current = setTimeout(() => { setSpinning(false); setStage('won'); }, SPIN_MS);
   };
 
   const submit = async (e) => {
@@ -111,7 +134,7 @@ function PromoSheet({ promo, event, claims, settings, saveClaim, lang, navigate,
     };
     try {
       await saveClaim(c);
-      write(localStorage, claimKey(promo.id), { voucher: c.voucher });
+      write(localStorage, claimKey(promo.id), { voucher: c.voucher, prizeLabel: c.prizeLabel, claimedAt: c.claimedAt });
       setClaim(c);
       setStage('claimed');
     } catch (err) {
@@ -125,6 +148,7 @@ function PromoSheet({ promo, event, claims, settings, saveClaim, lang, navigate,
     try { await navigator.clipboard.writeText(claim.voucher); setCopied(true); } catch { /* the code is on screen to copy by hand */ }
   };
   const goTerms = (e) => { e.preventDefault(); onClose(); navigate('/showroom/terms'); };
+  const winnerId = stage === 'claimed' ? (claim?.prizeId || prize?.id) : prize?.id;
 
   const field = (key, label, props) => (
     <div className={styles.field}>
@@ -139,60 +163,93 @@ function PromoSheet({ promo, event, claims, settings, saveClaim, lang, navigate,
     </div>
   );
 
-  return (
-    <Sheet open onClose={onClose} title={t(lang, 'promo.title', { event: event?.name || promo.name })} closeLabel={t(lang, 'common.close')}>
-      <div className={styles.promo}>
-        {stage !== 'claimed' && (
-          <>
-            {stage === 'intro' && <p className={styles.lead}>{t(lang, 'promo.lead')}</p>}
-            <div className={styles.promoWheel}><Wheel prizes={promo.prizes} rotation={rotation} spinning={spinning} /></div>
-            <p className={styles.promoResult} aria-live="polite">
-              {stage === 'spinning' && t(lang, 'promo.spinning')}
-              {stage === 'won' && prize && t(lang, returning ? 'promo.wonBefore' : 'promo.won', { prize: prize.label })}
-            </p>
-          </>
-        )}
+  const voucherLine = () => {
+    const status = voucherStatus(claim, new Date());
+    if (status === 'redeemed') return <p className={styles.ticketNote}>{t(lang, 'promo.used', { date: longDate(new Date(claim.redeemedAt)) })}</p>;
+    if (status === 'expired') return <p className={`${styles.ticketNote} ${styles.ticketExpired}`}>{t(lang, 'promo.expired', { date: longDate(voucherExpires(claim)) })}</p>;
+    return <p className={styles.ticketNote}>{t(lang, 'promo.valid', { date: longDate(voucherExpires(claim)) })}</p>;
+  };
 
-        {stage === 'intro' && (
+  return (
+    <dialog
+      ref={ref}
+      className={styles.promoDialog}
+      aria-labelledby={headingId}
+      onCancel={(e) => { e.preventDefault(); onClose(); }}
+      onClick={(e) => { if (e.target === ref.current) onClose(); }}
+    >
+      <div className={styles.promoHero}>
+        <button type="button" className={styles.promoClose} onClick={onClose} aria-label={t(lang, 'common.close')}>
+          <X size={22} strokeWidth={2} aria-hidden="true" />
+        </button>
+        {event?.name && <p className={styles.promoTag}>{event.name}</p>}
+        <h2 id={headingId} className={styles.promoHeading}>{t(lang, 'promo.heading')}</h2>
+        <div className={styles.promoWheel}>
+          <Wheel prizes={promo.prizes} rotation={rotation} spinning={spinning} winnerId={stage === 'intro' ? null : winnerId} />
+        </div>
+      </div>
+
+      {/* a new step fades in under the wheel; the key restarts the fade */}
+      <div className={styles.promoBody} key={stage === 'spinning' ? 'intro' : stage}>
+        {(stage === 'intro' || stage === 'spinning') && (
           <>
-            <div className={styles.promoActions}>
-              <button type="button" className={`${styles.btnPrimary} ${styles.btnBlock}`} onClick={spin}>{t(lang, 'promo.spin')}</button>
-              <button type="button" className={`${styles.btnGhost} ${styles.btnBlock}`} onClick={onClose}>{t(lang, 'promo.noThanks')}</button>
-            </div>
+            <p className={styles.promoLead}>{t(lang, 'promo.lead')}</p>
+            <button type="button" className={`${styles.btnPrimary} ${styles.btnBlock}`} onClick={spin} disabled={stage === 'spinning'}>
+              {t(lang, stage === 'spinning' ? 'promo.spinning' : 'promo.spin')}
+            </button>
+            <button type="button" className={styles.promoSkip} onClick={onClose} disabled={stage === 'spinning'}>{t(lang, 'promo.noThanks')}</button>
             <details className={styles.promoOdds}>
               <summary>{t(lang, 'promo.odds')}</summary>
-              <ul>{promo.prizes.map(p => <li key={p.id}><span>{p.label}</span><strong>{Number(p.chance)}%</strong></li>)}</ul>
+              <ul>
+                {promo.prizes.map((p, i) => (
+                  <li key={p.id}>
+                    <span className={styles.promoSwatch} style={{ background: sliceFill(i, promo.prizes.length) }} aria-hidden="true" />
+                    <span>{p.label}</span>
+                    <strong>{Number(p.chance)}%</strong>
+                  </li>
+                ))}
+              </ul>
             </details>
           </>
         )}
 
-        {stage === 'won' && (
-          <form className={styles.formGrid} onSubmit={submit} noValidate>
-            <p className={styles.muted}>{t(lang, 'promo.claimHint')}</p>
-            {field('name', t(lang, 'promo.name'), { autoComplete: 'name' })}
-            {field('email', t(lang, 'promo.email'), { type: 'email', inputMode: 'email', autoComplete: 'email', placeholder: 'ana@gmail.com' })}
-            {errors.form && <p className={styles.error} role="alert">{errors.form}</p>}
-            <div className={styles.promoActions}>
-              <button type="submit" className={`${styles.btnPrimary} ${styles.btnBlock}`} disabled={busy}>{t(lang, 'promo.claim')}</button>
-              <button type="button" className={`${styles.btnGhost} ${styles.btnBlock}`} onClick={onClose}>{t(lang, 'promo.later')}</button>
+        {stage === 'won' && prize && (
+          <>
+            <div className={styles.promoWin} aria-live="polite">
+              <p className={styles.promoWinTag}>{t(lang, returning ? 'promo.waiting' : 'promo.youWon')}</p>
+              <p className={styles.promoWinPrize}>{prize.label}</p>
             </div>
-          </form>
+            <form className={styles.formGrid} onSubmit={submit} noValidate>
+              <p className={styles.muted}>{t(lang, 'promo.claimHint')}</p>
+              {field('name', t(lang, 'promo.name'), { autoComplete: 'name' })}
+              {field('email', t(lang, 'promo.email'), { type: 'email', inputMode: 'email', autoComplete: 'email', placeholder: 'ana@gmail.com' })}
+              {errors.form && <p className={styles.error} role="alert">{errors.form}</p>}
+              <button type="submit" className={`${styles.btnPrimary} ${styles.btnBlock}`} disabled={busy}>{t(lang, 'promo.claim')}</button>
+              <button type="button" className={styles.promoSkip} onClick={onClose}>{t(lang, 'promo.later')}</button>
+            </form>
+          </>
         )}
 
         {stage === 'claimed' && claim && (
-          <div className={styles.voucher}>
-            <p className={styles.voucherLabel}>{t(lang, 'promo.voucher')}</p>
-            <p className={styles.voucherCode}><Ticket size={22} strokeWidth={1.75} aria-hidden="true" />{claim.voucher}</p>
-            <p className={styles.voucherPrize}>{claim.prizeLabel}</p>
-            <p className={styles.muted}>{t(lang, 'promo.valid', { date: longDate(voucherExpires(claim)) })}</p>
-            <p>{t(lang, 'promo.show', { shop: settings.shopName })}</p>
-            <div className={styles.promoActions}>
-              <button type="button" className={`${styles.btnGhost} ${styles.btnBlock}`} onClick={copy}>
-                <Copy size={18} strokeWidth={1.75} aria-hidden="true" />{t(lang, copied ? 'promo.copied' : 'promo.copy')}
-              </button>
-              <button type="button" className={`${styles.btnPrimary} ${styles.btnBlock}`} onClick={onClose}>{t(lang, 'promo.done')}</button>
+          <>
+            {/* the voucher as a tear-off ticket: what you won above, the code on the stub */}
+            <div className={styles.ticket}>
+              <div className={styles.ticketMain}>
+                <p className={styles.ticketLabel}>{t(lang, 'promo.voucher')}</p>
+                <p className={styles.ticketPrize}>{claim.prizeLabel}</p>
+                {voucherLine()}
+              </div>
+              <div className={styles.ticketStub}>
+                <p className={styles.ticketCode}>{claim.voucher}</p>
+                <button type="button" className={styles.ticketCopy} onClick={copy}>
+                  {copied ? <Check size={16} strokeWidth={2.25} aria-hidden="true" /> : <Copy size={16} strokeWidth={2} aria-hidden="true" />}
+                  {t(lang, copied ? 'promo.copied' : 'promo.copy')}
+                </button>
+              </div>
             </div>
-          </div>
+            <p className={styles.promoLead}>{t(lang, 'promo.show', { shop: settings.shopName })}</p>
+            <button type="button" className={`${styles.btnPrimary} ${styles.btnBlock}`} onClick={onClose}>{t(lang, 'promo.done')}</button>
+          </>
         )}
 
         <p className={styles.promoSmall}>
@@ -201,6 +258,6 @@ function PromoSheet({ promo, event, claims, settings, saveClaim, lang, navigate,
           <a href="/showroom/terms" onClick={goTerms}>{t(lang, 'legal.terms')}</a>
         </p>
       </div>
-    </Sheet>
+    </dialog>
   );
 }

@@ -200,7 +200,7 @@ function PublicShell() {
         )}
       </main>
 
-      {/* the event's prize wheel, once per visit (public pages only) */}
+      {/* the event's prize wheel: a gift button on the home page (public pages only) */}
       <PromoPopup />
 
       <footer className={`${styles.footer} ${loc.view === 'car' ? styles.footerCar : ''}`}>

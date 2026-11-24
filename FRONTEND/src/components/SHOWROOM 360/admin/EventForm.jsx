@@ -184,7 +184,7 @@ export default function EventForm({ id, role }) {
         {attached ? (
           <div className={a.promoOn}>
             <p><Gift size={16} aria-hidden="true" className={a.rowIconRed} /> <strong>{attached.name}</strong> · {attached.code}</p>
-            <p className={s.muted}>{promoWhen(attached)} · {promoStatus(attached, new Date()) === 'live' ? 'live now' : promoStatus(attached, new Date())}. While this sale and the promo are both live, buyers see the wheel once per visit.</p>
+            <p className={s.muted}>{promoWhen(attached)} · {promoStatus(attached, new Date()) === 'live' ? 'live now' : promoStatus(attached, new Date())}. While this sale and the promo are both live, buyers see a gift button on the home page that opens the wheel.</p>
             {managePromos && (
               <button type="button" className={s.textBtn} onClick={() => setForm(f => ({ ...f, promoId: null }))}>Remove promo</button>
             )}

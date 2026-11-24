@@ -92,7 +92,7 @@ export default function Promos({ role }) {
       </div>
       <p className={`${s.muted} ${a.intro}`}>
         A prize wheel buyers spin once. Put a promo on a live sale by typing its promo code on the event’s page{manage ? '' : ' (superadmin)'}.
-        While both are live, buyers see the wheel once per visit.
+        While both are live, a gift button on the home page opens the wheel.
       </p>
 
       <section className={a.block} aria-labelledby="pr-lookup">

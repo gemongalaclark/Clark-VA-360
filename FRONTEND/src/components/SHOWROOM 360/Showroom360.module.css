@@ -789,27 +789,149 @@
 
 /* ── prize wheel (promos) ── */
 .wheel { display: block; width: 100%; height: auto; overflow: visible; }
-.wheelText { font-family: var(--display); font-weight: 700; letter-spacing: 0.02em; pointer-events: none; }
-.wheelSpinning { transition: transform 4.2s cubic-bezier(0.12, 0.7, 0.1, 1); }
-@media (prefers-reduced-motion: reduce) { .wheelSpinning { transition: none; } }
+.wheelText { font-family: var(--display); font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; pointer-events: none; }
+/* decelerates to a stop, like a real wheel losing speed */
+.wheelSpinning { transition: transform 4.2s cubic-bezier(0.1, 0.65, 0.08, 1); }
+.wheelSlice { transition: opacity 0.4s var(--ease); }
+.wheelSliceDim { opacity: 0.32; }
+/* the rim's lights: half lit at rest, chasing only while it spins */
+.lightA { fill: var(--on-band); }
+.lightB { fill: rgba(var(--on-band-rgb), 0.3); }
+.wheelLightsOn .lightA { animation: wheelBlink 0.36s steps(1, end) infinite; }
+.wheelLightsOn .lightB { animation: wheelBlink 0.36s steps(1, end) infinite reverse; }
+@keyframes wheelBlink { 0% { fill: var(--on-band); } 50% { fill: rgba(var(--on-band-rgb), 0.3); } }
 
-/* the promo pop-up: the wheel, the result, then the voucher like a torn-off ticket */
-.promo { display: grid; gap: 14px; }
-.promoWheel { justify-self: center; width: min(280px, 74vw); padding-top: 4px; }
-.promoResult { min-height: 1.6em; text-align: center; font-family: var(--display); font-weight: 700; font-size: 1.45rem; line-height: 1.15; text-transform: uppercase; color: var(--red-text); }
-.promoActions { display: grid; gap: 10px; }
-@media (min-width: 460px) { .promoActions { grid-template-columns: 1fr 1fr; } }
-.promoOdds summary { display: inline-flex; align-items: center; min-height: 44px; cursor: pointer; color: var(--ink-2); font-weight: 600; font-size: 0.9rem; }
-.promoOdds ul { list-style: none; margin: 0; padding: 0; }
-.promoOdds li { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--rule); color: var(--ink); font-size: 0.92rem; }
-.voucher { display: grid; gap: 8px; justify-items: center; text-align: center; padding: 18px 12px; border: 2px dashed var(--ink); border-radius: 4px; }
-.voucher p { color: var(--ink); }
-.voucherLabel { font-family: var(--display); font-weight: 600; font-size: 0.95rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-2) !important; }
-.voucherCode { display: inline-flex; align-items: center; gap: 8px; font-family: var(--display); font-weight: 700; font-size: clamp(1.6rem, 8vw, 2.1rem); letter-spacing: 0.08em; font-variant-numeric: tabular-nums; }
-.voucherPrize { font-weight: 700; font-size: 1.05rem; }
-.voucher .promoActions { width: 100%; }
-.promoSmall { color: var(--ink-2) !important; font-size: 0.76rem; line-height: 1.45; }
+/* ── the promo's floating gift button (home page): a red sticker-round with a label tag,
+   above the phone's bottom bar. It pops in once and gives one wiggle, then stays still. ── */
+.promoFab {
+  position: fixed; right: 16px; bottom: calc(80px + env(safe-area-inset-bottom)); z-index: 40;
+  width: 62px; height: 62px; display: grid; place-items: center; padding: 0;
+  border: 2px solid var(--ink); border-radius: 50%; background: var(--red); color: #fff; cursor: pointer;
+  box-shadow: 3px 3px 0 var(--shade);
+  transition: transform 0.12s var(--ease), box-shadow 0.12s var(--ease);
+  animation: promoFabIn 0.45s var(--ease) backwards;
+}
+.promoFab:hover { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--shade); }
+.promoFab:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--shade); }
+.promoFabIcon { animation: promoFabWiggle 0.9s var(--ease) 0.8s backwards; }
+.promoFabTag {
+  position: absolute; left: 50%; bottom: -10px; transform: translateX(-50%) rotate(-3deg);
+  padding: 2px 7px 1px; border-radius: 2px; background: var(--ink); color: var(--paper); white-space: nowrap;
+  font-family: var(--display); font-weight: 700; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; line-height: 1.15;
+}
+@keyframes promoFabIn { from { opacity: 0; transform: scale(0.6); } }
+@keyframes promoFabWiggle {
+  0%, 100% { transform: rotate(0); }
+  20% { transform: rotate(-14deg); } 40% { transform: rotate(12deg); } 60% { transform: rotate(-8deg); } 80% { transform: rotate(4deg); }
+}
+@media (min-width: 900px) { .promoFab { right: 28px; bottom: 28px; width: 68px; height: 68px; } }
+
+/* ── the promo pop-up: a dark header holding the wheel, the step on paper below.
+   Pinned to the top and only growing downward, so the wheel never moves. ── */
+.promoDialog {
+  width: min(440px, calc(100vw - 24px)); max-width: none; max-height: calc(100vh - 24px); max-height: calc(100dvh - 24px);
+  margin: 12px auto auto; padding: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin;
+  scrollbar-gutter: stable; /* room kept for the scrollbar, so the wheel doesn't shift when the form makes it appear */
+  border: 2px solid var(--ink); border-radius: 6px; background: var(--paper); color: var(--ink);
+  box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.35);
+}
+.promoDialog::backdrop { background: rgba(14, 14, 24, 0.72); backdrop-filter: blur(3px); }
+.promoDialog[open] { animation: promoIn 0.32s var(--ease); }
+@keyframes promoIn { from { opacity: 0; transform: translateY(18px) scale(0.97); } }
+@media (min-width: 700px) { .promoDialog { margin-top: max(28px, 6vh); } }
+
+.promoHero {
+  position: relative; display: grid; justify-items: center; gap: 6px; padding: 22px 20px 22px;
+  background: var(--band); color: var(--on-band); text-align: center;
+}
+.promoHero :focus-visible { outline-color: var(--on-band); }
+.promoClose {
+  position: absolute; top: 10px; right: 10px; width: 44px; height: 44px; display: grid; place-items: center; padding: 0;
+  border: 1.5px solid rgba(var(--on-band-rgb), 0.28); border-radius: 50%; background: transparent; color: var(--on-band); cursor: pointer;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+.promoClose:hover { border-color: var(--on-band); }
+/* the sale's name as a sticker, a touch askew */
+.promoTag {
+  justify-self: center; padding: 4px 10px 3px; border-radius: 2px; background: var(--red); color: #fff !important;
+  font-family: var(--display); font-weight: 700; font-size: 0.9rem; letter-spacing: 0.12em; text-transform: uppercase; line-height: 1.1;
+  transform: rotate(-2deg); box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.4);
+}
+.promoHeading {
+  margin-top: 4px; color: var(--on-band); font-family: var(--display); font-weight: 700;
+  font-size: clamp(2.3rem, 11vw, 2.9rem); line-height: 0.92; letter-spacing: 0.01em; text-transform: uppercase;
+}
+.promoWheel { width: min(290px, 76vw); margin-top: 10px; }
+
+.promoBody { display: grid; gap: 12px; padding: 20px 20px 16px; animation: promoStep 0.3s var(--ease); }
+@keyframes promoStep { from { opacity: 0; transform: translateY(6px); } }
+.promoLead { color: var(--ink-2); font-size: 0.98rem; line-height: 1.5; text-align: center; }
+/* the quiet way out: a text button, still a 44px target */
+.promoSkip {
+  justify-self: center; min-height: 44px; padding: 0 14px; border: 0; background: none; cursor: pointer;
+  color: var(--ink-2); font: inherit; font-weight: 600; font-size: 0.95rem; text-decoration: underline; text-underline-offset: 3px;
+}
+.promoSkip:hover { color: var(--ink); }
+.promoSkip:disabled { visibility: hidden; }
+
+.promoOdds { border-top: 1px solid var(--rule); }
+.promoOdds summary {
+  display: flex; align-items: center; justify-content: center; min-height: 44px; cursor: pointer;
+  color: var(--ink-2); font-size: 0.88rem; font-weight: 600; list-style: none;
+}
+.promoOdds summary::-webkit-details-marker { display: none; }
+.promoOdds summary::after { content: '+'; margin-left: 8px; font-weight: 700; }
+.promoOdds[open] summary::after { content: '–'; }
+.promoOdds ul { list-style: none; margin: 0 0 4px; padding: 0; }
+.promoOdds li { display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 7px 0; border-top: 1px solid var(--rule); color: var(--ink); font-size: 0.92rem; }
+.promoOdds li strong { font-variant-numeric: tabular-nums; }
+.promoSwatch { width: 14px; height: 14px; border-radius: 3px; box-shadow: inset 0 0 0 1.5px var(--ink); }
+
+/* the result: a red tag, then the prize in big type */
+.promoWin { display: grid; justify-items: center; gap: 6px; text-align: center; }
+.promoWinTag {
+  padding: 3px 10px 2px; border-radius: 2px; background: var(--red); color: #fff !important;
+  font-family: var(--display); font-weight: 700; font-size: 0.85rem; letter-spacing: 0.14em; text-transform: uppercase;
+}
+.promoWinPrize { color: var(--ink); font-family: var(--display); font-weight: 700; font-size: clamp(1.9rem, 9vw, 2.4rem); line-height: 1; text-transform: uppercase; }
+
+/* the voucher: a ticket with notches at the tear line and the code on the stub */
+.ticket { position: relative; display: grid; border: 2px solid var(--ink); border-radius: 6px; background: var(--surface, var(--paper)); box-shadow: var(--lift); }
+.ticketMain { display: grid; justify-items: center; gap: 4px; padding: 18px 16px 16px; text-align: center; }
+.ticketStub {
+  position: relative; display: grid; justify-items: center; gap: 8px; padding: 16px 16px 14px;
+  border-top: 2px dashed var(--ink);
+}
+/* the two half-circle notches where the ticket tears */
+.ticketStub::before, .ticketStub::after {
+  content: ''; position: absolute; top: -11px; width: 20px; height: 20px; border-radius: 50%;
+  background: var(--paper); border: 2px solid var(--ink);
+}
+.ticketStub::before { left: -12px; clip-path: inset(0 0 0 50%); }
+.ticketStub::after { right: -12px; clip-path: inset(0 50% 0 0); }
+.ticketLabel { color: var(--ink-2) !important; font-family: var(--display); font-weight: 600; font-size: 0.85rem; letter-spacing: 0.14em; text-transform: uppercase; }
+.ticketPrize { color: var(--ink); font-family: var(--display); font-weight: 700; font-size: 1.7rem; line-height: 1; text-transform: uppercase; }
+.ticketNote { color: var(--ink-2) !important; font-size: 0.88rem; }
+.ticketExpired { color: var(--red-text) !important; font-weight: 600; }
+.ticketCode {
+  color: var(--ink); font-family: var(--display); font-weight: 700; font-size: clamp(1.7rem, 8.5vw, 2.2rem);
+  letter-spacing: 0.1em; font-variant-numeric: tabular-nums; line-height: 1;
+}
+.ticketCopy {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 14px;
+  border: 1.5px solid var(--ink); border-radius: 999px; background: transparent; color: var(--ink); cursor: pointer;
+  font-family: var(--display); font-weight: 700; font-size: 0.95rem; letter-spacing: 0.06em; text-transform: uppercase;
+}
+.ticketCopy:hover { background: var(--ink); color: var(--paper); }
+
+.promoSmall { margin-top: 4px !important; padding-top: 12px; border-top: 1px solid var(--rule); color: var(--ink-2) !important; font-size: 0.74rem; line-height: 1.45; text-align: center; }
 .promoSmall a { color: inherit; text-underline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .wheelSpinning, .wheelSlice { transition: none; }
+  .wheelLightsOn .lightA, .wheelLightsOn .lightB { animation: none; }
+  .promoDialog[open], .promoBody, .promoFab, .promoFabIcon { animation: none; }
+}
 
 /* ── full-screen photo viewer: the dark band, so the photo is all you see ── */
 .viewer {
