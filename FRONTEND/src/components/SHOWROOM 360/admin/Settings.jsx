@@ -19,6 +19,9 @@ const toForm = (st) => ({
   minDownPct: String(st.financing.minDownPct),
   feesPct: String(st.financing.feesPct),
   addOn: Object.fromEntries(loanTerms(st.financing).map(t => [t, String(st.financing.addOn[t])])),
+  ruleOn: !!st.priceRule?.on,
+  ruleDays: String(st.priceRule?.days ?? 45),
+  rulePct: String(st.priceRule?.pct ?? 3),
 });
 
 function validate(f) {
@@ -33,6 +36,8 @@ function validate(f) {
   if (!inRange(f.minDownPct, 0, 90)) e.minDownPct = 'Between 0 and 90.';
   if (!inRange(f.feesPct, 0, 30)) e.feesPct = 'Between 0 and 30.';
   if (Object.values(f.addOn).some(v => !inRange(v, 0, 100))) e.addOn = 'Each rate must be between 0 and 100.';
+  if (f.ruleOn && !(inRange(f.ruleDays, 1, 365) && Number.isInteger(Number(f.ruleDays)))) e.ruleDays = 'Whole days, from 1 to 365.';
+  if (f.ruleOn && !inRange(f.rulePct, 1, 20)) e.rulePct = 'Between 1 and 20.';
   return e;
 }
 
@@ -91,6 +96,10 @@ export default function Settings() {
         feesPct: Number(form.feesPct),
         addOn: Object.fromEntries(Object.entries(form.addOn).map(([t, v]) => [t, Number(v)])),
       },
+      /* switched off, the last good numbers are kept for next time */
+      priceRule: form.ruleOn
+        ? { on: true, days: Number(form.ruleDays), pct: Number(form.rulePct) }
+        : { ...settings.priceRule, on: false },
     };
     try {
       await saveSettings(next);
@@ -189,6 +198,21 @@ export default function Settings() {
           ))}
         </div>
         {errors.addOn && <p className={s.error}>{errors.addOn}</p>}
+      </fieldset>
+
+      <fieldset className={a.fieldset}>
+        <legend>Price-drop rule</legend>
+        <p className={s.hint}>Cars that sit too long show up on the dashboard’s to-do list with a lower price to apply or skip. Nothing changes until someone taps it. Cars in a sale are left alone.</p>
+        <label className={s.checkRow}>
+          <input type="checkbox" checked={form.ruleOn} onChange={(e) => setForm(f => ({ ...f, ruleOn: e.target.checked }))} />
+          <span>Suggest price drops</span>
+        </label>
+        {form.ruleOn && (
+          <div className={a.formCols}>
+            {field('ruleDays', 'After this many days in stock', text('ruleDays', { inputMode: 'numeric' }))}
+            {field('rulePct', 'Suggest this much off (%)', text('rulePct', { inputMode: 'decimal' }), { hint: 'Rounded down to the nearest ₱1,000.' })}
+          </div>
+        )}
       </fieldset>
 
       <fieldset className={a.fieldset}>

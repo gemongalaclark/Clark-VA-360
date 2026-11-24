@@ -1,15 +1,17 @@
-/* Showroom 360 data, saved in this browser (IndexedDB). Each visitor gets their own
+/* Showroom 360 data, saved in this browser (IndexedDB). Promos and their claims are two
+   lists in the `kv` store (no new object store, so no version bump: an upgrade is blocked
+   while another tab of the site is open). Each visitor gets their own
    copy seeded with sample cars. Other open tabs refresh through a BroadcastChannel,
    so the admin and the public site can sit side by side during a pitch.
    If IndexedDB is unavailable (some private windows), everything still works in
    memory and `persistent` is false so the UI can say changes won't be kept. */
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { makeSeed, normalizeData, applySamplePhotos } from './seedData.js';
+import { makeSeed, normalizeData, applySamplePhotos, applySampleLeads, applySamplePromo } from './seedData.js';
 import { newPhotoId, orphanPhotoIds } from './showroomRules.js';
 import { isSamplePhoto, samplePhotoUrl } from './samplePhotos.js';
 import {
   carEntry, carDeletedEntry, eventEntry, eventDeletedEntry, settingsEntry, leadEntry, resetEntry,
-  addToHistory, normalizeHistory,
+  addToHistory, normalizeHistory, promoEntry, promoDeletedEntry, redeemEntry,
 } from './historyRules.js';
 
 const DB_NAME = 'showroom360';
@@ -60,20 +62,29 @@ function idbBackend(db) {
   return {
     async load() {
       const t = db.transaction([...RECORD_STORES, 'kv'], 'readonly');
-      const [cars, events, leads, settings, history] = await Promise.all([
+      const [cars, events, leads, settings, history, promos, claims] = await Promise.all([
         req(t.objectStore('cars').getAll()),
         req(t.objectStore('events').getAll()),
         req(t.objectStore('leads').getAll()),
         req(t.objectStore('kv').get('settings')),
         req(t.objectStore('kv').get('history')),
+        req(t.objectStore('kv').get('promos')),
+        req(t.objectStore('kv').get('claims')),
       ]);
-      return { cars, events, leads, settings, history };
+      return { cars, events, leads, settings, history, promos, claims };
     },
     async photoIds() { return req(db.transaction('photos').objectStore('photos').getAllKeys()); },
     async photo(id) { return req(db.transaction('photos').objectStore('photos').get(id)); },
     put: (store, value, entry) => run([store], t => t.objectStore(store).put(value), entry),
     del: (store, id, entry) => run([store], t => t.objectStore(store).delete(id), entry),
     putSettings: (s, entry) => run(['kv'], t => t.objectStore('kv').put(s, 'settings'), entry),
+    /* a whole list in kv: 'promos' or 'claims' */
+    putList: (key, list, entry) => run(['kv'], t => t.objectStore('kv').put(list, key), entry),
+    /* A promo delete also takes it off the events that carried it, in one transaction */
+    deletePromo: (promos, events, entry) => run(['kv', 'events'], t => {
+      t.objectStore('kv').put(promos, 'promos');
+      events.forEach(e => t.objectStore('events').put(e));
+    }, entry),
     putPhoto: (id, blob) => run(['photos'], t => t.objectStore('photos').put(blob, id)),
     delPhotos: (ids) => run(['photos'], t => ids.forEach(id => t.objectStore('photos').delete(id))),
     /* Car delete touches cars, events and photos in one transaction */
@@ -87,13 +98,15 @@ function idbBackend(db) {
       [...RECORD_STORES, 'kv', 'photos'].forEach(s => t.objectStore(s).clear());
       for (const s of RECORD_STORES) seed[s].forEach(v => t.objectStore(s).put(v));
       t.objectStore('kv').put(seed.settings, 'settings');
+      t.objectStore('kv').put(seed.promos || [], 'promos');
+      t.objectStore('kv').put(seed.claims || [], 'claims');
       if (entry) t.objectStore('kv').put([entry], 'history');
     }),
   };
 }
 
 function memoryBackend() {
-  let mem = { cars: [], events: [], leads: [], settings: null, history: [] };
+  let mem = { cars: [], events: [], leads: [], settings: null, history: [], promos: [], claims: [] };
   const log = (entry) => { if (entry) mem = { ...mem, history: addToHistory(mem.history, entry) }; };
   const photos = new Map();
   const upsert = (list, v) => [...list.filter(x => x.id !== v.id), v];
@@ -104,6 +117,8 @@ function memoryBackend() {
     async put(store, value, entry) { mem = { ...mem, [store]: upsert(mem[store], value) }; log(entry); },
     async del(store, id, entry) { mem = { ...mem, [store]: mem[store].filter(x => x.id !== id) }; log(entry); },
     async putSettings(s, entry) { mem = { ...mem, settings: s }; log(entry); },
+    async putList(key, list, entry) { mem = { ...mem, [key]: list }; log(entry); },
+    async deletePromo(promos, events, entry) { mem = { ...mem, promos, events: events.reduce(upsert, mem.events) }; log(entry); },
     async putPhoto(id, blob) { photos.set(id, blob); },
     async delPhotos(ids) { ids.forEach(id => photos.delete(id)); },
     async deleteCar(id, photoIds, events, entry) {
@@ -113,7 +128,10 @@ function memoryBackend() {
     },
     async reset(seed, entry) {
       photos.clear();
-      mem = { cars: seed.cars, events: seed.events, leads: seed.leads, settings: seed.settings, history: entry ? [entry] : [] };
+      mem = {
+        cars: seed.cars, events: seed.events, leads: seed.leads, settings: seed.settings,
+        promos: seed.promos || [], claims: seed.claims || [], history: entry ? [entry] : [],
+      };
     },
   };
 }
@@ -143,7 +161,7 @@ export async function resizeImage(file, maxEdge = 1600, quality = 0.82) {
 /* ── the hook, used once at the app root and shared through ShowroomContext ── */
 
 export function useShowroomStore() {
-  const [state, setState] = useState({ ready: false, persistent: true, cars: [], events: [], leads: [], settings: null, history: [] });
+  const [state, setState] = useState({ ready: false, persistent: true, cars: [], events: [], leads: [], promos: [], claims: [], settings: null, history: [] });
   const backend = useRef(null);
   /* Who is signed in to the admin ('admin' | 'superadmin'); stamped on each history entry */
   const actor = useRef(null);
@@ -190,11 +208,27 @@ export function useShowroomStore() {
         const loaded = await b.load();
         if (!loaded.settings) await b.reset(makeSeed(new Date()));
         else {
-          /* A demo saved before the sample photos shipped gets them, once (not logged in History) */
-          if (!loaded.settings.samplePhotos) {
+          /* A demo saved before the sample photos or sample buyers shipped gets them, once (not logged in History) */
+          let settings = loaded.settings;
+          if (!settings.samplePhotos) {
             const { cars } = applySamplePhotos(normalizeData(loaded), new Date());
             for (const car of cars) await b.put('cars', car);
-            await b.putSettings({ ...loaded.settings, samplePhotos: 1 });
+            settings = { ...settings, samplePhotos: 1 };
+            await b.putSettings(settings);
+          }
+          if (!settings.sampleLeads) {
+            const { leads } = applySampleLeads(normalizeData(await b.load()), new Date());
+            for (const lead of leads) await b.put('leads', lead);
+            settings = { ...settings, sampleLeads: 1 };
+            await b.putSettings(settings);
+          }
+          if (!settings.samplePromo) {
+            const current = normalizeData(await b.load());
+            const { promo, event } = applySamplePromo(current, new Date());
+            if (promo) await b.putList('promos', [...current.promos, promo]);
+            if (event) await b.put('events', event);
+            settings = { ...settings, samplePromo: 1 };
+            await b.putSettings(settings);
           }
           /* Clear photos left behind by forms that were never saved (older than a day) */
           const orphans = orphanPhotoIds(await b.photoIds(), normalizeData(loaded), new Date());
@@ -225,6 +259,8 @@ export function useShowroomStore() {
 
   /* A history entry for this change, stamped with who made it (null: nothing to log) */
   const stamp = (entry) => (entry ? { ...entry, by: actor.current || 'admin' } : null);
+  /* replace in place, or add at the end (kv lists keep their order) */
+  const upsertList = (list, v) => (list.some(x => x.id === v.id) ? list.map(x => (x.id === v.id ? v : x)) : [...list, v]);
 
   const actions = {
     setActor: (role) => { actor.current = role; },
@@ -238,13 +274,27 @@ export function useShowroomStore() {
       return b.deleteCar(id, car?.photoIds || [], events, stamp(carDeletedEntry(car, state.events, new Date())));
     }),
     saveEvent: (ev) => commit(b => b.put('events', ev,
-      stamp(eventEntry(state.events.find(e => e.id === ev.id), ev, state.cars, new Date())))),
+      stamp(eventEntry(state.events.find(e => e.id === ev.id), ev, state.cars, new Date(), state.promos)))),
     deleteEvent: (id) => commit(b => b.del('events', id,
       stamp(eventDeletedEntry(state.events.find(e => e.id === id), new Date())))),
     /* A buyer's new request has no "before", so leadEntry logs nothing for it */
     saveLead: (lead) => commit(b => b.put('leads', lead,
       stamp(leadEntry(state.leads.find(l => l.id === lead.id), lead, new Date())))),
     saveSettings: (s) => commit(b => b.putSettings(s, stamp(settingsEntry(state.settings, s, new Date())))),
+    savePromo: (p) => commit(b => b.putList('promos', upsertList(state.promos, p),
+      stamp(promoEntry(state.promos.find(x => x.id === p.id), p, new Date())))),
+    deletePromo: (id) => commit(b => b.deletePromo(
+      state.promos.filter(p => p.id !== id),
+      state.events.filter(e => e.promoId === id).map(e => ({ ...e, promoId: null })),
+      stamp(promoDeletedEntry(state.promos.find(p => p.id === id), new Date())))),
+    /* A buyer's claim is not an admin change: not logged */
+    saveClaim: (c) => commit(b => b.putList('claims', upsertList(state.claims, c))),
+    redeemClaim: (id, stockNo) => commit(b => {
+      const claim = state.claims.find(c => c.id === id);
+      const now = new Date();
+      const next = { ...claim, redeemedAt: now.toISOString(), stockNo: String(stockNo || '').trim() };
+      return b.putList('claims', upsertList(state.claims, next), stamp(redeemEntry(next, next.stockNo, now)));
+    }),
     async addPhoto(file, maxEdge) {
       const blob = await resizeImage(file, maxEdge);
       const id = newPhotoId();

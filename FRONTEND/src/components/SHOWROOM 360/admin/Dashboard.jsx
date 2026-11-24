@@ -6,9 +6,12 @@ import { useShowroom } from '../store.js';
 import { timeLeft } from '../i18n.js';
 import { useNav, Link, CarPhoto } from '../ui.jsx';
 import { liveEvents, daysInStock, AGING_DAYS, carTitle, canAddEvent } from '../showroomRules.js';
+import { todoList } from '../autoRules.js';
+import TaskList from './TaskList.jsx';
+import WeekReport from './WeekReport.jsx';
 
 export default function Dashboard({ role }) {
-  const { cars, events, leads, history } = useShowroom();
+  const { cars, events, leads, history, settings } = useShowroom();
   const { now } = useNav();
 
   const available = cars.filter(c => c.status === 'available');
@@ -27,6 +30,9 @@ export default function Dashboard({ role }) {
     .filter(x => x.days >= AGING_DAYS)
     .sort((x, y) => y.days - x.days)
     .slice(0, 5);
+  const tasks = todoList({ leads, cars, events, settings }, now);
+  /* the price-drop rule's "Drop price?" tasks replace the aging list */
+  const showAging = !settings.priceRule?.on;
 
   const stats = [
     { label: 'Available', value: available.length, to: '/showroom/admin/cars?status=available' },
@@ -47,6 +53,14 @@ export default function Dashboard({ role }) {
           )}
         </div>
       </div>
+
+      <section className={`${a.block} ${a.todoBlock}`} aria-labelledby="ad-todo">
+        <div className={a.blockHead}>
+          <h2 id="ad-todo" className={s.h3}>To do</h2>
+          <span className={s.muted}>{tasks.length ? `${tasks.length} task${tasks.length === 1 ? '' : 's'}` : 'Nothing waiting'}</span>
+        </div>
+        <TaskList tasks={tasks} />
+      </section>
 
       <ul className={a.stats}>
         {stats.map(st => (
@@ -87,7 +101,7 @@ export default function Dashboard({ role }) {
         )}
       </section>
 
-      <div className={a.twoCol}>
+      <div className={showAging ? a.twoCol : undefined}>
         <section className={a.block} aria-labelledby="ad-leads">
           <div className={a.blockHead}>
             <h2 id="ad-leads" className={s.h3}>Latest leads</h2>
@@ -102,7 +116,7 @@ export default function Dashboard({ role }) {
                   <Link to="/showroom/admin/leads" className={a.row}>
                     <span className={a.rowMain}>
                       <strong>{l.name} {l.status === 'new' && <span className={a.newDot}>New</span>}</strong>
-                      <span className={s.muted}>{l.type === 'test-drive' ? 'Test drive' : 'Reservation'} · {l.carLabel}</span>
+                      <span className={s.muted}>{l.type === 'test-drive' ? 'Test drive' : l.type === 'wish' ? 'Waitlist' : 'Reservation'} · {l.carLabel}</span>
                     </span>
                     <ChevronRight size={18} aria-hidden="true" className={a.rowChevron} />
                   </Link>
@@ -112,7 +126,7 @@ export default function Dashboard({ role }) {
           )}
         </section>
 
-        <section className={a.block} aria-labelledby="ad-aging">
+        {showAging && <section className={a.block} aria-labelledby="ad-aging">
           <div className={a.blockHead}>
             <h2 id="ad-aging" className={s.h3}>Aging stock</h2>
             <span className={s.muted}>{AGING_DAYS}+ days</span>
@@ -134,8 +148,10 @@ export default function Dashboard({ role }) {
               ))}
             </ul>
           )}
-        </section>
+        </section>}
       </div>
+
+      {role === 'superadmin' && <WeekReport />}
 
       {role === 'superadmin' && (
         <section className={a.block} aria-labelledby="ad-history">

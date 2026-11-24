@@ -10,6 +10,7 @@ import Home from './public/Home.jsx';
 import Inventory from './public/Inventory.jsx';
 import CarPage from './public/CarPage.jsx';
 import Legal from './public/Legal.jsx';
+import PromoPopup from './public/PromoPopup.jsx';
 import { LEGAL_KINDS } from './legalText.js';
 
 /* The admin is its own download: buyers never load it */
@@ -198,6 +199,9 @@ function PublicShell() {
           </div>
         )}
       </main>
+
+      {/* the event's prize wheel, once per visit (public pages only) */}
+      <PromoPopup />
 
       <footer className={`${styles.footer} ${loc.view === 'car' ? styles.footerCar : ''}`}>
         <div className={styles.footerInner}>

@@ -484,6 +484,17 @@
   display: grid; justify-items: center; gap: 12px; color: var(--ink-2);
 }
 .empty h1, .empty h2 { font-size: 1.6rem; text-transform: uppercase; line-height: 1.05; }
+.emptyActions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+/* waitlist offer under the results: a quiet ruled line, not another card */
+.wishLine {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px;
+  margin-top: 28px; padding-top: 16px; border-top: 2px solid var(--ink);
+}
+.wishLine p { flex: 1 1 240px; color: var(--ink-2); }
+/* the form's own search fields: two by two from a little wider than a phone */
+.wishFields { display: grid; gap: 12px; padding: 14px 0 4px; border-top: 1.5px solid var(--rule-2); border-bottom: 1.5px solid var(--rule-2); }
+@media (min-width: 460px) { .wishFields { grid-template-columns: 1fr 1fr; } }
+.wishBandBody { display: grid; gap: 16px; justify-items: start; max-width: 62ch; }
 
 /* ── sample Privacy Policy and Terms: a numbered spec sheet ── */
 
@@ -768,6 +779,73 @@
   overflow: hidden; background: var(--paper-2); cursor: pointer; opacity: 0.7;
 }
 .thumb[aria-current='true'] { border-color: var(--ink); opacity: 1; }
+/* the whole main photo opens the full-screen viewer; the arrows sit above it */
+.galleryZoom { position: absolute; inset: 0; padding: 0; border: 0; background: transparent; cursor: zoom-in; }
+.galleryZoom:focus-visible { outline-offset: -5px; }
+.galleryZoomIcon {
+  position: absolute; top: 8px; right: 8px; width: 36px; height: 36px; display: grid; place-items: center;
+  border: 1.5px solid var(--ink); border-radius: var(--radius); background: rgba(var(--paper-rgb), 0.94); color: var(--ink);
+}
+
+/* ── prize wheel (promos) ── */
+.wheel { display: block; width: 100%; height: auto; overflow: visible; }
+.wheelText { font-family: var(--display); font-weight: 700; letter-spacing: 0.02em; pointer-events: none; }
+.wheelSpinning { transition: transform 4.2s cubic-bezier(0.12, 0.7, 0.1, 1); }
+@media (prefers-reduced-motion: reduce) { .wheelSpinning { transition: none; } }
+
+/* the promo pop-up: the wheel, the result, then the voucher like a torn-off ticket */
+.promo { display: grid; gap: 14px; }
+.promoWheel { justify-self: center; width: min(280px, 74vw); padding-top: 4px; }
+.promoResult { min-height: 1.6em; text-align: center; font-family: var(--display); font-weight: 700; font-size: 1.45rem; line-height: 1.15; text-transform: uppercase; color: var(--red-text); }
+.promoActions { display: grid; gap: 10px; }
+@media (min-width: 460px) { .promoActions { grid-template-columns: 1fr 1fr; } }
+.promoOdds summary { display: inline-flex; align-items: center; min-height: 44px; cursor: pointer; color: var(--ink-2); font-weight: 600; font-size: 0.9rem; }
+.promoOdds ul { list-style: none; margin: 0; padding: 0; }
+.promoOdds li { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--rule); color: var(--ink); font-size: 0.92rem; }
+.voucher { display: grid; gap: 8px; justify-items: center; text-align: center; padding: 18px 12px; border: 2px dashed var(--ink); border-radius: 4px; }
+.voucher p { color: var(--ink); }
+.voucherLabel { font-family: var(--display); font-weight: 600; font-size: 0.95rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-2) !important; }
+.voucherCode { display: inline-flex; align-items: center; gap: 8px; font-family: var(--display); font-weight: 700; font-size: clamp(1.6rem, 8vw, 2.1rem); letter-spacing: 0.08em; font-variant-numeric: tabular-nums; }
+.voucherPrize { font-weight: 700; font-size: 1.05rem; }
+.voucher .promoActions { width: 100%; }
+.promoSmall { color: var(--ink-2) !important; font-size: 0.76rem; line-height: 1.45; }
+.promoSmall a { color: inherit; text-underline-offset: 2px; }
+
+/* ── full-screen photo viewer: the dark band, so the photo is all you see ── */
+.viewer {
+  width: 100vw; height: 100vh; height: 100dvh; max-width: none; max-height: none; margin: 0; padding: 0; border: 0;
+  display: flex; flex-direction: column; overflow: hidden; background: var(--band); color: var(--on-band);
+}
+.viewer:not([open]) { display: none; }
+.viewer::backdrop { background: var(--band); }
+.viewer :focus-visible { outline-color: var(--on-band); }
+.viewerBar {
+  display: flex; align-items: center; gap: 2px; padding: 6px 6px 6px 16px;
+  padding-top: max(6px, env(safe-area-inset-top));
+}
+.viewerCount { margin-right: auto; font-family: var(--display); font-weight: 600; font-size: 1.15rem; letter-spacing: 0.04em; font-variant-numeric: tabular-nums; }
+.viewerBtn {
+  flex: none; width: 44px; height: 44px; display: grid; place-items: center; padding: 0;
+  border: 1.5px solid transparent; border-radius: var(--radius); background: transparent; color: var(--on-band); cursor: pointer;
+  transition: border-color 0.15s;
+}
+.viewerBtn:hover { border-color: rgba(var(--on-band-rgb), 0.5); }
+.viewerBtn:disabled { opacity: 0.35; cursor: default; border-color: transparent; }
+.viewerStage { position: relative; flex: 1; min-height: 0; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; }
+.viewerImg {
+  position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain;
+  transform-origin: center; transition: transform 0.2s var(--ease); -webkit-user-drag: none;
+}
+.viewerMoving { transition: none; }
+.viewerPrev, .viewerNext { position: absolute; top: 50%; margin-top: -22px; border-color: rgba(var(--on-band-rgb), 0.35); background: rgba(0, 0, 0, 0.45); }
+.viewerPrev { left: 8px; }
+.viewerNext { right: 8px; }
+.viewerFoot {
+  display: grid; gap: 2px; padding: 8px 16px; padding-bottom: max(10px, env(safe-area-inset-bottom));
+  text-align: center; font-size: 0.82rem; line-height: 1.4; overflow-wrap: anywhere;
+}
+.viewerFoot p { color: rgba(var(--on-band-rgb), 0.72); }
+.viewerFoot a { color: inherit; text-underline-offset: 2px; }
 
 .carSide { grid-area: side; display: grid; gap: 30px; min-width: 0; }
 .carSummary { display: grid; gap: 14px; container-type: inline-size; }
@@ -933,4 +1011,5 @@
   .cardLink:hover, .cardLink:hover .cardMedia .photoArt svg, .cardLink:hover .cardMedia .photo, .cardLink:hover .cardMonthly svg { transform: none; }
   .btnPrimary:hover, .btnPrimary:active { transform: none; }
   .sheet[open], .toast { animation: none; }
+  .viewerImg { transition: none; }
 }

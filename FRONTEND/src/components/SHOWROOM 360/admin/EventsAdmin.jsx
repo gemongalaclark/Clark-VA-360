@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CalendarPlus, Pencil, Trash2, Tag } from 'lucide-react';
+import { CalendarPlus, Pencil, Trash2, Tag, Gift } from 'lucide-react';
 import s from '../Showroom360.module.css';
 import a from './Admin.module.css';
 import { useShowroom } from '../store.js';
@@ -24,11 +24,13 @@ export default function EventsAdmin({ role }) {
     <div className={a.page}>
       <div className={a.pageHead}>
         <h1 className={s.h1}>Events</h1>
-        {canAddEvent(role) && (
-          <div className={a.headActions}>
+        <div className={a.headActions}>
+          {/* phones have no Promos tab: it is reached from here (the sidebar has its own link) */}
+          <Link to="/showroom/admin/promos" className={`${s.btnGhost} ${a.phoneOnly}`}><Gift size={18} strokeWidth={1.75} aria-hidden="true" />Promos</Link>
+          {canAddEvent(role) && (
             <Link to="/showroom/admin/events/new" className={s.btnPrimary}><CalendarPlus size={18} strokeWidth={1.75} aria-hidden="true" />New event</Link>
-          </div>
-        )}
+          )}
+        </div>
       </div>
       <p className={`${s.muted} ${a.intro}`}>While an event is live, its cars lead the home carousel and show the sale price with the old price crossed out.</p>
 

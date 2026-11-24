@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight, Phone, ExternalLink, ArrowRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Phone, ExternalLink, ArrowRight, BellRing } from 'lucide-react';
 import styles from '../Showroom360.module.css';
 import { useShowroom } from '../store.js';
 import { t, timeLeft } from '../i18n.js';
@@ -9,6 +9,7 @@ import {
   TRANSMISSIONS, FUELS, BODY_TYPES, mapsOpenUrl, filterCars,
 } from '../showroomRules.js';
 import { CarCard } from './Inventory.jsx';
+import LeadForm from './LeadForm.jsx';
 
 export const telHref = (phone) => `tel:${String(phone || '').replace(/[^\d+]/g, '')}`;
 const mapsEmbedUrl = (s) =>
@@ -122,7 +123,26 @@ export default function Home() {
           </ul>
         </section>
       )}
+
+      <WishBand lang={lang} />
     </>
+  );
+}
+
+/* The waitlist on the home page: for buyers who don't see their car */
+function WishBand({ lang }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <section className={styles.section} aria-labelledby="sr-wish">
+      <h2 id="sr-wish" className={styles.ruleHead}>{t(lang, 'wish.homeTitle')}</h2>
+      <div className={styles.wishBandBody}>
+        <p className={styles.lead}>{t(lang, 'wish.homeText')}</p>
+        <button type="button" className={styles.btnPrimary} onClick={() => setOpen(true)}>
+          <BellRing size={18} strokeWidth={1.75} aria-hidden="true" />{t(lang, 'wish.cta')}
+        </button>
+      </div>
+      {open && <LeadForm type="wish" query={{}} onClose={() => setOpen(false)} />}
+    </section>
   );
 }
 
@@ -224,8 +244,8 @@ function Featured({ slides }) {
                   <p className={styles.slideFacts}>
                     {[formatKm(car.odometer), TRANSMISSIONS[car.transmission], FUELS[car.fuel]].join(' · ')}
                   </p>
-                  <div className={`${styles.sticker} ${info.event ? styles.stickerSale : ''}`}>
-                    <span className={styles.stickerHead}>{info.event ? info.event.name : t(lang, 'sticker.price')}</span>
+                  <div className={`${styles.sticker} ${info.event || info.dropped ? styles.stickerSale : ''}`}>
+                    <span className={styles.stickerHead}>{info.event ? info.event.name : info.dropped ? t(lang, 'price.dropped') : t(lang, 'sticker.price')}</span>
                     <PriceTag info={info} wasLabel={t(lang, 'car.was')} className={styles.slidePrice} />
                     <span className={styles.stickerTear}>
                       {car.financing

@@ -1,7 +1,7 @@
 /* Sample shop for the pitch demo. Everything here is made up: the shop, the phone
    number (0900 is not a live prefix) and the cars. Prices sit inside CarMark 360's
    used-price range for the same generation (genId), checked by the tests. */
-import { DEFAULT_FINANCING } from './showroomRules.js';
+import { DEFAULT_FINANCING, DEFAULT_PRICE_RULE, carTitle } from './showroomRules.js';
 import { samplePhotoSet } from './samplePhotos.js';
 
 export const DEFAULT_SETTINGS = {
@@ -20,6 +20,7 @@ export const DEFAULT_SETTINGS = {
   pin: '0360',          /* admin: cars, events, leads */
   superPin: '0361',     /* superadmin: everything, plus Settings and History */
   financing: DEFAULT_FINANCING,
+  priceRule: DEFAULT_PRICE_RULE,
 };
 
 const DAY = 864e5;
@@ -82,11 +83,28 @@ export function normalizeData(data, now = new Date()) {
       photoIds: Array.isArray(c.photoIds) ? c.photoIds : [],
     })),
     events: list(data?.events).map(e => ({
-      name: '', tagline: '', ...e,
+      name: '', tagline: '', promoId: null, ...e,
       items: Array.isArray(e.items) ? e.items.filter(i => isObj(i) && i.carId) : [],
     })),
-    leads: list(data?.leads).map(l => ({ status: 'new', carLabel: '', ...l })),
-    settings: { ...DEFAULT_SETTINGS, ...s, financing: { ...DEFAULT_FINANCING, ...fin, addOn } },
+    leads: list(data?.leads).map(l => {
+      const lead = { status: 'new', carLabel: '', ...l };
+      if (lead.type !== 'wish') return lead;
+      return {
+        ...lead,
+        query: isObj(lead.query) ? lead.query : {},
+        notifiedCarIds: Array.isArray(lead.notifiedCarIds) ? lead.notifiedCarIds : [],
+      };
+    }),
+    promos: list(data?.promos).map(p => ({
+      name: '', code: '', permit: '', ...p,
+      prizes: Array.isArray(p.prizes) ? p.prizes.filter(isObj) : [],
+    })),
+    claims: list(data?.claims).map(c => ({ redeemedAt: null, stockNo: '', ...c })),
+    settings: {
+      ...DEFAULT_SETTINGS, ...s,
+      financing: { ...DEFAULT_FINANCING, ...fin, addOn },
+      priceRule: { ...DEFAULT_PRICE_RULE, ...(isObj(s.priceRule) ? s.priceRule : {}) },
+    },
   };
 }
 
@@ -114,6 +132,7 @@ export function makeSeed(now = new Date()) {
     tagline: 'Year-end prices on selected units. Reserve before the holidays.',
     startsAt: ago(3),
     endsAt: ago(-30),
+    promoId: SAMPLE_PROMO_ID,
     items: [
       { carId: 'car-01', salePrice: 525000 },
       { carId: 'car-03', salePrice: 398000 },
@@ -122,9 +141,89 @@ export function makeSeed(now = new Date()) {
   };
 
   return {
-    cars, events: [event], leads: [],
-    settings: { ...DEFAULT_SETTINGS, samplePhotos: 1, financing: { ...DEFAULT_FINANCING, addOn: { ...DEFAULT_FINANCING.addOn } } },
+    cars, events: [event], leads: sampleLeads(now, cars), promos: [samplePromo(now)], claims: [],
+    settings: {
+      ...DEFAULT_SETTINGS, samplePhotos: 1, sampleLeads: 1, samplePromo: 1,
+      financing: { ...DEFAULT_FINANCING, addOn: { ...DEFAULT_FINANCING.addOn } }, priceRule: { ...DEFAULT_PRICE_RULE },
+    },
   };
+}
+
+/* Sample promo (2026-11-24): a prize wheel on the Christmas Sale, so a fresh demo shows
+   the buyer pop-up. The odds keep the dear prize rare. No DTI permit: it says "sample". */
+const SAMPLE_PROMO_ID = 'promo-sample';
+export function samplePromo(now) {
+  const ago = (days) => new Date(now.getTime() - days * DAY).toISOString();
+  return {
+    id: SAMPLE_PROMO_ID, name: 'Christmas Spin', code: 'SPIN-XMAS', permit: '',
+    prizes: [
+      { id: 'prize-1', label: '₱5,000 off', chance: 40 },
+      { id: 'prize-2', label: 'Full tank of gas', chance: 30 },
+      { id: 'prize-3', label: 'Free window tint', chance: 25 },
+      { id: 'prize-4', label: '₱10,000 off', chance: 5 },
+    ],
+    startsAt: ago(3), endsAt: ago(-30), createdAt: ago(3),
+  };
+}
+
+/* A demo saved before promos shipped gets the sample promo once (settings.samplePromo marks
+   it done). It is put on the Christmas Sale only if that sale is still there and has no
+   promo of its own. Returns the data, the added promo and the changed event (or nulls). */
+export function applySamplePromo(data, now = new Date()) {
+  if (data.settings?.samplePromo || data.promos.some(p => p.id === SAMPLE_PROMO_ID)) return { data, promo: null, event: null };
+  const promo = samplePromo(now);
+  const sale = data.events.find(e => e.id === 'event-christmas' && !e.promoId);
+  const event = sale ? { ...sale, promoId: promo.id } : null;
+  return {
+    data: { ...data, promos: [...data.promos, promo], events: data.events.map(e => (event && e.id === event.id ? event : e)) },
+    promo, event,
+  };
+}
+
+/* Sample buyers (2026-11-24), so a fresh demo shows every autopilot task: a late reply
+   (Mark), a test drive to remind (Joy), a quiet reservation (Liza), and two waitlist
+   requests. Ramon's matches once the Montero's suggested price drop is applied; Ana's
+   matches when a Toyota MPV up to ₱900,000 is added live during a pitch. Ben's closed
+   test drive gives the week report something to count. Made-up names and 0900 numbers.
+   Only buyers whose car is in `cars` are returned (waitlist buyers have no car). */
+export function sampleLeads(now, cars) {
+  const at = (hours) => new Date(now.getTime() - hours * 36e5).toISOString();
+  const day = (d) => {
+    const x = new Date(now.getFullYear(), now.getMonth(), now.getDate() + d);
+    return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`;
+  };
+  const rows = [
+    { id: 'lead-sample-1', type: 'test-drive', carId: 'car-04', name: 'Mark D.', mobile: '0900 000 0101', lang: 'en',
+      date: day(1), slot: 'morning', note: 'Can I bring my own mechanic?', status: 'new', createdAt: at(3) },
+    { id: 'lead-sample-2', type: 'test-drive', carId: 'car-09', name: 'Joy R.', mobile: '0900 000 0102', lang: 'ceb',
+      date: day(1), slot: 'afternoon', note: '', status: 'contacted', createdAt: at(26), contactedAt: at(25) },
+    { id: 'lead-sample-3', type: 'reserve', carId: 'car-06', name: 'Liza C.', mobile: '0900 000 0103', lang: 'en',
+      date: '', slot: '', note: 'Planning to apply for a bank loan.', status: 'contacted', createdAt: at(5 * 24), contactedAt: at(4 * 24) },
+    { id: 'lead-sample-4', type: 'wish', carId: null, carLabel: 'SUV · up to ₱900,000', query: { body: 'suv', priceMax: 900000 },
+      notifiedCarIds: [], name: 'Ramon T.', mobile: '0900 000 0104', lang: 'en',
+      date: '', slot: '', note: 'Diesel if possible.', status: 'contacted', createdAt: at(8 * 24), contactedAt: at(8 * 24 - 1) },
+    { id: 'lead-sample-5', type: 'wish', carId: null, carLabel: 'Toyota · MPV · up to ₱900,000', query: { make: 'Toyota', body: 'mpv', priceMax: 900000 },
+      notifiedCarIds: [], name: 'Ana P.', mobile: '0900 000 0105', lang: 'ceb',
+      date: '', slot: '', note: '', status: 'contacted', createdAt: at(3 * 24), contactedAt: at(3 * 24 - 2) },
+    { id: 'lead-sample-6', type: 'test-drive', carId: 'car-10', name: 'Ben S.', mobile: '0900 000 0106', lang: 'en',
+      date: day(-7), slot: 'morning', note: '', status: 'closed', createdAt: at(8 * 24), contactedAt: at(8 * 24 - 1) },
+  ];
+  const byId = new Map(cars.map(c => [c.id, c]));
+  return rows
+    .filter(r => !r.carId || byId.has(r.carId))
+    .map(r => (r.carId ? { ...r, carLabel: `${carTitle(byId.get(r.carId))} (${byId.get(r.carId).stockNo})` } : r));
+}
+
+/* A demo saved before the sample buyers shipped gets them once (settings.sampleLeads marks
+   it done). A buyer is skipped if their car was deleted or is now a different make or model,
+   or if they are already there. Returns the data and the added leads. */
+export function applySampleLeads(data, now = new Date()) {
+  if (data.settings?.sampleLeads) return { data, leads: [] };
+  const seed = Object.fromEntries(makeSeed(now).cars.map(c => [c.id, c]));
+  const same = data.cars.filter(c => seed[c.id] && seed[c.id].make === c.make && seed[c.id].model === c.model);
+  const have = new Set(data.leads.map(l => l.id));
+  const leads = sampleLeads(now, same).filter(l => !have.has(l.id));
+  return { data: { ...data, leads: [...data.leads, ...leads] }, leads };
 }
 
 /* The sample cars' colours before they were matched to their photos (2026-11-24) */

@@ -1,19 +1,20 @@
 import { useRef, useState } from 'react';
-import { ChevronLeft, Plus, X, SearchX } from 'lucide-react';
+import { ChevronLeft, Plus, X, SearchX, Gift } from 'lucide-react';
 import s from '../Showroom360.module.css';
 import a from './Admin.module.css';
 import { useShowroom, newId } from '../store.js';
 import { useNav, Link, useToast, adminSaveError } from '../ui.jsx';
-import { validateEvent, carTitle, formatPeso } from '../showroomRules.js';
+import { validateEvent, carTitle, formatPeso, canManagePromos } from '../showroomRules.js';
+import { findPromoByCode, promoStatus } from '../promoRules.js';
 
 const pad = (n) => String(n).padStart(2, '0');
 /* <input type="datetime-local"> works in local time; the data is stored as ISO */
-const toLocalInput = (iso) => {
+export const toLocalInput = (iso) => {
   if (!iso) return '';
   const d = new Date(iso);
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 };
-const fromLocalInput = (v) => {
+export const fromLocalInput = (v) => {
   const d = v ? new Date(v) : null;
   return d && !Number.isNaN(d.getTime()) ? d.toISOString() : '';
 };
@@ -26,8 +27,8 @@ function blankEvent() {
   return { name: '', tagline: '', startsAt: start.toISOString(), endsAt: end.toISOString(), items: [] };
 }
 
-export default function EventForm({ id }) {
-  const { cars, events, saveEvent } = useShowroom();
+export default function EventForm({ id, role }) {
+  const { cars, events, promos, saveEvent } = useShowroom();
   const { navigate } = useNav();
   const toast = useToast();
   const isNew = id === 'new';
@@ -38,9 +39,12 @@ export default function EventForm({ id }) {
       name: src.name, tagline: src.tagline || '',
       start: toLocalInput(src.startsAt), end: toLocalInput(src.endsAt),
       items: src.items.map(i => ({ carId: i.carId, salePrice: String(i.salePrice) })),
+      promoId: src.promoId || null,
     };
   });
   const [errors, setErrors] = useState({});
+  const [promoCode, setPromoCode] = useState('');
+  const [promoError, setPromoError] = useState('');
   const formRef = useRef(null);
 
   if (!isNew && !original) {
@@ -58,6 +62,20 @@ export default function EventForm({ id }) {
   const removeItem = (i) => setForm(f => ({ ...f, items: f.items.filter((_, k) => k !== i) }));
   const addItem = () => setForm(f => ({ ...f, items: [...f.items, { carId: '', salePrice: '' }] }));
 
+  /* Only the superadmin puts a promo on a sale, by its promo code */
+  const managePromos = canManagePromos(role);
+  const attached = promos.find(p => p.id === form.promoId) || null;
+  const eventEnded = Date.parse(fromLocalInput(form.end)) <= Date.now();
+  const addPromo = () => {
+    const found = findPromoByCode(promos, promoCode);
+    if (!found) { setPromoError('No promo has that code. Copy it from the Promos page.'); return; }
+    if (promoStatus(found, new Date()) === 'ended') { setPromoError(`“${found.name}” has ended. Pick a promo that is live or upcoming.`); return; }
+    setPromoError('');
+    setPromoCode('');
+    setForm(f => ({ ...f, promoId: found.id }));
+  };
+  const promoWhen = (p) => `${new Date(p.startsAt).toLocaleDateString('en-PH', { month: 'short', day: 'numeric' })} – ${new Date(p.endsAt).toLocaleDateString('en-PH', { month: 'short', day: 'numeric' })}`;
+
   const sellable = cars.filter(c => c.status !== 'sold').sort((x, y) => carTitle(x).localeCompare(carTitle(y)));
 
   const submit = async (e) => {
@@ -69,6 +87,7 @@ export default function EventForm({ id }) {
       startsAt: fromLocalInput(form.start),
       endsAt: fromLocalInput(form.end),
       items: form.items.filter(i => i.carId).map(i => ({ carId: i.carId, salePrice: Number(i.salePrice) || 0 })),
+      promoId: form.promoId || null,
     };
     const errs = validateEvent(ev, events, cars);
     setErrors(errs);
@@ -158,6 +177,40 @@ export default function EventForm({ id }) {
           })}
         </ul>
         <button type="button" className={s.btnGhost} onClick={addItem}><Plus size={18} aria-hidden="true" />Add a car</button>
+      </fieldset>
+
+      <fieldset className={a.fieldset}>
+        <legend>Promo wheel</legend>
+        {attached ? (
+          <div className={a.promoOn}>
+            <p><Gift size={16} aria-hidden="true" className={a.rowIconRed} /> <strong>{attached.name}</strong> · {attached.code}</p>
+            <p className={s.muted}>{promoWhen(attached)} · {promoStatus(attached, new Date()) === 'live' ? 'live now' : promoStatus(attached, new Date())}. While this sale and the promo are both live, buyers see the wheel once per visit.</p>
+            {managePromos && (
+              <button type="button" className={s.textBtn} onClick={() => setForm(f => ({ ...f, promoId: null }))}>Remove promo</button>
+            )}
+          </div>
+        ) : managePromos ? (
+          eventEnded ? (
+            <p className={s.hint}>This event has ended, so a promo can’t be added.</p>
+          ) : (
+            <>
+              <p className={s.hint}>Type the promo code from the Promos page, e.g. SPIN-XMAS. The change is saved with the event.</p>
+              <div className={a.promoAttach}>
+                <div className={s.field}>
+                  <label htmlFor="ef-promo" className={s.srOnly}>Promo code</label>
+                  <input id="ef-promo" className={s.input} placeholder="SPIN-XXXX" autoCapitalize="characters" autoComplete="off"
+                    value={promoCode} onChange={(e) => { setPromoCode(e.target.value); setPromoError(''); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addPromo(); } }}
+                    aria-invalid={promoError ? 'true' : undefined} aria-describedby={promoError ? 'ef-promo-err' : undefined} />
+                  {promoError && <p className={s.error} id="ef-promo-err">{promoError}</p>}
+                </div>
+                <button type="button" className={s.btnGhost} onClick={addPromo}>Add promo</button>
+              </div>
+            </>
+          )
+        ) : (
+          <p className={s.hint}>No promo on this event. The superadmin can add one.</p>
+        )}
       </fieldset>
 
       <div className={a.saveBar} data-savebar="">

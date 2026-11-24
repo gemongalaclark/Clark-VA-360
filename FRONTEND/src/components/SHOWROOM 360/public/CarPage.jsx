@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight, SearchX, CalendarCheck, BookmarkCheck } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ChevronLeft, ChevronRight, SearchX, CalendarCheck, BookmarkCheck, Expand, BellRing } from 'lucide-react';
 import styles from '../Showroom360.module.css';
 import { useShowroom } from '../store.js';
 import { t } from '../i18n.js';
@@ -12,6 +12,8 @@ import ConditionCard from './ConditionCard.jsx';
 import LoanCalc from './LoanCalc.jsx';
 import InquiryBar from './InquiryBar.jsx';
 import LeadForm from './LeadForm.jsx';
+import PhotoViewer from './PhotoViewer.jsx';
+import { similarQuery } from '../autoRules.js';
 
 export default function CarPage({ id }) {
   const { cars, events, settings } = useShowroom();
@@ -89,9 +91,9 @@ export default function CarPage({ id }) {
           </div>
 
           {/* The car's window sticker: price, monthly, the ways to ask, the stock no. */}
-          <div className={`${styles.priceBox} ${info.event ? styles.priceBoxSale : ''}`}>
+          <div className={`${styles.priceBox} ${info.event || info.dropped ? styles.priceBoxSale : ''}`}>
             <p className={styles.priceBoxHead}>
-              <span>{info.event ? info.event.name : t(lang, 'sticker.price')}</span>
+              <span>{info.event ? info.event.name : info.dropped ? t(lang, 'price.dropped') : t(lang, 'sticker.price')}</span>
               {car.negotiable && !sold && <span>{t(lang, 'car.negotiable')}</span>}
             </p>
             <div className={styles.priceBoxBody}>
@@ -118,6 +120,11 @@ export default function CarPage({ id }) {
                   </div>
                   {reserved && <p className={styles.reservedNote}>{t(lang, 'car.reservedNoContact')}</p>}
                 </>
+              )}
+              {(sold || reserved) && (
+                <button type="button" className={`${sold ? styles.btnPrimary : styles.btnGhost} ${styles.btnBlock}`} onClick={() => setLead('wish')}>
+                  <BellRing size={18} strokeWidth={1.75} aria-hidden="true" />{t(lang, 'wish.similar')}
+                </button>
               )}
               {car.stockNo && (
                 <p className={styles.barcode}><span className={styles.srOnly}>{t(lang, 'spec.stock')} </span>{car.stockNo}</p>
@@ -156,7 +163,7 @@ export default function CarPage({ id }) {
         </div>
       </div>
 
-      <LeadForm key={lead || 'none'} type={lead} car={car} onClose={() => setLead(null)} />
+      <LeadForm key={lead || 'none'} type={lead} car={car} query={lead === 'wish' ? similarQuery(car, info.price) : undefined} onClose={() => setLead(null)} />
       {car.status === 'reserved' && !seenReserved && <ReservedOverlay lang={lang} onView={() => setSeenReserved(true)} />}
     </div>
   );
@@ -202,6 +209,14 @@ function Gallery({ car, title, lang }) {
   const i = Math.min(index, total - 1);
   const go = (d) => setIndex(v => (Math.min(v, total - 1) + d + total) % total);
   const credit = sampleCredit(car.photoIds[i]);
+  const { photoUrl } = useShowroom();
+  const zoomable = !!photoUrl(car.photoIds[i]);
+  const [viewer, setViewer] = useState(false);
+  /* closed from inside (button, Esc): drop the history step the viewer added */
+  const closeViewer = useCallback((fromBack) => {
+    setViewer(false);
+    if (!fromBack && window.history.state?.srViewer) window.history.back();
+  }, []);
 
   return (
     <div className={styles.gallery}>
@@ -214,6 +229,11 @@ function Gallery({ car, title, lang }) {
         }}
       >
         <CarPhoto car={car} index={i} label={total > 1 ? `${title}, ${t(lang, 'car.photo', { n: i + 1, total })}` : title} mark />
+        {zoomable && (
+          <button type="button" className={styles.galleryZoom} onClick={() => setViewer(true)} aria-label={t(lang, 'car.zoomOpen', { n: i + 1, total })}>
+            <span className={styles.galleryZoomIcon}><Expand size={18} strokeWidth={2} aria-hidden="true" /></span>
+          </button>
+        )}
         {total > 1 && (
           <>
             <button type="button" className={`${styles.galleryNav} ${styles.galleryPrev}`} onClick={() => go(-1)} aria-label={t(lang, 'car.prevPhoto')}>
@@ -248,6 +268,7 @@ function Gallery({ car, title, lang }) {
           ))}
         </div>
       )}
+      {viewer && <PhotoViewer car={car} title={title} lang={lang} index={i} onIndex={setIndex} onClose={closeViewer} />}
     </div>
   );
 }

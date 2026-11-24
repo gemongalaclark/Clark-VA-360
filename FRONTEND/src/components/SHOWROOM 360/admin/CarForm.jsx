@@ -11,6 +11,7 @@ import {
 } from '../showroomRules.js';
 import { MODELS } from '../../CARMARK 360/carData.js';
 import { localISODate } from '../public/LeadForm.jsx';
+import { waitingFor } from '../autoRules.js';
 
 const MAX_PHOTOS = 12;
 const BLANK = {
@@ -24,8 +25,8 @@ const FIELD_ORDER = ['year', 'make', 'model', 'transmission', 'fuel', 'odometer'
 const digits = (v) => v.replace(/\D/g, '');
 
 export default function CarForm({ id }) {
-  const { cars, saveCar, addPhoto, removePhotos } = useShowroom();
-  const { navigate } = useNav();
+  const { cars, leads, events, saveCar, addPhoto, removePhotos } = useShowroom();
+  const { navigate, now } = useNav();
   const toast = useToast();
   const isNew = id === 'new';
   const original = isNew ? null : cars.find(c => c.id === id);
@@ -143,7 +144,11 @@ export default function CarForm({ id }) {
       await saveCar(car);
       if (removedOriginal.current.length) await removePhotos(removedOriginal.current);
       saved.current = true;
-      toast(`${car.stockNo} saved.`);
+      const waiting = waitingFor(car, leads, events, new Date()).length;
+      if (waiting) {
+        toast(`${car.stockNo} saved. ${waiting} buyer${waiting === 1 ? ' is' : 's are'} waiting for a car like this.`,
+          { label: 'See', onClick: () => navigate('/showroom/admin') });
+      } else toast(`${car.stockNo} saved.`);
       navigate('/showroom/admin/cars');
     } catch (err) {
       toast(adminSaveError(err));
@@ -184,6 +189,8 @@ export default function CarForm({ id }) {
 
   const title = original ? carTitle(original) : 'Add a car';
 
+  const waiting = original ? waitingFor(original, leads, events, now) : [];
+
   return (
     <form ref={formRef} className={a.page} onSubmit={submit} noValidate>
       <Link to="/showroom/admin/cars" className={s.crumb}><ChevronLeft size={18} aria-hidden="true" />Cars</Link>
@@ -191,6 +198,12 @@ export default function CarForm({ id }) {
         <h1 className={s.h1}>{title}</h1>
         {original && <span className={a.count}>{original.stockNo}</span>}
       </div>
+      {original && waiting.length > 0 && (
+        <p className={a.waitNote}>
+          {waiting.length} buyer{waiting.length === 1 ? ' is' : 's are'} waiting for a car like this.{' '}
+          <Link to="/showroom/admin" className={a.inlineLink}>Message them from the dashboard</Link>
+        </p>
+      )}
 
       <fieldset className={a.fieldset}>
         <legend>Basics</legend>

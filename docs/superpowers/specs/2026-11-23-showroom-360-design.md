@@ -385,3 +385,11 @@ Clark's ask: enhance the admin navigation bar. Same look, sharper wayfinding.
 - **Phone:**
   - Bottom tabs: condensed uppercase labels, a bolder icon on the current tab, and press feedback.
   - Top bar: the role tag, and a thin divider before Lock. Below 400px the shop name is slightly smaller, so a three-word name fits at 390px with four buttons. At 360px the superadmin's name may still end in "…".
+
+## Autopilot and photo zoom (added 2026-11-24)
+
+Waitlist, follow-up tasks, price-drop rules and a week report, all without a server: see [2026-11-24-showroom-autopilot-design.md](2026-11-24-showroom-autopilot-design.md). Car page photos open full screen with pinch and double-tap zoom.
+
+## Promos: prize wheel (added 2026-11-24)
+
+Superadmin-made prize wheels attached to an event by promo code; buyers spin once and claim a voucher. See [2026-11-24-showroom-promos-design.md](2026-11-24-showroom-promos-design.md).

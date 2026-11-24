@@ -6,7 +6,7 @@
 import { useEffect, useState } from 'react';
 import {
   LayoutDashboard, CarFront, CalendarRange, Inbox, Settings as SettingsIcon, History as HistoryIcon,
-  ExternalLink, Lock, SearchX, ShieldAlert,
+  ExternalLink, Lock, SearchX, ShieldAlert, Gift,
 } from 'lucide-react';
 import s from '../Showroom360.module.css';
 import a from './Admin.module.css';
@@ -20,16 +20,21 @@ import EventForm from './EventForm.jsx';
 import Leads from './Leads.jsx';
 import Settings from './Settings.jsx';
 import History from './History.jsx';
-import { roleForPin, canOpen, canAddEvent, liveEvents } from '../showroomRules.js';
+import Promos from './Promos.jsx';
+import PromoForm from './PromoForm.jsx';
+import { roleForPin, canOpen, canAddEvent, canManagePromos, liveEvents } from '../showroomRules.js';
+import { promoStatus } from '../promoRules.js';
 
 const UNLOCK_KEY = 'showroom360:unlocked';
 
-/* History lives in the phone's top bar, not the bottom tabs (they stay at 5 or fewer).
+/* History lives in the phone's top bar and Promos on the Events page, not the bottom tabs
+   (they stay at 5 or fewer).
    `shop` pages sit in their own group in the sidebar, under the day-to-day ones. */
 const PAGES = [
   { id: 'dashboard', label: 'Dashboard', path: '/showroom/admin', Icon: LayoutDashboard },
   { id: 'cars', label: 'Cars', path: '/showroom/admin/cars', Icon: CarFront },
   { id: 'events', label: 'Events', path: '/showroom/admin/events', Icon: CalendarRange },
+  { id: 'promos', label: 'Promos', path: '/showroom/admin/promos', Icon: Gift, noTab: true },
   { id: 'leads', label: 'Leads', path: '/showroom/admin/leads', Icon: Inbox },
   { id: 'history', label: 'History', path: '/showroom/admin/history', Icon: HistoryIcon, noTab: true, shop: true },
   { id: 'settings', label: 'Settings', path: '/showroom/admin/settings', Icon: SettingsIcon, shop: true },
@@ -41,7 +46,7 @@ const readRole = () => {
 };
 
 export default function Admin() {
-  const { settings, leads, cars, events, persistent, setActor } = useShowroom();
+  const { settings, leads, cars, events, promos, persistent, setActor } = useShowroom();
   const { loc, theme, now } = useNav();
   const [role, setRole] = useState(readRole);
 
@@ -66,6 +71,7 @@ export default function Admin() {
   const sideCount = {
     cars: `${inStock} in stock`,
     events: liveCount > 0 && `${liveCount} live`,
+    promos: promos.some(p => promoStatus(p, now) === 'live') && 'live',
   };
   const sub = String(loc.sub || 'dashboard').toLowerCase();
   const pages = PAGES.filter(p => canOpen(role, p.id));
@@ -77,7 +83,10 @@ export default function Admin() {
   else if (sub === 'cars' && !loc.id) page = <CarsAdmin />;
   else if (sub === 'cars') page = <CarForm key={loc.id} id={loc.id} />;
   else if (sub === 'events' && !loc.id) page = <EventsAdmin role={role} />;
-  else if (sub === 'events') page = <EventForm key={loc.id} id={loc.id} />;
+  else if (sub === 'events') page = <EventForm key={loc.id} id={loc.id} role={role} />;
+  else if (sub === 'promos' && !loc.id) page = <Promos role={role} />;
+  else if (sub === 'promos' && !canManagePromos(role)) page = <SuperadminOnly />;
+  else if (sub === 'promos') page = <PromoForm key={loc.id} id={loc.id} />;
   else if (sub === 'leads') page = <Leads />;
   else if (sub === 'settings') page = <Settings />;
   else if (sub === 'history') page = <History />;
@@ -202,7 +211,7 @@ function SuperadminOnly() {
     <div className={s.empty}>
       <ShieldAlert size={40} strokeWidth={1.5} aria-hidden="true" />
       <h1>Superadmin only</h1>
-      <p>Settings, History and adding events need the superadmin PIN. Lock the admin and sign in again to switch.</p>
+      <p>Settings, History, adding events and changing promos need the superadmin PIN. Lock the admin and sign in again to switch.</p>
       <Link to="/showroom/admin" className={s.btnPrimary}>Go to dashboard</Link>
     </div>
   );

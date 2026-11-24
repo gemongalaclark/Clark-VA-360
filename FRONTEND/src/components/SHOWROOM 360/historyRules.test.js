@@ -3,9 +3,10 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   carEntry, carDeletedEntry, eventEntry, eventDeletedEntry, settingsEntry, leadEntry, resetEntry,
-  addToHistory, groupByDay, normalizeHistory, HISTORY_LIMIT,
+  addToHistory, groupByDay, normalizeHistory, HISTORY_LIMIT, HISTORY_KINDS, promoEntry, promoDeletedEntry, redeemEntry,
 } from './historyRules.js';
 import { DEFAULT_SETTINGS } from './seedData.js';
+import { applyPriceDrop, skipPriceDrop } from './autoRules.js';
 
 const NOW = new Date(2026, 10, 23, 15, 42);
 const car = (over = {}) => ({
@@ -172,4 +173,69 @@ test('a value that looks the same after saving is not a change (event times save
   const e = eventEntry(before, after, CARS, NOW);
   assert.deepEqual(e.changes.map(r => r.label), ['Sale price · 2019 Toyota Vios 1.3 E CVT']);
   assert.equal(carEntry(car({ listedAt: '2026-11-11T02:00:00.000Z' }), car({ listedAt: '2026-11-11T05:30:00.000Z' }), NOW), null);
+});
+
+/* ── autopilot ── */
+
+test('a price drop from the to-do list reads as Price dropped', () => {
+  const e = carEntry(car(), applyPriceDrop(car(), 525000, NOW), NOW);
+  assert.equal(e.action, 'Price dropped');
+  assert.deepEqual(e.changes, [{ label: 'Price', from: '₱548,000', to: '₱525,000' }]);
+  /* a price typed in by hand is still an ordinary edit */
+  assert.equal(carEntry(car(), car({ price: 525000 }), NOW).action, 'Edited');
+});
+
+test('skipping a suggested price drop logs nothing', () => {
+  assert.equal(carEntry(car(), skipPriceDrop(car(), NOW), NOW), null);
+});
+
+test('the price-drop rule shows in the settings history', () => {
+  const e = settingsEntry(DEFAULT_SETTINGS, { ...DEFAULT_SETTINGS, priceRule: { on: false, days: 60, pct: 5 } }, NOW);
+  assert.deepEqual(row(e, 'Price-drop rule'), { label: 'Price-drop rule', from: 'On', to: 'Off' });
+  assert.deepEqual(row(e, 'Price drop after'), { label: 'Price drop after', from: '45 days', to: '60 days' });
+  assert.deepEqual(row(e, 'Price drop size'), { label: 'Price drop size', from: '3%', to: '5%' });
+  assert.equal(settingsEntry(DEFAULT_SETTINGS, { ...DEFAULT_SETTINGS, priceRule: { ...DEFAULT_SETTINGS.priceRule } }, NOW), null);
+});
+
+/* ── promos ── */
+
+const PROMO = {
+  id: 'promo-1', name: 'Christmas Spin', code: 'SPIN-XMAS', permit: '',
+  prizes: [{ id: 'a', label: '₱5,000 off', chance: 60 }, { id: 'b', label: 'Full tank', chance: 40 }],
+  startsAt: '2026-11-20T00:00:00.000Z', endsAt: '2026-12-20T00:00:00.000Z',
+};
+
+test('creating, editing and deleting a promo is logged', () => {
+  assert.equal(HISTORY_KINDS.promo, 'Promos');
+  const made = promoEntry(undefined, PROMO, NOW);
+  assert.equal(made.kind, 'promo');
+  assert.equal(made.action, 'Created');
+  assert.equal(made.title, 'Christmas Spin');
+  assert.deepEqual(row(made, 'Prizes'), { label: 'Prizes', to: '₱5,000 off 60%, Full tank 40%' });
+  assert.deepEqual(row(made, 'Promo code'), { label: 'Promo code', to: 'SPIN-XMAS' });
+  const edited = promoEntry(PROMO, { ...PROMO, prizes: [{ id: 'a', label: '₱5,000 off', chance: 70 }, { id: 'b', label: 'Full tank', chance: 30 }], permit: 'FTEB 123' }, NOW);
+  assert.equal(edited.action, 'Edited');
+  assert.deepEqual(row(edited, 'Prizes'), { label: 'Prizes', from: '₱5,000 off 60%, Full tank 40%', to: '₱5,000 off 70%, Full tank 30%' });
+  assert.deepEqual(row(edited, 'DTI permit no.'), { label: 'DTI permit no.', from: '—', to: 'FTEB 123' });
+  assert.equal(promoEntry(PROMO, { ...PROMO }, NOW), null);
+  assert.equal(promoDeletedEntry(PROMO, NOW).action, 'Deleted');
+});
+
+test('redeeming a voucher is logged with the car bought', () => {
+  const claim = { id: 'c1', promoId: 'promo-1', name: 'Ana P.', email: 'ana@mail.com', prizeLabel: 'Full tank', voucher: 'DM-4F7K-9QXH' };
+  const e = redeemEntry(claim, 'SR-0004', NOW);
+  assert.equal(e.kind, 'promo');
+  assert.equal(e.action, 'Voucher redeemed');
+  assert.equal(e.title, 'Ana P. · Full tank');
+  assert.deepEqual(row(e, 'Voucher'), { label: 'Voucher', to: 'DM-4F7K-9QXH' });
+  assert.deepEqual(row(e, 'Car'), { label: 'Car', to: 'SR-0004' });
+  assert.equal(row(redeemEntry(claim, '', NOW), 'Car'), undefined);
+});
+
+test('adding a promo to an event is logged on the event', () => {
+  const ev = { id: 'e1', name: 'Christmas Sale', tagline: '', startsAt: '2026-11-20T00:00:00.000Z', endsAt: '2026-12-20T00:00:00.000Z', items: [], promoId: null };
+  const e = eventEntry(ev, { ...ev, promoId: 'promo-1' }, [], NOW, [PROMO]);
+  assert.deepEqual(row(e, 'Promo'), { label: 'Promo', from: '—', to: 'Christmas Spin' });
+  const off = eventEntry({ ...ev, promoId: 'promo-1' }, ev, [], NOW, [PROMO]);
+  assert.deepEqual(row(off, 'Promo'), { label: 'Promo', from: 'Christmas Spin', to: '—' });
 });

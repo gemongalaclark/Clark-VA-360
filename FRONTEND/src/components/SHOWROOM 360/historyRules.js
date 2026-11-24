@@ -7,7 +7,7 @@ import {
 } from './showroomRules.js';
 
 export const HISTORY_LIMIT = 500;
-export const HISTORY_KINDS = { car: 'Cars', event: 'Events', settings: 'Settings', lead: 'Leads' };
+export const HISTORY_KINDS = { car: 'Cars', event: 'Events', settings: 'Settings', lead: 'Leads', promo: 'Promos' };
 
 const DASH = '—';
 const LONG = Symbol('long text');
@@ -23,7 +23,7 @@ const pct = (v) => `${Number(v)}%`;
 
 const STATUS = { available: 'Available', reserved: 'Reserved', sold: 'Sold' };
 const LEAD_STATUS = { new: 'New', contacted: 'Contacted', closed: 'Closed' };
-const LEAD_TYPE = { 'test-drive': 'Test drive', reserve: 'Reservation' };
+const LEAD_TYPE = { 'test-drive': 'Test drive', reserve: 'Reservation', wish: 'Waitlist' };
 
 let seq = 0;
 const entryId = (now) => `h-${now.getTime()}-${(seq++).toString(36)}${Math.random().toString(36).slice(2, 6)}`;
@@ -91,6 +91,8 @@ export function carEntry(before, after, now) {
   let action = 'Edited';
   if (changes.length === 1 && changes[0].label === 'Status') action = `Marked ${STATUS[after.status]?.toLowerCase() || after.status}`;
   if (changes.length === 1 && changes[0].label === 'Featured on home') action = after.featured ? 'Featured on home' : 'Removed from home';
+  /* applied from the autopilot's "Drop price?" task */
+  if (changes.length === 1 && changes[0].label === 'Price' && after.priceDrop?.at && after.priceDrop.at !== before.priceDrop?.at) action = 'Price dropped';
   return entry(now, 'car', action, carTitle(after), after.id, changes);
 }
 
@@ -104,7 +106,7 @@ export function carDeletedEntry(car, events, now) {
 
 /* ── events ── */
 
-export function eventEntry(before, after, cars, now) {
+export function eventEntry(before, after, cars, now, promos = []) {
   const created = !before;
   const name = (id) => { const c = cars.find(x => x.id === id); return c ? carTitle(c) : 'A deleted car'; };
   const changes = diffRows(before || {}, after, [
@@ -120,6 +122,10 @@ export function eventEntry(before, after, cars, now) {
     }
   }
   for (const id of old.keys()) if (!next.has(id)) changes.push({ label: 'Car removed', from: name(id) });
+  if ((before?.promoId || null) !== (after.promoId || null)) {
+    const promo = (id) => (id ? promos.find(p => p.id === id)?.name || 'A deleted promo' : DASH);
+    changes.push(created ? { label: 'Promo', to: promo(after.promoId) } : { label: 'Promo', from: promo(before.promoId), to: promo(after.promoId) });
+  }
   if (!created && !changes.length) return null;
   return entry(now, 'event', created ? 'Created' : 'Edited', after.name, after.id, changes);
 }
@@ -149,6 +155,9 @@ export function settingsEntry(before, after, now) {
   const fa = before?.financing || {};
   const fb = after.financing || {};
   changes.push(...diffRows(fa, fb, [['minDownPct', 'Minimum downpayment', pct], ['feesPct', 'All-in fees', pct]]));
+  changes.push(...diffRows(before?.priceRule || {}, after.priceRule || {}, [
+    ['on', 'Price-drop rule', v => (v ? 'On' : 'Off')], ['days', 'Price drop after', v => `${Number(v)} days`], ['pct', 'Price drop size', pct],
+  ]));
   const terms = [...new Set([...Object.keys(fa.addOn || {}), ...Object.keys(fb.addOn || {})])].sort((x, y) => x - y);
   for (const term of terms) {
     changes.push(...diffRows(fa.addOn || {}, fb.addOn || {}, [[term, `Add-on rate, ${term} months`, pct]]));
@@ -167,6 +176,29 @@ export function leadEntry(before, after, now) {
     ...(after.carLabel ? [{ label: 'Car', to: after.carLabel }] : []),
   ]);
 }
+
+/* ── promos ── */
+
+const prizeList = (p) => (p.prizes || []).map(x => `${x.label} ${Number(x.chance)}%`).join(', ');
+
+export function promoEntry(before, after, now) {
+  const view = (p) => p && ({ name: p.name, code: p.code, permit: p.permit, startsAt: p.startsAt, endsAt: p.endsAt, prizes: prizeList(p) });
+  const fields = [
+    ...(before ? [['name', 'Name']] : []), ['code', 'Promo code'], ['startsAt', 'Starts', dateTime], ['endsAt', 'Ends', dateTime],
+    ['prizes', 'Prizes'], ['permit', 'DTI permit no.'],
+  ];
+  const changes = diffRows(view(before) || {}, view(after), fields).map(r => (before ? r : { label: r.label, to: r.to }));
+  if (before && !changes.length) return null;
+  return entry(now, 'promo', before ? 'Edited' : 'Created', after.name, after.id, changes);
+}
+
+export const promoDeletedEntry = (p, now) => (p ? entry(now, 'promo', 'Deleted', p.name, null, [{ label: 'Promo code', to: p.code }]) : null);
+
+export const redeemEntry = (claim, stockNo, now) => entry(now, 'promo', 'Voucher redeemed', `${claim.name} · ${claim.prizeLabel}`, claim.promoId, [
+  { label: 'Voucher', to: claim.voucher },
+  { label: 'Prize', to: claim.prizeLabel },
+  ...(String(stockNo || '').trim() ? [{ label: 'Car', to: String(stockNo).trim() }] : []),
+]);
 
 export const resetEntry = (now) => entry(now, 'demo', 'Reset', 'Demo data reset to the sample cars', null, []);
 

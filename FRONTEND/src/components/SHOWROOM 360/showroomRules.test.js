@@ -10,9 +10,11 @@ import {
   messengerUrl, viberUrl, toIntlMobile, mapsOpenUrl, parseShowroomPath,
   clampDownPct, newPhotoId, orphanPhotoIds, saveErrorKind, liveEventsWithCars,
   priceBounds, priceFilter, parsePesoInput, priceAtPosition, positionOfPrice, PRICE_POSITIONS,
-  roleForPin, canOpen, canAddEvent, themeFor, themeToSave,
+  roleForPin, canOpen, canAddEvent, canManagePromos, themeFor, themeToSave, clampView, zoomAt, ZOOM_MAX, smsUrl,
 } from './showroomRules.js';
-import { makeSeed, normalizeData, applySamplePhotos, DEFAULT_SETTINGS } from './seedData.js';
+import { makeSeed, normalizeData, applySamplePhotos, applySampleLeads, sampleLeads, applySamplePromo, DEFAULT_SETTINGS } from './seedData.js';
+import { validatePromo, activePromo } from './promoRules.js';
+import { todoList, waitingFor, applyPriceDrop, suggestedDropPrice } from './autoRules.js';
 import { t, DICT } from './i18n.js';
 import { legalDoc, LEGAL_KINDS } from './legalText.js';
 import { MODELS } from '../CARMARK 360/carData.js';
@@ -67,10 +69,10 @@ test('effectivePrice uses a live sale price only when it is lower', () => {
   assert.equal(sale.event.id, 'e1');
 
   const ended = ev({ startsAt: at(-10), endsAt: at(-1), items: [{ carId: 'c1', salePrice: 520000 }] });
-  assert.deepEqual(effectivePrice(car(), [ended], NOW), { price: 548000, original: null, event: null });
+  assert.deepEqual(effectivePrice(car(), [ended], NOW), { price: 548000, original: null, event: null, dropped: false });
 
   const notLower = ev({ items: [{ carId: 'c1', salePrice: 600000 }] });
-  assert.deepEqual(effectivePrice(car(), [notLower], NOW), { price: 548000, original: null, event: null });
+  assert.deepEqual(effectivePrice(car(), [notLower], NOW), { price: 548000, original: null, event: null, dropped: false });
 });
 
 test('featuredCars puts live-event cars first, then featured, newest first, without repeats', () => {
@@ -281,7 +283,7 @@ test('the sample Christmas Sale is live and valid', () => {
   assert.equal(events[0].items.length, 3);
   assert.deepEqual(validateEvent(events[0], [], cars), {});
   assert.ok(events[0].items.every(i => cars.find(c => c.id === i.carId).status === 'available'));
-  assert.deepEqual(leads, []);
+  assert.deepEqual(leads.map(l => l.id), sampleLeads(NOW, cars).map(l => l.id));
   assert.deepEqual(settings.financing, DEFAULT_FINANCING);
 });
 
@@ -354,7 +356,8 @@ test('sample data names no real phone number', () => {
   const text = JSON.stringify(makeSeed(NOW));
   const phones = text.match(/(\+?63|0)9\d{2}[\s-]?\d{3}[\s-]?\d{4}/g) || [];
   assert.ok(phones.length > 0);
-  assert.ok(phones.every(p => p === '0900 000 0000'), phones.join(', '));
+  /* 0900 is not a live prefix: the shop and the sample buyers all use it */
+  assert.ok(phones.every(p => /^0900[\s-]?\d{3}[\s-]?\d{4}$/.test(p)), phones.join(', '));
 });
 
 /* ── review fixes ── */
@@ -592,4 +595,152 @@ test('only the superadmin can add an event; the admin still opens the events pag
   assert.equal(canAddEvent('admin'), false);
   assert.equal(canAddEvent(null), false);
   assert.equal(canOpen('admin', 'events'), true);
+});
+
+/* ── photo viewer ── */
+
+test('zoom stays inside the photo', () => {
+  const box = { imgW: 400, imgH: 250, boxW: 400, boxH: 500 };
+  assert.equal(ZOOM_MAX, 4);
+  assert.equal(clampView({ s: 9, x: 0, y: 0 }, box).s, 4);
+  assert.deepEqual(clampView({ s: 0.5, x: 30, y: 30 }, box), { s: 1, x: 0, y: 0 });
+  /* at 2x the photo is 800 wide in a 400 box: 200 px each way; 500 tall in a 500 box: no room */
+  assert.deepEqual(clampView({ s: 2, x: 999, y: 999 }, box), { s: 2, x: 200, y: 0 });
+  assert.deepEqual(clampView({ s: 2, x: -999, y: -40 }, box), { s: 2, x: -200, y: 0 });
+});
+
+test('zooming at a point keeps that point still', () => {
+  assert.deepEqual(zoomAt({ s: 1, x: 0, y: 0 }, 2, 100, 0), { s: 2, x: -100, y: 0 });
+  /* zooming back out at the same point returns to where it was */
+  assert.deepEqual(zoomAt({ s: 2, x: -100, y: 0 }, 1, 100, 0), { s: 1, x: 0, y: 0 });
+});
+
+/* ── sample buyers ── */
+
+test('the sample buyers show every kind of task', () => {
+  const seed = makeSeed(NOW);
+  const tasks = todoList(seed, NOW);
+  const kinds = new Set(tasks.map(x => x.kind));
+  for (const k of ['reply', 'remind', 'followup', 'drop']) assert.ok(kinds.has(k), k);
+  assert.ok(!kinds.has('wish'), 'nothing matches a waiting buyer until a price drop or a new car');
+  assert.deepEqual(tasks.filter(x => x.kind === 'drop').map(x => x.car.model), ['BR-V', 'Montero Sport']);
+  assert.equal(seed.settings.sampleLeads, 1);
+});
+
+test('applying the Montero price drop wakes a waiting buyer', () => {
+  const seed = makeSeed(NOW);
+  const montero = seed.cars.find(c => c.model === 'Montero Sport');
+  assert.deepEqual(waitingFor(montero, seed.leads, seed.events, NOW), []);
+  const dropped = applyPriceDrop(montero, suggestedDropPrice(montero.price, seed.settings.priceRule.pct), NOW);
+  assert.equal(dropped.price, 897000);
+  assert.deepEqual(waitingFor(dropped, seed.leads, seed.events, NOW).map(l => l.name), ['Ramon T.']);
+});
+
+test('saved demos get the sample buyers once, skipping any whose car is gone or changed', () => {
+  const seed = makeSeed(NOW);
+  const old = { ...seed, leads: [], settings: { ...seed.settings, sampleLeads: undefined } };
+  const all = applySampleLeads(old, NOW);
+  assert.equal(all.leads.length, seed.leads.length);
+  assert.equal(all.data.leads.length, seed.leads.length);
+  const noFortuner = { ...old, cars: old.cars.filter(c => c.model !== 'Fortuner') };
+  assert.ok(!applySampleLeads(noFortuner, NOW).leads.some(l => l.name === 'Mark D.'));
+  const changed = { ...old, cars: old.cars.map(c => (c.model === 'City' ? { ...c, make: 'Toyota', model: 'Vios' } : c)) };
+  assert.ok(!applySampleLeads(changed, NOW).leads.some(l => l.name === 'Joy R.'));
+  /* waitlist buyers have no car, so they always come along */
+  assert.ok(applySampleLeads(noFortuner, NOW).leads.some(l => l.name === 'Ramon T.'));
+  assert.deepEqual(applySampleLeads({ ...old, settings: { ...old.settings, sampleLeads: 1 } }, NOW).leads, []);
+  /* a buyer already there is not added twice */
+  assert.equal(applySampleLeads({ ...old, leads: [seed.leads[0]] }, NOW).leads.length, seed.leads.length - 1);
+});
+
+test('the sample buyers look made up: a first name and an initial, and a 0900 number', () => {
+  const leads = sampleLeads(NOW, makeSeed(NOW).cars);
+  assert.equal(leads.length, 6);
+  for (const l of leads) {
+    assert.match(l.name, /^[A-Z][a-z]+ [A-Z]\.$/);
+    assert.ok(isPhMobile(l.mobile), l.mobile);
+    assert.match(l.mobile, /^0900/);
+    assert.ok(['en', 'ceb'].includes(l.lang));
+  }
+  assert.equal(new Set(leads.map(l => l.id)).size, 6);
+});
+
+test('the Facebook caption calls out a recent price drop', () => {
+  const c = car({ price: 525000, priceDrop: { from: 548000, at: at(-1) } });
+  const info = effectivePrice(c, [], NOW);
+  const en = fbCaption(c, SETTINGS, info, 'en').split('\n');
+  assert.match(en[0], /^PRICE DROP: 2019 Toyota Vios/);
+  assert.equal(en[1], '₱525,000 (was ₱548,000)');
+  assert.equal(fbCaption(c, SETTINGS, info, 'ceb').split('\n')[1], '₱525,000 (dati ₱548,000)');
+  /* after two weeks it is an ordinary listing again */
+  const later = fbCaption(c, SETTINGS, effectivePrice(c, [], new Date(NOW.getTime() + 20 * DAY)), 'en').split('\n');
+  assert.match(later[0], /^FOR SALE: /);
+});
+
+test('a text message link opens the phone’s Messages app with the text typed', () => {
+  assert.equal(smsUrl('0917 123 4567', 'Hi Joy! See you'), 'sms:+639171234567?&body=Hi%20Joy!%20See%20you');
+});
+
+/* ── promos: sample data ── */
+
+test('a new demo comes with the sample promo on the Christmas Sale', () => {
+  const seed = makeSeed(NOW);
+  assert.equal(seed.promos.length, 1);
+  assert.deepEqual(seed.claims, []);
+  assert.deepEqual(validatePromo(seed.promos[0]), {});
+  assert.equal(seed.events[0].promoId, seed.promos[0].id);
+  assert.equal(activePromo(seed.events, seed.promos, NOW).promo.code, 'SPIN-XMAS');
+  assert.deepEqual(seed.promos[0].prizes.map(p => p.chance), [40, 30, 25, 5]);
+  assert.equal(seed.settings.samplePromo, 1);
+});
+
+test('saved demos get the sample promo once, without taking over another event or promo', () => {
+  const seed = makeSeed(NOW);
+  const old = { ...seed, promos: [], events: seed.events.map(e => ({ ...e, promoId: null })), settings: { ...seed.settings, samplePromo: undefined } };
+  const r = applySamplePromo(old, NOW);
+  assert.equal(r.promo.id, 'promo-sample');
+  assert.equal(r.event.promoId, 'promo-sample');
+  assert.equal(r.data.events.find(e => e.id === 'event-christmas').promoId, 'promo-sample');
+  /* the sale was deleted: the promo comes, unattached */
+  const noSale = applySamplePromo({ ...old, events: [] }, NOW);
+  assert.ok(noSale.promo);
+  assert.equal(noSale.event, null);
+  /* the sale already has a promo: leave it */
+  const taken = applySamplePromo({ ...old, events: old.events.map(e => ({ ...e, promoId: 'mine' })) }, NOW);
+  assert.equal(taken.event, null);
+  /* already done, or already there */
+  assert.equal(applySamplePromo({ ...old, settings: { ...old.settings, samplePromo: 1 } }, NOW).promo, null);
+  assert.equal(applySamplePromo({ ...old, promos: [seed.promos[0]] }, NOW).promo, null);
+});
+
+test('normalizeData repairs saved promos and claims', () => {
+  const fixed = normalizeData({ promos: 'oops', claims: null, events: [{ id: 'e1', items: [] }] });
+  assert.deepEqual(fixed.promos, []);
+  assert.deepEqual(fixed.claims, []);
+  assert.equal(fixed.events[0].promoId, null);
+  const p = normalizeData({ promos: [{ id: 'p1', prizes: 'x' }], claims: [{ id: 'c1' }, 'junk'] });
+  assert.deepEqual(p.promos[0].prizes, []);
+  assert.equal(p.claims.length, 1);
+  assert.equal(p.claims[0].redeemedAt, null);
+});
+
+test('only the superadmin manages promos; both roles open the Promos page', () => {
+  assert.equal(canManagePromos('superadmin'), true);
+  assert.equal(canManagePromos('admin'), false);
+  assert.equal(canManagePromos(null), false);
+  assert.equal(canOpen('admin', 'promos'), true);
+  assert.equal(canOpen('superadmin', 'promos'), true);
+});
+
+test('the sample policies cover the promo wheel', () => {
+  const all = (doc) => [doc.intro, ...doc.sections.flatMap(x => [x.heading, ...x.paras, ...(x.list || [])])].join(' ');
+  const privacy = all(legalDoc('privacy', DEFAULT_SETTINGS));
+  assert.match(privacy, /email/i);
+  assert.match(privacy, /promo/i);
+  const promos = legalDoc('terms', DEFAULT_SETTINGS).sections.find(x => x.heading === 'Promos');
+  assert.ok(promos, 'a Promos section');
+  const text = [...promos.paras, ...(promos.list || [])].join(' ');
+  assert.match(text, /DTI/);
+  assert.match(text, /30 days/);
+  assert.match(text, /one spin/i);
 });

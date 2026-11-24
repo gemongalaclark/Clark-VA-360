@@ -38,6 +38,10 @@ export const DEFAULT_FINANCING = {
   feesPct: 5,
 };
 
+/* Price-drop rule (Settings): after `days` in stock, suggest `pct` off. Only a suggestion:
+   nothing changes until the dealer taps Apply. */
+export const DEFAULT_PRICE_RULE = { on: true, days: 45, pct: 3 };
+
 /* ── display ── */
 
 export const carTitle = (car) =>
@@ -72,14 +76,31 @@ export const liveEventsWithCars = (events, cars, now) =>
   liveEvents(events, now).filter(ev =>
     cars.some(c => c.status === 'available' && ev.items.some(i => i.carId === c.id) && effectivePrice(c, [ev], now).event));
 
+/* A price drop shows on the public site (old price crossed out) for this long */
+export const DROP_SHOWN_DAYS = 14;
+
+/* The car's last price drop if it is recent and the price is still below the old one */
+export function recentDrop(car, now) {
+  const d = car?.priceDrop;
+  const at = Date.parse(d?.at);
+  if (!d || !Number.isFinite(at) || !(Number(d.from) > Number(car.price))) return null;
+  const age = now.getTime() - at;
+  return age >= 0 && age < DROP_SHOWN_DAYS * DAY ? d : null;
+}
+
+/* What a buyer pays now: a live sale price wins, then a recent price drop */
 export function effectivePrice(car, events, now) {
   let best = null;
   for (const ev of liveEvents(events, now)) {
     const item = ev.items.find(i => i.carId === car.id);
     if (!item || !(item.salePrice > 0) || item.salePrice >= car.price) continue;
-    if (!best || item.salePrice < best.price) best = { price: item.salePrice, original: car.price, event: ev };
+    if (!best || item.salePrice < best.price) best = { price: item.salePrice, original: car.price, event: ev, dropped: false };
   }
-  return best || { price: car.price, original: null, event: null };
+  if (best) return best;
+  const drop = recentDrop(car, now);
+  return drop
+    ? { price: car.price, original: Number(drop.from), event: null, dropped: true }
+    : { price: car.price, original: null, event: null, dropped: false };
 }
 
 const byNewest = (a, b) => Date.parse(b.listedAt) - Date.parse(a.listedAt);
@@ -371,6 +392,10 @@ export const canOpen = (role, page) => role === 'superadmin' || (role === 'admin
 /* The admin can edit and delete events; only the superadmin starts a new one */
 export const canAddEvent = (role) => role === 'superadmin';
 
+/* Promos: both roles see them and redeem vouchers; only the superadmin creates, edits,
+   deletes or puts one on an event */
+export const canManagePromos = (role) => role === 'superadmin';
+
 /* ── dark mode: the device's setting until the visitor flips the switch ── */
 
 export const themeFor = (saved, deviceDark) =>
@@ -379,6 +404,9 @@ export const themeFor = (saved, deviceDark) =>
 /* What to remember after a flip: nothing when it matches the device again,
    so the site goes back to following the device */
 export const themeToSave = (next, deviceDark) => (next === (deviceDark ? 'dark' : 'light') ? null : next);
+
+/* "?&body=" works in both iPhone and Android Messages */
+export const smsUrl = (number, text) => `sms:${toIntlMobile(number)}?&body=${encodeURIComponent(text)}`;
 
 export const viberUrl = (number, text) =>
   `viber://chat?number=${encodeURIComponent(toIntlMobile(number))}&draft=${encodeURIComponent(text)}`;
@@ -394,10 +422,12 @@ export function inquiryText(car, info, lang) {
 
 export function fbCaption(car, settings, info, lang) {
   const ceb = lang === 'ceb';
-  const lines = [`FOR SALE: ${carTitle(car)}`];
+  const lines = [`${info.dropped ? 'PRICE DROP' : 'FOR SALE'}: ${carTitle(car)}`];
 
   if (info.event) {
     lines.push(`${formatPeso(info.price)} (${info.event.name}, ${ceb ? 'dati' : 'was'} ${formatPeso(info.original)})`);
+  } else if (info.dropped) {
+    lines.push(`${formatPeso(info.price)} (${ceb ? 'dati' : 'was'} ${formatPeso(info.original)})`);
   } else {
     lines.push(`${formatPeso(info.price)}${car.negotiable ? (ceb ? ' (pwede pa hangyo)' : ' (negotiable)') : ''}`);
   }
@@ -422,4 +452,26 @@ export function fbCaption(car, settings, info, lang) {
   lines.push('');
   lines.push(`#CebuCars #UsedCarsCebu #${String(car.make || '').replace(/\s+/g, '')}`);
   return lines.join('\n');
+}
+
+/* ── photo viewer: pinch and double-tap zoom on the car page ──
+   view = { s: scale, x, y: pan in px from the centre }; box = the photo's size at 1x
+   (imgW, imgH) and the frame's (boxW, boxH). */
+
+export const ZOOM_MAX = 4;
+
+const limit = (v, m) => Math.max(-m, Math.min(m, v)) || 0;
+
+/* Keeps the zoom between 1x and ZOOM_MAX and the photo's edges inside the frame */
+export function clampView(view, box) {
+  const s = Math.max(1, Math.min(ZOOM_MAX, Number(view.s) || 1));
+  const mx = Math.max(0, (box.imgW * s - box.boxW) / 2);
+  const my = Math.max(0, (box.imgH * s - box.boxH) / 2);
+  return { s, x: limit(view.x, mx), y: limit(view.y, my) };
+}
+
+/* Zoom to s2 about a point (fx, fy) measured from the frame's centre, so that point stays put */
+export function zoomAt(view, s2, fx, fy) {
+  const k = s2 / view.s;
+  return { s: s2, x: fx - (fx - view.x) * k, y: fy - (fy - view.y) * k };
 }

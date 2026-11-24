@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useState } from 'react';
-import { Search, SlidersHorizontal, SearchX, ArrowRight } from 'lucide-react';
+import { Search, SlidersHorizontal, SearchX, ArrowRight, BellRing } from 'lucide-react';
 import styles from '../Showroom360.module.css';
 import { useShowroom } from '../store.js';
 import { t } from '../i18n.js';
@@ -9,6 +9,8 @@ import {
   BODY_TYPES, TRANSMISSIONS, FUELS, SORT_KEYS,
   priceBounds, priceFilter, parsePesoInput, priceAtPosition, positionOfPrice, PRICE_POSITIONS,
 } from '../showroomRules.js';
+import LeadForm from './LeadForm.jsx';
+
 const FILTER_KEYS = ['make', 'body', 'transmission', 'fuel', 'priceMin', 'priceMax', 'yearMin', 'yearMax', 'onSale'];
 
 export default function Inventory() {
@@ -16,6 +18,7 @@ export default function Inventory() {
   const { loc, navigate, lang, now } = useNav();
   const [query, setQuery] = useState(() => parseQuery(loc.search));
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [wishOpen, setWishOpen] = useState(false);
   const searchId = useId();
 
   /* Back/Forward changed the URL: follow it */
@@ -41,6 +44,13 @@ export default function Inventory() {
 
   const results = filterCars(cars, query, events, now);
   const activeFilters = FILTER_KEYS.filter(k => query[k]).length;
+  /* the waitlist saves the search, not the sort order */
+  const wishQuery = Object.fromEntries(Object.entries(query).filter(([k]) => k !== 'sort'));
+  const wishBtn = (cls) => (
+    <button type="button" className={cls} onClick={() => setWishOpen(true)}>
+      <BellRing size={18} strokeWidth={1.75} aria-hidden="true" />{t(lang, 'wish.cta')}
+    </button>
+  );
   const countText = results.length === 1 ? t(lang, 'cars.count1') : t(lang, 'cars.count', { n: results.length });
 
   return (
@@ -90,15 +100,28 @@ export default function Inventory() {
               <SearchX size={40} strokeWidth={1.5} aria-hidden="true" />
               <h2>{t(lang, 'cars.empty')}</h2>
               <p>{t(lang, 'cars.emptyHint')}</p>
-              <button type="button" className={styles.btnGhost} onClick={clear}>{t(lang, 'cars.clear')}</button>
+              <p>{t(lang, 'wish.line')}</p>
+              <div className={styles.emptyActions}>
+                {wishBtn(styles.btnPrimary)}
+                <button type="button" className={styles.btnGhost} onClick={clear}>{t(lang, 'cars.clear')}</button>
+              </div>
             </div>
           ) : (
-            <ul className={styles.cardGrid}>
-              {results.map(car => <CarCard key={car.id} car={car} events={events} now={now} lang={lang} fin={settings.financing} />)}
-            </ul>
+            <>
+              <ul className={styles.cardGrid}>
+                {results.map(car => <CarCard key={car.id} car={car} events={events} now={now} lang={lang} fin={settings.financing} />)}
+              </ul>
+              <div className={styles.wishLine}>
+                <p>{t(lang, activeFilters > 0 || query.q ? 'wish.line' : 'wish.lineAny')}</p>
+                {wishBtn(styles.btnGhost)}
+              </div>
+            </>
           )}
         </section>
       </div>
+
+      {/* mounted only while open: the form has no car to show when closed */}
+      {wishOpen && <LeadForm type="wish" query={wishQuery} onClose={() => setWishOpen(false)} />}
 
       <Sheet open={sheetOpen} onClose={() => setSheetOpen(false)} title={t(lang, 'cars.filters')} closeLabel={t(lang, 'common.close')}>
         <Filters query={query} update={update} options={options} lang={lang} idPrefix="sheet" />
@@ -226,6 +249,7 @@ export function CarCard({ car, events, now, lang, fin }) {
           <CarPhoto car={car} mark />
           <div className={styles.cardBadges}>
             {info.event && <span className={styles.saleChip}>{info.event.name}</span>}
+            {info.dropped && <span className={styles.saleChip}>{t(lang, 'price.dropped')}</span>}
             {car.status === 'reserved' && <span className={styles.reservedChip}>{t(lang, 'car.reserved')}</span>}
           </div>
           {car.stockNo && <span className={styles.cardStock} aria-hidden="true">{car.stockNo}</span>}

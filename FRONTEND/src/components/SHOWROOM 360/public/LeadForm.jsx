@@ -4,14 +4,20 @@ import styles from '../Showroom360.module.css';
 import { useShowroom, newId } from '../store.js';
 import { t } from '../i18n.js';
 import { useNav, Sheet } from '../ui.jsx';
-import { validateLead, carTitle, saveErrorKind } from '../showroomRules.js';
+import { validateLead, carTitle, saveErrorKind, formatPeso, BODY_TYPES } from '../showroomRules.js';
+import { describeQuery, mergeWishQuery } from '../autoRules.js';
+import { MODELS } from '../../CARMARK 360/carData.js';
+
+/* Every brand CarMark knows, so a buyer can wait for one the shop doesn't have yet */
+const MAKES = [...new Set(MODELS.map(m => m.make))].sort();
 
 /* Local date, not UTC: in Cebu (UTC+8) the UTC date is "yesterday" until 8 AM */
 export const localISODate = (d = new Date()) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
-export default function LeadForm({ type, car, onClose }) {
-  const { saveLead } = useShowroom();
+/* type: 'test-drive' | 'reserve' for a car, or 'wish' (waitlist) for a saved search (`query`) */
+export default function LeadForm({ type, car, query, onClose }) {
+  const { saveLead, cars } = useShowroom();
   const { lang } = useNav();
   const today = localISODate();
   const [form, setForm] = useState({ name: '', mobile: '', date: today, slot: '', note: '' });
@@ -22,6 +28,14 @@ export default function LeadForm({ type, car, onClose }) {
   const formRef = useRef(null);
   const uid = useId();
   const testDrive = type === 'test-drive';
+  const wish = type === 'wish';
+  /* the waitlist's own fields, filled from the search or car the buyer came from */
+  const [want, setWant] = useState(() => ({
+    body: query?.body || '', make: query?.make || '', q: query?.q || '', priceMax: query?.priceMax ? String(query.priceMax) : '',
+  }));
+  const wishQuery = wish ? mergeWishQuery(query, want) : null;
+  const makes = [...new Set([...MAKES, ...cars.map(c => c.make), want.make].filter(Boolean))].sort();
+  const setWantField = (k) => (e) => setWant(w => ({ ...w, [k]: k === 'priceMax' ? e.target.value.replace(/\D/g, '') : e.target.value }));
 
   /* Editing a field clears its error, so a fixed field stops looking wrong */
   const change = (k, v) => {
@@ -45,8 +59,9 @@ export default function LeadForm({ type, car, onClose }) {
       await saveLead({
         id: newId('lead'),
         type,
-        carId: car.id,
-        carLabel: `${carTitle(car)} (${car.stockNo})`,
+        ...(wish
+          ? { carId: null, carLabel: describeQuery(wishQuery, 'en'), query: wishQuery, notifiedCarIds: [] }
+          : { carId: car.id, carLabel: `${carTitle(car)} (${car.stockNo})` }),
         name: form.name.trim(),
         mobile: form.mobile.trim(),
         date: testDrive ? form.date : '',
@@ -54,6 +69,7 @@ export default function LeadForm({ type, car, onClose }) {
         note: form.note.trim(),
         status: 'new',
         createdAt: new Date().toISOString(),
+        lang,
       });
       setSent(true);
     } catch (err) {
@@ -78,18 +94,49 @@ export default function LeadForm({ type, car, onClose }) {
   });
 
   return (
-    <Sheet open={!!type} onClose={onClose} title={t(lang, testDrive ? 'lead.testDrive' : 'lead.reserve')} closeLabel={t(lang, 'common.close')}>
+    <Sheet open={!!type} onClose={onClose} title={t(lang, wish ? 'wish.title' : testDrive ? 'lead.testDrive' : 'lead.reserve')} closeLabel={t(lang, 'common.close')}>
       {sent ? (
         <div className={styles.sentBox}>
           <CircleCheck size={44} strokeWidth={1.5} aria-hidden="true" />
           <h3 className={styles.h3}>{t(lang, 'lead.sent')}</h3>
-          <p className={styles.muted}>{t(lang, 'lead.sentHint')}</p>
+          <p className={styles.muted}>{t(lang, wish ? 'wish.sentHint' : 'lead.sentHint')}</p>
           <button type="button" className={`${styles.btnPrimary} ${styles.btnBlock}`} onClick={onClose}>{t(lang, 'lead.done')}</button>
         </div>
       ) : (
         <form ref={formRef} className={styles.formGrid} onSubmit={submit} noValidate>
-          <p className={styles.leadCar}>{carTitle(car)} · {car.stockNo}</p>
-          <p className={styles.muted}>{t(lang, testDrive ? 'lead.testDriveHint' : 'lead.reserveHint')}</p>
+          {wish ? (
+            <p className={styles.leadCar} aria-live="polite"><span className={styles.srOnly}>{t(lang, 'wish.looking')}: </span>{describeQuery(wishQuery, lang)}</p>
+          ) : (
+            <p className={styles.leadCar}>{carTitle(car)} · {car.stockNo}</p>
+          )}
+          <p className={styles.muted}>{t(lang, wish ? 'wish.hint' : testDrive ? 'lead.testDriveHint' : 'lead.reserveHint')}</p>
+          {wish && (
+            <div className={styles.wishFields}>
+              <div className={styles.field}>
+                <label className={styles.fieldLabel} htmlFor={`${uid}-body`}>{t(lang, 'cars.body')}</label>
+                <select id={`${uid}-body`} className={styles.select} value={want.body} onChange={setWantField('body')}>
+                  <option value="">{t(lang, 'cars.any')}</option>
+                  {Object.entries(BODY_TYPES).map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+                </select>
+              </div>
+              <div className={styles.field}>
+                <label className={styles.fieldLabel} htmlFor={`${uid}-make`}>{t(lang, 'cars.make')}</label>
+                <select id={`${uid}-make`} className={styles.select} value={want.make} onChange={setWantField('make')}>
+                  <option value="">{t(lang, 'cars.any')}</option>
+                  {makes.map(m => <option key={m} value={m}>{m}</option>)}
+                </select>
+              </div>
+              <div className={styles.field}>
+                <label className={styles.fieldLabel} htmlFor={`${uid}-q`}>{t(lang, 'wish.keyword')}</label>
+                <input id={`${uid}-q`} className={styles.input} placeholder="Innova, Mirage…" value={want.q} onChange={setWantField('q')} />
+              </div>
+              <div className={styles.field}>
+                <label className={styles.fieldLabel} htmlFor={`${uid}-max`}>{t(lang, 'wish.budget')}</label>
+                <input id={`${uid}-max`} className={styles.input} inputMode="numeric" placeholder="900000" value={want.priceMax} onChange={setWantField('priceMax')} />
+                {Number(want.priceMax) > 0 && <p className={styles.hint}>{t(lang, 'wish.upTo', { amount: formatPeso(want.priceMax) })}</p>}
+              </div>
+            </div>
+          )}
           {field('name', t(lang, 'lead.name'),
             <input className={styles.input} autoComplete="name" value={form.name} onChange={set('name')} {...aria('name')} />)}
           {field('mobile', t(lang, 'lead.mobile'),

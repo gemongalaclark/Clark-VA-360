@@ -221,6 +221,73 @@ a.row:hover strong { text-decoration: underline; text-underline-offset: 3px; }
 }
 .rowThumb { flex: none; width: 64px; aspect-ratio: 16 / 10; border-radius: 2px; overflow: hidden; background: var(--paper-2); }
 .twoCol { display: grid; gap: 0 36px; }
+
+/* ── to-do list (autopilot): ruled rows, a sticker tag per task, the message one tap away ── */
+.todoBlock { margin-top: 8px; margin-bottom: 28px; }
+.todo { list-style: none; margin: 0; padding: 0; }
+.todo li + li { border-top: 1px solid var(--rule); }
+.todoItem { display: grid; gap: 4px; padding: 14px 0 16px; min-width: 0; }
+.todoTag {
+  justify-self: start; display: inline-flex; align-items: center; gap: 5px; padding: 2px 7px 1px;
+  border: 1.5px solid var(--ink); border-radius: 2px; color: var(--ink);
+  font-family: var(--display); font-weight: 700; font-size: 0.82rem; letter-spacing: 0.08em; text-transform: uppercase; line-height: 1.2;
+}
+.todoUrgent { border-color: var(--red); background: var(--red); color: #fff; }
+.todoWho {
+  margin-top: 4px !important; font-family: var(--display); font-size: 1.3rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.02em; line-height: 1.05; color: var(--ink); overflow-wrap: anywhere;
+}
+.todoWhy { overflow-wrap: anywhere; }
+.todoMsg summary {
+  display: inline-flex; align-items: center; min-height: 44px; cursor: pointer;
+  color: var(--ink-2); font-size: 0.9rem; font-weight: 600;
+}
+.todoMsg summary:hover { color: var(--ink); }
+.todoMsg p {
+  margin-bottom: 6px !important; padding: 10px 12px; border-left: 3px solid var(--rule-2); background: var(--paper-2);
+  color: var(--ink); font-size: 0.92rem; line-height: 1.5; white-space: pre-line; overflow-wrap: anywhere;
+}
+.todoActions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.todoActions > a, .todoActions > button { min-height: 44px; padding: 0 14px; font-size: 1rem; }
+.leadTask { display: grid; gap: 4px; margin-top: 8px; padding-top: 10px; border-top: 1px dashed var(--rule-2); }
+.leadWish { color: var(--ink); font-weight: 600; }
+/* ── promos ── */
+@media (min-width: 900px) { .phoneOnly { display: none !important; } }
+.lookup { display: flex; gap: 8px; margin-top: 12px; }
+.lookup input { flex: 1; min-width: 0; text-transform: uppercase; letter-spacing: 0.06em; font-variant-numeric: tabular-nums; }
+.winners { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 20px; }
+@media (min-width: 900px) { .winners { grid-template-columns: 1fr 1fr; gap: 24px 32px; } }
+.winner { display: grid; gap: 4px; padding-top: 10px; border-top: 3px solid var(--ink); min-width: 0; }
+.winner .muted, .winner p { overflow-wrap: anywhere; }
+.voucherCode {
+  display: inline-flex; align-items: center; gap: 8px; justify-self: start; padding: 4px 10px 3px;
+  border: 2px dashed var(--ink); border-radius: 2px; color: var(--ink);
+  font-family: var(--display); font-weight: 700; font-size: 1.35rem; letter-spacing: 0.08em; font-variant-numeric: tabular-nums;
+}
+.winnerPrize { font-weight: 700; color: var(--ink); }
+.winnerBtn { justify-self: start; margin-top: 4px; }
+.voucher_unused { background: var(--ink); color: var(--paper); }
+.voucher_redeemed { box-shadow: inset 0 0 0 1.5px var(--rule-2); color: var(--ink-2); }
+.voucher_expired { box-shadow: inset 0 0 0 1.5px var(--rule-2); color: var(--ink-2); text-decoration: line-through; }
+.prizeChips { list-style: none; margin: 2px 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.prizeChips li { padding: 3px 8px 2px; border: 1.5px solid var(--rule-2); border-radius: 2px; color: var(--ink); font-size: 0.85rem; }
+.promoCode { font-variant-numeric: tabular-nums; letter-spacing: 0.08em; }
+.promoEditor { display: grid; gap: 18px; align-items: start; }
+@media (min-width: 760px) { .promoEditor { grid-template-columns: minmax(0, 1fr) 220px; } }
+.promoPreview { justify-self: center; width: min(220px, 70vw); }
+.prizeRow { grid-template-columns: minmax(0, 1fr) 110px; }
+.chanceTotal { margin: 10px 0 12px !important; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
+.chanceOff { color: var(--red-text); }
+.promoAttach { display: flex; gap: 8px; align-items: flex-start; }
+.promoAttach .field, .promoAttach > div { flex: 1; min-width: 0; }
+.promoOn { display: grid; gap: 6px; padding: 12px 14px; border-left: 4px solid var(--red); background: var(--paper-2); color: var(--ink); }
+.weekTabs { margin: 12px 0 4px; }
+.weekFacts { display: grid; margin: 0 0 14px; }
+.weekFacts > div { display: grid; gap: 2px; padding: 10px 0; border-bottom: 1px solid var(--rule); }
+@media (min-width: 700px) { .weekFacts > div { grid-template-columns: 180px minmax(0, 1fr); gap: 16px; } }
+.weekFacts dt { color: var(--ink-2); font-size: 0.85rem; font-weight: 600; }
+.weekFacts dd { margin: 0; color: var(--ink); font-weight: 500; overflow-wrap: anywhere; }
+.waitNote { margin: -4px 0 18px !important; padding: 10px 12px; border-left: 4px solid var(--red); background: var(--paper-2); color: var(--ink); }
 @media (min-width: 900px) { .twoCol { grid-template-columns: 1fr 1fr; } }
 
 /* ── lists & filters ── */

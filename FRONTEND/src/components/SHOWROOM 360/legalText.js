@@ -24,6 +24,8 @@ function privacy(shop, s) {
     sections: [
       { heading: 'What we collect', paras: ['We only collect what you choose to give us:'], list: [
         'When you book a test drive or reserve a car: your name, mobile number, preferred date and time, the car you asked about, and your message.',
+        'When you ask us to tell you when a car arrives: your name, mobile number, the search you saved, and your message.',
+        'When you claim a prize from our promo wheel: your name, email address, the prize you won and your voucher code.',
         'When you message us on Messenger or Viber, or call us: what you send us there. Those apps also handle your data under their own policies.',
         'If you buy a car: the details needed for the deed of sale, the transfer of registration and, if you apply for a loan, the bank’s application form. We collect these in person, not on this website.',
       ] },
@@ -32,6 +34,7 @@ function privacy(shop, s) {
       ] },
       { heading: 'Why we use it', paras: ['We use your information only to:'], list: [
         'Answer your questions and confirm test drives and reservations.',
+        'Check and honour promo vouchers, and contact you about a prize you won.',
         'Prepare the papers when you buy a car, and send your loan application to the bank or financing company you choose.',
         'Keep the sales records the law requires.',
         'Tell you about new units or sales, but only if you ask us to.',
@@ -102,6 +105,14 @@ function terms(shop, s) {
       ] },
       { heading: 'Photos and content', paras: [
         `The text, logo and photos on this site belong to ${shop} or to the owners named in the photo credits. Please don’t copy them for other listings.`,
+      ] },
+      { heading: 'Promos', paras: [
+        'When a sale has a prize wheel, these rules apply on top of the promo’s own mechanics:',
+      ], list: [
+        'One spin per person. A second spin, or a claim with someone else’s details, isn’t valid.',
+        'A prize is claimed with your name and email. Each email can claim each promo once.',
+        'A voucher is good for 30 days from the day you win it, for one car bought from us. It can’t be exchanged for cash or combined with another voucher.',
+        'Promos that involve chance run under a permit from the Department of Trade and Industry (DTI). The permit number is shown on the wheel.',
       ] },
       { heading: 'Our responsibility', paras: [
         'We work to keep this site accurate and running, but we can’t promise it will always be error-free or available. As far as the law allows, we aren’t responsible for losses from relying on a listing without checking the car and its papers yourself.',

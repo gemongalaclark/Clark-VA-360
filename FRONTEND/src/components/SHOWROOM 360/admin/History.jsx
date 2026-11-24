@@ -1,7 +1,7 @@
 /* History: every change made in this admin, newest first, grouped by day, with
    who made it and what changed. Superadmin only (the route is guarded in Admin.jsx). */
 import { useState } from 'react';
-import { CarFront, CalendarRange, Settings as SettingsIcon, Inbox, RotateCcw, History as HistoryIcon } from 'lucide-react';
+import { CarFront, CalendarRange, Settings as SettingsIcon, Inbox, RotateCcw, History as HistoryIcon, Gift } from 'lucide-react';
 import s from '../Showroom360.module.css';
 import a from './Admin.module.css';
 import { useShowroom } from '../store.js';
@@ -10,7 +10,7 @@ import { groupByDay, HISTORY_KINDS, HISTORY_LIMIT } from '../historyRules.js';
 
 const PAGE_SIZE = 50;
 const KIND = {
-  car: ['Car', CarFront], event: ['Event', CalendarRange], settings: ['Settings', SettingsIcon],
+  car: ['Car', CarFront], event: ['Event', CalendarRange], settings: ['Settings', SettingsIcon], promo: ['Promo', Gift],
   lead: ['Lead', Inbox], demo: ['Demo', RotateCcw],
 };
 const BY = { admin: 'Admin', superadmin: 'Superadmin' };
@@ -29,6 +29,7 @@ function targetPath(e, cars, events) {
   if (e.kind === 'event' && e.targetId && events.some(v => v.id === e.targetId)) return `/showroom/admin/events/${e.targetId}`;
   if (e.kind === 'lead') return '/showroom/admin/leads';
   if (e.kind === 'settings') return '/showroom/admin/settings';
+  if (e.kind === 'promo') return '/showroom/admin/promos';
   return null;
 }
 
