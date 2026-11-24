@@ -5,12 +5,12 @@ import a from './Admin.module.css';
 import { useShowroom } from '../store.js';
 import { timeLeft } from '../i18n.js';
 import { useNav, Link, Sheet, useToast } from '../ui.jsx';
-import { eventStatus } from '../showroomRules.js';
+import { eventStatus, canAddEvent } from '../showroomRules.js';
 
 const ORDER = { live: 0, upcoming: 1, ended: 2 };
 export const fmtDateTime = (iso) => new Date(iso).toLocaleString('en-PH', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
 
-export default function EventsAdmin() {
+export default function EventsAdmin({ role }) {
   const { events, deleteEvent } = useShowroom();
   const { now } = useNav();
   const toast = useToast();
@@ -24,14 +24,16 @@ export default function EventsAdmin() {
     <div className={a.page}>
       <div className={a.pageHead}>
         <h1 className={s.h1}>Events</h1>
-        <div className={a.headActions}>
-          <Link to="/showroom/admin/events/new" className={s.btnPrimary}><CalendarPlus size={18} strokeWidth={1.75} aria-hidden="true" />New event</Link>
-        </div>
+        {canAddEvent(role) && (
+          <div className={a.headActions}>
+            <Link to="/showroom/admin/events/new" className={s.btnPrimary}><CalendarPlus size={18} strokeWidth={1.75} aria-hidden="true" />New event</Link>
+          </div>
+        )}
       </div>
       <p className={`${s.muted} ${a.intro}`}>While an event is live, its cars lead the home carousel and show the sale price with the old price crossed out.</p>
 
       {list.length === 0 ? (
-        <p className={`${s.muted} ${a.emptyLine}`}>No events yet. Try a Christmas Sale or a Payday Weekend.</p>
+        <p className={`${s.muted} ${a.emptyLine}`}>No events yet.{canAddEvent(role) && ' Try a Christmas Sale or a Payday Weekend.'}</p>
       ) : (
         <ul className={a.eventList}>
           {list.map(({ ev, status }) => (

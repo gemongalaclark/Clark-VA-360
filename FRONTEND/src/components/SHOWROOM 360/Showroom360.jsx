@@ -9,6 +9,8 @@ import { sampleCredit } from './samplePhotos.js';
 import Home from './public/Home.jsx';
 import Inventory from './public/Inventory.jsx';
 import CarPage from './public/CarPage.jsx';
+import Legal from './public/Legal.jsx';
+import { LEGAL_KINDS } from './legalText.js';
 
 /* The admin is its own download: buyers never load it */
 const Admin = lazy(() => import('./admin/Admin.jsx'));
@@ -82,9 +84,10 @@ export default function Showroom360({ onBackToPortfolio }) {
   const shopName = store.settings?.shopName || 'Showroom 360';
   useEffect(() => {
     const prev = document.title;
-    document.title = loc.view === 'admin' ? `Admin · ${shopName}` : shopName;
+    document.title = loc.view === 'admin' ? `Admin · ${shopName}`
+      : LEGAL_KINDS.includes(loc.view) ? `${t(lang, `legal.${loc.view}`)} · ${shopName}` : shopName;
     return () => { document.title = prev; };
-  }, [shopName, loc.view]);
+  }, [shopName, loc.view, lang]);
 
   if (!store.ready) return <div className={styles.app} aria-busy="true" />;
 
@@ -186,6 +189,7 @@ function PublicShell() {
         {loc.view === 'home' && <Home />}
         {loc.view === 'cars' && <Inventory />}
         {loc.view === 'car' && <CarPage key={loc.id} id={loc.id} />}
+        {LEGAL_KINDS.includes(loc.view) && <Legal kind={loc.view} />}
         {loc.view === 'notfound' && (
           <div className={styles.empty}>
             <SearchX size={40} strokeWidth={1.5} aria-hidden="true" />
@@ -202,6 +206,13 @@ function PublicShell() {
             <p className={styles.footerFacts}>{[settings.address, settings.hours].filter(Boolean).join(' · ')}</p>
           )}
           <p className={styles.footerNote}>{t(lang, 'footer.note')}</p>
+          <nav className={styles.footerLinks} aria-label={t(lang, 'legal.nav')}>
+            {LEGAL_KINDS.map(k => (
+              <a key={k} href={`/showroom/${k}`} onClick={go(`/showroom/${k}`)} aria-current={loc.view === k ? 'page' : undefined}>
+                {t(lang, `legal.${k}`)}
+              </a>
+            ))}
+          </nav>
           {credits.length > 0 && (
             <details className={styles.credits}>
               <summary>{t(lang, 'photo.credits')}</summary>

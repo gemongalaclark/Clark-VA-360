@@ -10,10 +10,11 @@ import {
   messengerUrl, viberUrl, toIntlMobile, mapsOpenUrl, parseShowroomPath,
   clampDownPct, newPhotoId, orphanPhotoIds, saveErrorKind, liveEventsWithCars,
   priceBounds, priceFilter, parsePesoInput, priceAtPosition, positionOfPrice, PRICE_POSITIONS,
-  roleForPin, canOpen, themeFor, themeToSave,
+  roleForPin, canOpen, canAddEvent, themeFor, themeToSave,
 } from './showroomRules.js';
 import { makeSeed, normalizeData, applySamplePhotos, DEFAULT_SETTINGS } from './seedData.js';
 import { t, DICT } from './i18n.js';
+import { legalDoc, LEGAL_KINDS } from './legalText.js';
 import { MODELS } from '../CARMARK 360/carData.js';
 
 const NOW = new Date('2026-11-23T02:00:00Z');
@@ -401,6 +402,41 @@ test('parseShowroomPath survives a stray % in the address', () => {
   assert.deepEqual(parseShowroomPath('/showroom/zzz'), { view: 'notfound' });
 });
 
+test('the privacy policy and terms have their own pages', () => {
+  assert.deepEqual(parseShowroomPath('/showroom/privacy'), { view: 'privacy' });
+  assert.deepEqual(parseShowroomPath('/showroom/terms'), { view: 'terms' });
+  assert.deepEqual(parseShowroomPath('/showroom/privacy/extra'), { view: 'notfound' });
+  assert.deepEqual(LEGAL_KINDS, ['privacy', 'terms']);
+});
+
+test('the sample policies speak for the shop in Settings', () => {
+  const s = { ...DEFAULT_SETTINGS, shopName: 'Sugbo Auto Hub', phone: '0917 555 0101', address: 'Banilad, Cebu City' };
+  for (const kind of LEGAL_KINDS) {
+    const text = JSON.stringify(legalDoc(kind, s));
+    assert.match(text, /Sugbo Auto Hub/, kind);
+    assert.match(text, /0917 555 0101/, kind);
+    assert.match(text, /Banilad, Cebu City/, kind);
+    assert.doesNotMatch(text, /Demo Motors/, kind);
+  }
+  assert.match(JSON.stringify(legalDoc('privacy', s)), /Data Privacy Act of 2012/);
+  assert.equal(legalDoc('nope', s), null);
+});
+
+test('the sample policies read cleanly when the shop leaves contact details blank', () => {
+  const s = { ...DEFAULT_SETTINGS, phone: '', address: '', messenger: '', viber: '' };
+  for (const kind of LEGAL_KINDS) {
+    const doc = legalDoc(kind, s);
+    assert.ok(doc.intro && doc.sections.length > 3, kind);
+    for (const sec of doc.sections) {
+      assert.ok(sec.heading, kind);
+      assert.ok(sec.paras.length || sec.list?.length, `${kind}: ${sec.heading}`);
+    }
+    const text = JSON.stringify(doc);
+    assert.doesNotMatch(text, /undefined|null|\{\w+\}| ,|,,|\(\)/, kind);
+    assert.doesNotMatch(text, /admin/i, kind); // never point buyers at the hidden admin
+  }
+});
+
 test('validateCar rejects a listing date in the future', () => {
   assert.deepEqual(validateCar(car({ listedAt: at(-30) }), NOW), {});
   assert.ok(validateCar(car({ listedAt: at(3) }), NOW).listedAt);
@@ -549,4 +585,11 @@ test('flipping back to the device setting forgets the choice', () => {
   assert.equal(themeToSave('light', true), 'light');
   assert.equal(themeToSave('light', false), null);
   assert.equal(themeToSave('dark', true), null);
+});
+
+test('only the superadmin can add an event; the admin still opens the events page', () => {
+  assert.equal(canAddEvent('superadmin'), true);
+  assert.equal(canAddEvent('admin'), false);
+  assert.equal(canAddEvent(null), false);
+  assert.equal(canOpen('admin', 'events'), true);
 });

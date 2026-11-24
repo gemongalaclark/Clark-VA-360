@@ -5,7 +5,7 @@ import a from './Admin.module.css';
 import { useShowroom } from '../store.js';
 import { timeLeft } from '../i18n.js';
 import { useNav, Link, CarPhoto } from '../ui.jsx';
-import { liveEvents, daysInStock, AGING_DAYS, carTitle } from '../showroomRules.js';
+import { liveEvents, daysInStock, AGING_DAYS, carTitle, canAddEvent } from '../showroomRules.js';
 
 export default function Dashboard({ role }) {
   const { cars, events, leads, history } = useShowroom();
@@ -42,7 +42,9 @@ export default function Dashboard({ role }) {
         <h1 className={s.h1}>Dashboard</h1>
         <div className={a.headActions}>
           <Link to="/showroom/admin/cars/new" className={s.btnPrimary}><Plus size={18} aria-hidden="true" />Add car</Link>
-          <Link to="/showroom/admin/events/new" className={s.btnGhost}><CalendarPlus size={18} strokeWidth={1.75} aria-hidden="true" />New event</Link>
+          {canAddEvent(role) && (
+            <Link to="/showroom/admin/events/new" className={s.btnGhost}><CalendarPlus size={18} strokeWidth={1.75} aria-hidden="true" />New event</Link>
+          )}
         </div>
       </div>
 
@@ -63,7 +65,10 @@ export default function Dashboard({ role }) {
           <Link to="/showroom/admin/events" className={a.more}>All events<ChevronRight size={16} aria-hidden="true" /></Link>
         </div>
         {live.length === 0 ? (
-          <p className={s.muted}>No sale is running. <Link to="/showroom/admin/events/new" className={a.inlineLink}>Create one</Link> to put cars on the home carousel with sale prices.</p>
+          <p className={s.muted}>
+            No sale is running.
+            {canAddEvent(role) && <> <Link to="/showroom/admin/events/new" className={a.inlineLink}>Create one</Link> to put cars on the home carousel with sale prices.</>}
+          </p>
         ) : (
           <ul className={a.rows}>
             {live.map(ev => (

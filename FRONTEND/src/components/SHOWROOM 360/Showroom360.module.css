@@ -466,6 +466,14 @@
 .credits p { color: rgba(var(--on-band-rgb), 0.72); margin-bottom: 8px; }
 .credits ul { margin: 0; padding: 0 0 0 18px; display: grid; gap: 4px; }
 .credits a { color: var(--on-band); text-underline-offset: 2px; }
+/* sample Privacy Policy and Terms links */
+.footerLinks { display: flex; flex-wrap: wrap; gap: 0 22px; }
+.footerLinks a {
+  display: inline-flex; align-items: center; min-height: 44px; color: var(--on-band); font-weight: 600;
+  text-decoration: underline; text-underline-offset: 3px;
+}
+.footerLinks a:hover { text-decoration-thickness: 2px; }
+.footerLinks a[aria-current='page'] { color: rgba(var(--on-band-rgb), 0.72); text-decoration: none; }
 .footer .textBtn { color: rgba(var(--on-band-rgb), 0.72); }
 .footer .textBtn:hover { color: var(--on-band); }
 .footerCar { padding-bottom: 76px; }
@@ -476,6 +484,28 @@
   display: grid; justify-items: center; gap: 12px; color: var(--ink-2);
 }
 .empty h1, .empty h2 { font-size: 1.6rem; text-transform: uppercase; line-height: 1.05; }
+
+/* ── sample Privacy Policy and Terms: a numbered spec sheet ── */
+
+.legal { max-width: 760px; margin: 0 auto; padding: 28px 16px 48px; }
+@media (min-width: 900px) { .legal { padding: 48px 24px 64px; } }
+.legal > .muted { margin-top: 10px; }
+.legalSample {
+  margin-top: 18px; padding: 12px 14px; border: 1px solid var(--note-rule); border-left: 4px solid var(--note-text);
+  border-radius: var(--radius); background: var(--note-bg); color: var(--note-text); font-size: 0.92rem;
+}
+.legalIntro { margin-top: 24px; color: var(--ink); font-size: 1.05rem; max-width: 65ch; }
+.legalSection { margin-top: 28px; padding-top: 12px; border-top: 2px solid var(--ink); }
+.legalSection h2 {
+  display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px;
+  font-size: 1.3rem; line-height: 1.15; text-transform: uppercase; letter-spacing: 0.03em;
+}
+.legalNum { color: var(--red-text); font-variant-numeric: tabular-nums; }
+.legalSection p, .legalSection li { color: var(--ink); max-width: 68ch; }
+.legalSection p + p, .legalSection p + ul { margin-top: 10px; }
+.legalSection ul { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+.legalSection li::marker { color: var(--red-text); }
+.legal .arrowLink { margin-top: 28px; }
 
 /* ── forms (public lead forms and the admin) ── */
 

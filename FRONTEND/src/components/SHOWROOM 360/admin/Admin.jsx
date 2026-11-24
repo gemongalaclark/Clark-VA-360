@@ -20,18 +20,19 @@ import EventForm from './EventForm.jsx';
 import Leads from './Leads.jsx';
 import Settings from './Settings.jsx';
 import History from './History.jsx';
-import { roleForPin, canOpen } from '../showroomRules.js';
+import { roleForPin, canOpen, canAddEvent, liveEvents } from '../showroomRules.js';
 
 const UNLOCK_KEY = 'showroom360:unlocked';
 
-/* History lives in the phone's top bar, not the bottom tabs (they stay at 5 or fewer) */
+/* History lives in the phone's top bar, not the bottom tabs (they stay at 5 or fewer).
+   `shop` pages sit in their own group in the sidebar, under the day-to-day ones. */
 const PAGES = [
   { id: 'dashboard', label: 'Dashboard', path: '/showroom/admin', Icon: LayoutDashboard },
   { id: 'cars', label: 'Cars', path: '/showroom/admin/cars', Icon: CarFront },
   { id: 'events', label: 'Events', path: '/showroom/admin/events', Icon: CalendarRange },
   { id: 'leads', label: 'Leads', path: '/showroom/admin/leads', Icon: Inbox },
-  { id: 'history', label: 'History', path: '/showroom/admin/history', Icon: HistoryIcon, noTab: true },
-  { id: 'settings', label: 'Settings', path: '/showroom/admin/settings', Icon: SettingsIcon },
+  { id: 'history', label: 'History', path: '/showroom/admin/history', Icon: HistoryIcon, noTab: true, shop: true },
+  { id: 'settings', label: 'Settings', path: '/showroom/admin/settings', Icon: SettingsIcon, shop: true },
 ];
 const ROLE_LABEL = { admin: 'Admin', superadmin: 'Superadmin' };
 
@@ -40,8 +41,8 @@ const readRole = () => {
 };
 
 export default function Admin() {
-  const { settings, leads, persistent, setActor } = useShowroom();
-  const { loc, theme } = useNav();
+  const { settings, leads, cars, events, persistent, setActor } = useShowroom();
+  const { loc, theme, now } = useNav();
   const [role, setRole] = useState(readRole);
 
   /* Every change made from here is stamped with this role in the history */
@@ -59,33 +60,41 @@ export default function Admin() {
   if (!role) return <PinGate settings={settings} onUnlock={unlock} />;
 
   const newLeads = leads.filter(l => l.status === 'new').length;
+  const inStock = cars.filter(c => c.status !== 'sold').length;
+  const liveCount = liveEvents(events, now).length;
+  /* a quiet count beside a sidebar link (new leads get the red badge instead) */
+  const sideCount = {
+    cars: `${inStock} in stock`,
+    events: liveCount > 0 && `${liveCount} live`,
+  };
   const sub = String(loc.sub || 'dashboard').toLowerCase();
   const pages = PAGES.filter(p => canOpen(role, p.id));
 
   let page;
   if (PAGES.some(p => p.id === sub) && !canOpen(role, sub)) page = <SuperadminOnly />;
+  else if (sub === 'events' && loc.id === 'new' && !canAddEvent(role)) page = <SuperadminOnly />;
   else if (sub === 'dashboard') page = <Dashboard role={role} />;
   else if (sub === 'cars' && !loc.id) page = <CarsAdmin />;
   else if (sub === 'cars') page = <CarForm key={loc.id} id={loc.id} />;
-  else if (sub === 'events' && !loc.id) page = <EventsAdmin />;
+  else if (sub === 'events' && !loc.id) page = <EventsAdmin role={role} />;
   else if (sub === 'events') page = <EventForm key={loc.id} id={loc.id} />;
   else if (sub === 'leads') page = <Leads />;
   else if (sub === 'settings') page = <Settings />;
   else if (sub === 'history') page = <History />;
   else page = <AdminNotFound />;
 
-  const navItems = (cls, list) => (
-    <nav className={cls} aria-label="Admin pages" style={{ '--tabs': list.length }}>
-      {list.map(p => (
-        <Link key={p.id} to={p.path} className={a.navItem} aria-current={sub === p.id ? 'page' : undefined}>
-          <span className={a.navIcon}>
-            <p.Icon size={20} strokeWidth={1.75} aria-hidden="true" />
-            {p.id === 'leads' && newLeads > 0 && <span className={a.navBadge} aria-label={`${newLeads} new`}>{newLeads}</span>}
-          </span>
-          <span>{p.label}</span>
-        </Link>
-      ))}
-    </nav>
+  const navLink = (p, withCount) => (
+    <Link key={p.id} to={p.path} className={a.navItem} aria-current={sub === p.id ? 'page' : undefined}>
+      <span className={a.navIcon}>
+        <p.Icon size={20} strokeWidth={1.75} aria-hidden="true" />
+        {p.id === 'leads' && newLeads > 0 && <span className={a.navBadge} aria-label={`${newLeads} new`}>{newLeads}</span>}
+      </span>
+      <span className={a.navLabel}>{p.label}</span>
+      {withCount && sideCount[p.id] && <>{' '}<span className={a.navCount}>{sideCount[p.id]}</span></>}
+    </Link>
+  );
+  const roleTag = (cls) => (
+    <span className={`${a.roleTag} ${role === 'superadmin' ? a.roleSuper : ''} ${cls}`}>{ROLE_LABEL[role]}</span>
   );
 
   return (
@@ -93,19 +102,23 @@ export default function Admin() {
       <aside className={a.sidebar}>
         <div className={a.sideBrand}>
           <ShopLogo settings={settings} />
-          <div>
+          <div className={a.sideBrandText}>
             <p className={a.sideName}>{settings.shopName}</p>
-            <p className={a.sideRole}>{ROLE_LABEL[role]}</p>
+            {roleTag(a.roleOnBand)}
           </div>
         </div>
-        {navItems(a.sideNav, pages)}
+        <nav className={a.sideNav} aria-label="Admin pages">
+          {[pages.filter(p => !p.shop), pages.filter(p => p.shop)].filter(g => g.length).map(group => (
+            <div key={group[0].id} className={a.sideGroup}>{group.map(p => navLink(p, true))}</div>
+          ))}
+        </nav>
         <div className={a.sideFoot}>
           <a href="/showroom" target="_blank" rel="noopener noreferrer" className={a.sideLink}>
-            <ExternalLink size={18} strokeWidth={1.75} aria-hidden="true" />View site
+            <ExternalLink size={18} strokeWidth={1.75} aria-hidden="true" />View site<span className={s.srOnly}> (opens in a new tab)</span>
           </a>
           <ThemeToggle className={a.sideLink}>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</ThemeToggle>
-          <button type="button" className={a.sideLink} onClick={lock}>
-            <Lock size={18} strokeWidth={1.75} aria-hidden="true" />Lock
+          <button type="button" className={a.lockBtn} onClick={lock}>
+            <Lock size={18} strokeWidth={1.75} aria-hidden="true" />Lock admin
           </button>
         </div>
       </aside>
@@ -115,7 +128,7 @@ export default function Admin() {
           <ShopLogo settings={settings} />
           <span className={a.topName}>
             <span>{settings.shopName}</span>
-            <span className={a.topRole}>{ROLE_LABEL[role]}</span>
+            {roleTag(a.roleOnPaper)}
           </span>
         </div>
         {canOpen(role, 'history') && (
@@ -127,6 +140,7 @@ export default function Admin() {
         <a href="/showroom" target="_blank" rel="noopener noreferrer" className={s.iconBtn} aria-label="View site (new tab)">
           <ExternalLink size={20} strokeWidth={1.75} aria-hidden="true" />
         </a>
+        <span className={a.topDivider} aria-hidden="true" />
         <button type="button" className={s.iconBtn} onClick={lock} aria-label="Lock admin">
           <Lock size={20} strokeWidth={1.75} aria-hidden="true" />
         </button>
@@ -137,7 +151,9 @@ export default function Admin() {
         {page}
       </main>
 
-      {navItems(a.bottomNav, pages.filter(p => !p.noTab))}
+      <nav className={a.bottomNav} aria-label="Admin pages" style={{ '--tabs': pages.filter(p => !p.noTab).length }}>
+        {pages.filter(p => !p.noTab).map(p => navLink(p, false))}
+      </nav>
     </div>
   );
 }
@@ -186,7 +202,7 @@ function SuperadminOnly() {
     <div className={s.empty}>
       <ShieldAlert size={40} strokeWidth={1.5} aria-hidden="true" />
       <h1>Superadmin only</h1>
-      <p>Settings and History open with the superadmin PIN. Lock the admin and sign in again to switch.</p>
+      <p>Settings, History and adding events need the superadmin PIN. Lock the admin and sign in again to switch.</p>
       <Link to="/showroom/admin" className={s.btnPrimary}>Go to dashboard</Link>
     </div>
   );

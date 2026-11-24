@@ -6,7 +6,10 @@
 .admin { min-height: 100vh; }
 .main { min-width: 0; }
 
-/* ── navigation ── */
+/* ── navigation ──
+   Phone: a paper top bar and bottom tabs. From 900px: a dark band (--band, dark in
+   both themes) where the current page is a paper tab pulled out of the band and
+   joined to the page, the reverse of the ink tabs that head each section. */
 
 .topBar {
   position: sticky; top: 0; z-index: 30; height: 56px; padding: 0 6px 0 16px;
@@ -18,15 +21,30 @@
   font-family: var(--display); font-weight: 700; font-size: 1.2rem; text-transform: uppercase; letter-spacing: 0.02em; color: var(--ink);
 }
 .topBrand span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.topName { display: grid; min-width: 0; line-height: 1.05; }
-.topRole { font-family: var(--body); font-size: 0.72rem; font-weight: 600; color: var(--ink-2); text-transform: none; letter-spacing: 0; }
+.topName { display: grid; gap: 3px; min-width: 0; line-height: 1.05; }
+.topName .roleTag { justify-self: start; }
+/* Lock signs out, so it stands a little apart from the other buttons */
+.topDivider { flex: none; width: 1.5px; height: 24px; margin: 0 2px; background: var(--rule-2); }
+/* small phones: keep more of the shop name next to four buttons */
+@media (max-width: 399px) { .topBar { padding-left: 12px; } .topBrand { gap: 8px; font-size: 1.06rem; } }
+
+/* who is signed in, as a small sticker tag; the superadmin's is red */
+.roleTag {
+  display: inline-block; max-width: 100%; padding: 2px 6px 1px; border: 1.5px solid; border-radius: 2px;
+  font-family: var(--display); font-weight: 700; font-size: 0.78rem; line-height: 1.1; letter-spacing: 0.1em; text-transform: uppercase;
+}
+.roleOnPaper { border-color: var(--ink); color: var(--ink); }
+.roleOnBand { border-color: rgba(var(--on-band-rgb), 0.5); color: var(--on-band); }
+.roleTag.roleSuper { border-color: var(--red); background: var(--red); color: #fff; }
 
 .navItem { position: relative; display: flex; align-items: center; gap: 10px; min-height: 44px; text-decoration: none; }
-.navIcon { position: relative; display: inline-grid; }
+.navIcon { position: relative; display: inline-grid; flex: none; }
+.navLabel { min-width: 0; }
+.navCount { display: none; }
 .navBadge {
   position: absolute; top: -6px; right: -12px; min-width: 18px; height: 18px; padding: 0 4px;
   display: grid; place-items: center; border-radius: 2px; background: var(--red); color: #fff;
-  font-size: 0.68rem; font-weight: 700; line-height: 1;
+  font-family: var(--body); font-size: 0.68rem; font-weight: 700; line-height: 1; letter-spacing: 0;
 }
 
 .bottomNav {
@@ -36,12 +54,16 @@
   border-top: 2px solid var(--ink); padding-bottom: env(safe-area-inset-bottom);
 }
 .bottomNav .navItem {
-  flex-direction: column; justify-content: center; gap: 3px; min-height: 60px; padding: 6px 2px;
-  color: var(--ink-2); font-size: 0.7rem; font-weight: 600;
+  flex-direction: column; justify-content: center; gap: 5px; min-height: 60px; padding: 6px 2px;
+  color: var(--ink-2); font-family: var(--display); font-weight: 600; font-size: 0.86rem; line-height: 1;
+  letter-spacing: 0.05em; text-transform: uppercase;
+  transition: color 0.15s, background-color 0.15s;
 }
-.bottomNav .navItem[aria-current='page'] { color: var(--ink); }
+.bottomNav .navItem:active { background: var(--paper-2); }
+.bottomNav .navItem[aria-current='page'] { color: var(--ink); font-weight: 700; }
+.bottomNav .navItem[aria-current='page'] svg { stroke-width: 2.25; }
 .bottomNav .navItem[aria-current='page']::before {
-  content: ''; position: absolute; top: -2px; left: 24%; right: 24%; height: 4px; background: var(--red);
+  content: ''; position: absolute; top: -2px; left: 18%; right: 18%; height: 4px; background: var(--red);
 }
 
 .sidebar { display: none; }
@@ -49,27 +71,73 @@
 @media (min-width: 900px) {
   .admin { display: grid; grid-template-columns: 240px minmax(0, 1fr); }
   .topBar, .bottomNav { display: none; }
-  /* A dark band in both themes (--band), like the back office of the lot */
+  /* The right padding is on each row, so the current page's tab can reach past
+     the band's edge and join the page */
   .sidebar {
-    position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; gap: 8px;
-    padding: 20px 12px; background: var(--band); border-right: 2px solid var(--ink); color: var(--on-band);
+    position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; gap: 16px;
+    padding: 20px 0 16px 14px; background: var(--band); border-right: 2px solid var(--ink); color: var(--on-band);
   }
 }
-.sideBrand { display: flex; align-items: center; gap: 10px; padding: 4px 8px 18px; margin-bottom: 6px; border-bottom: 1px solid rgba(var(--on-band-rgb), 0.16); }
-.sideName { font-family: var(--display); font-weight: 700; font-size: 1.25rem; text-transform: uppercase; letter-spacing: 0.02em; line-height: 1.05; color: var(--on-band); }
-.sideRole { color: rgba(var(--on-band-rgb), 0.66); font-size: 0.8rem; }
-.sideNav { display: grid; gap: 2px; }
-.sideNav .navItem { padding: 10px 12px; border-radius: var(--radius); color: rgba(var(--on-band-rgb), 0.72); font-weight: 600; transition: background-color 0.15s, color 0.15s; }
-.sideNav .navItem:hover { background: rgba(var(--on-band-rgb), 0.08); color: var(--on-band); }
+.sideBrand {
+  display: flex; align-items: center; gap: 12px; margin-right: 14px; padding: 2px 0 18px;
+  border-bottom: 1px solid rgba(var(--on-band-rgb), 0.16);
+}
+.sideBrandText { display: grid; justify-items: start; gap: 6px; min-width: 0; }
+.sideName {
+  font-family: var(--display); font-weight: 700; font-size: 1.25rem; text-transform: uppercase; letter-spacing: 0.02em;
+  line-height: 1.05; color: var(--on-band); overflow-wrap: anywhere;
+}
+.sideNav { display: grid; gap: 14px; }
+.sideGroup { display: grid; gap: 2px; }
+/* Settings and History: the shop's own pages, under a rule */
+.sideGroup + .sideGroup::before { content: ''; height: 1px; margin: 0 14px 12px 0; background: rgba(var(--on-band-rgb), 0.16); }
+.sideNav .navItem {
+  margin-right: 14px; padding: 10px 14px; border-radius: var(--radius);
+  color: rgba(var(--on-band-rgb), 0.74); font-family: var(--display); font-weight: 600; font-size: 1.18rem; line-height: 1;
+  letter-spacing: 0.05em; text-transform: uppercase;
+  transition: color 0.15s, box-shadow 0.15s;
+}
+/* hover: no grey block (Clark), just brighter text and a thin edge where the tab would sit */
+.sideNav .navItem:hover { color: var(--on-band); box-shadow: inset 2px 0 0 rgba(var(--on-band-rgb), 0.45); }
+.sideNav .navItem:active { box-shadow: inset 4px 0 0 var(--red); }
 .sideNav .navIcon { position: static; }
-.sideNav .navBadge { top: 50%; right: 12px; transform: translateY(-50%); }
-.sideNav .navItem[aria-current='page'] { background: rgba(var(--on-band-rgb), 0.1); color: var(--on-band); box-shadow: inset 4px 0 0 var(--red); }
-.sideFoot { margin-top: auto; display: grid; gap: 2px; padding-top: 12px; border-top: 1px solid rgba(var(--on-band-rgb), 0.16); }
+.sideNav .navLabel { flex: 1; }
+.sideNav .navCount {
+  display: block; flex: none; color: rgba(var(--on-band-rgb), 0.62);
+  font-family: var(--body); font-size: 0.8rem; font-weight: 600; letter-spacing: 0; text-transform: none; font-variant-numeric: tabular-nums;
+}
+.sideNav .navBadge { top: 50%; right: 14px; transform: translateY(-50%); }
+/* the current page: a paper tab, 16px wider so it covers the band's edge (counts stay lined up) */
+.sideNav .navItem[aria-current='page'] {
+  margin-right: -2px; padding-right: 30px; border-radius: var(--radius) 0 0 var(--radius);
+  background: var(--paper); color: var(--ink); font-weight: 700; box-shadow: inset 4px 0 0 var(--red);
+}
+.sideNav .navItem[aria-current='page'] svg { stroke-width: 2.25; }
+.sideNav .navItem[aria-current='page'] .navCount { color: var(--ink-2); }
+.sideNav .navItem[aria-current='page'] .navBadge { right: 30px; }
+.sideFoot {
+  margin-top: auto; margin-right: 14px; display: grid; gap: 2px; padding-top: 12px;
+  border-top: 1px solid rgba(var(--on-band-rgb), 0.16);
+}
 .sideLink {
   display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 10px 12px; border: 0; border-radius: var(--radius);
-  background: none; color: rgba(var(--on-band-rgb), 0.72); font: inherit; font-weight: 600; text-decoration: none; cursor: pointer; text-align: left;
+  background: none; color: rgba(var(--on-band-rgb), 0.74); font: inherit; font-weight: 600; text-decoration: none; cursor: pointer; text-align: left;
+  transition: color 0.15s, box-shadow 0.15s;
 }
-.sideLink:hover { background: rgba(var(--on-band-rgb), 0.08); color: var(--on-band); }
+.sideLink:hover { color: var(--on-band); box-shadow: inset 2px 0 0 rgba(var(--on-band-rgb), 0.45); }
+.sideLink:active { box-shadow: inset 4px 0 0 var(--red); }
+/* Lock signs out: its own outlined button at the very bottom */
+.lockBtn {
+  display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; margin-top: 10px; padding: 10px 12px;
+  border: 1.5px solid rgba(var(--on-band-rgb), 0.4); border-radius: var(--radius); background: transparent; color: var(--on-band);
+  font-family: var(--display); font-weight: 700; font-size: 1.05rem; line-height: 1; letter-spacing: 0.06em; text-transform: uppercase;
+  cursor: pointer; transition: border-color 0.15s;
+}
+.lockBtn:hover { border-color: var(--on-band); }
+.lockBtn:active { border-color: var(--red); }
+/* the red focus ring is too faint on the dark band; the paper tab keeps red */
+.admin .sidebar :focus-visible { outline-color: var(--on-band); }
+.admin .sidebar [aria-current='page']:focus-visible { outline-color: var(--red); }
 
 /* ── PIN gate ── */
 

@@ -74,6 +74,10 @@ const EN = {
   'lead.failed': 'Couldn’t send. Please try again.', 'lead.full': 'This phone’s storage for the site is full, so the request couldn’t be sent. Please call or message us instead.',
   'footer.note': 'Demo website. Cars, prices and the shop are samples.',
   'footer.madeBy': 'Made by Clark VA 360',
+  'legal.privacy': 'Privacy Policy', 'legal.terms': 'Terms and Conditions', 'legal.nav': 'Legal',
+  'legal.updated': 'Last updated {date}',
+  'legal.sample': 'Sample for this demo website. A real shop should have its own version checked by a lawyer before going live.',
+  'legal.inEnglish': 'This page is in English.',
   'storage.off': 'This browser can’t save changes, so edits reset when you leave.',
   'time.days': '{n} days', 'time.day': '1 day', 'time.hours': '{n} hrs', 'time.hour': '1 hr',
 };
@@ -146,6 +150,10 @@ const CEB = {
   'lead.failed': 'Wala napadala. Palihug sulayi pag-usab.', 'lead.full': 'Puno na ang storage sa site ani nga phone, wala napadala ang request. Palihug tawag o message lang mi.',
   'footer.note': 'Demo nga website. Pananglitan lang ang mga sakyanan, presyo ug shop.',
   'footer.madeBy': 'Gihimo sa Clark VA 360',
+  'legal.privacy': 'Privacy Policy', 'legal.terms': 'Terms and Conditions', 'legal.nav': 'Legal',
+  'legal.updated': 'Katapusang gi-update {date}',
+  'legal.sample': 'Sample lang ni para sa demo nga website. Ang tinuod nga shop kinahanglan adunay kaugalingon nga bersyon nga gi-check sa abogado sa dili pa i-live.',
+  'legal.inEnglish': 'Ang sulod ani nga panid anaa sa English.',
   'storage.off': 'Dili maka-save ani nga browser, mawala ang mga kausaban inig gawas nimo.',
   'time.days': '{n} ka adlaw', 'time.day': '1 ka adlaw', 'time.hours': '{n} ka oras', 'time.hour': '1 ka oras',
 };

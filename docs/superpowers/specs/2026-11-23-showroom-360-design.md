@@ -139,6 +139,7 @@ Clark's ask: a page that lists every change the admin makes (editing a car, sett
 Clark's ask: a superadmin on the same admin site with passcode 0361. The superadmin can do everything; the admin can't see Settings or History.
 - **Sign-in:** one PIN page. The PIN that matches decides the role: superadmin 0361, admin 0360. Both PINs are in Settings and must differ. The role lasts for the browser tab, and Lock signs out.
 - **Admin:** Dashboard, Cars, Events and Leads. Settings and History are hidden from the sidebar, bottom tabs, top bar and Dashboard. Opening their URL directly shows "Superadmin only".
+- **Events (added 2026-11-24, Clark's ask):** only the superadmin can add an event. The admin can still open, edit and delete events. The "New event" button (Events page and Dashboard) and the Dashboard's "Create one" link are hidden from the admin, and opening `/showroom/admin/events/new` as the admin shows "Superadmin only". Rule: `canAddEvent(role)` in showroomRules.js.
 - **Superadmin:**
   - Everything above, plus Settings (with Reset) and History.
   - The role name shows under the shop name in the top bar and sidebar.
@@ -361,3 +362,26 @@ Clark's ask: hardcode photos for the sample cars, showing front, back, left side
   - **Storage:** ask the browser for persistent storage (`navigator.storage.persist()`). Safari can still clear site data after about 7 days without a visit; that's noted in the docs guide, and there's no export feature.
   - **Phones first (Clark, 2026-11-23):** most buyers will only ever see the store on a phone. 360–390 px is the primary layout for the public site *and* the admin, and every screen gets checked there first. 1280 px (Clark's laptop) comes second.
 - **Left to the builder:** component split, carousel internals, IndexedDB helper shape, CSS details, exact Cebuano wording (Clark proofreads) and sample car details.
+
+## Sample Privacy Policy and Terms (added 2026-11-24)
+Clark's ask: samples of a privacy policy and terms in the footer.
+- **Pages:** `/showroom/privacy` and `/showroom/terms`, linked from the footer on every public page, with a link to the other one at the bottom. The tab title names the page.
+- **Wording:** plain English for a Cebu used-car shop, in `legalText.js`. They name the shop, address and phone from Settings, so a pitched dealer sees their own name. The privacy policy follows the Data Privacy Act of 2012 (RA 10173): what is collected, why, who it is shared with (bank, insurer, LTO, PNP-HPG), how long it is kept, the data subject's rights and the National Privacy Commission. The terms cover prices, condition ("as is" unless a written warranty, with Consumer Act rights kept), loan estimates, test drives, reservations, papers and transfer, and Philippine law with Cebu courts. The ₱10,000 / 7-day reservation fee and one-year retention are sample values.
+- **Marked as samples:** a note at the top says a real shop should have its own version checked by a lawyer before going live.
+- **Language:** the page title, date and note follow EN/CEB; the body stays English in both (the CEB page says so). Real PH shops usually publish these in English, and a legal text in Claude's Bisaya would need a careful check.
+- **Never mentions the admin** (a test checks this).
+
+## Admin navigation, enhanced (added 2026-11-24)
+Clark's ask: enhance the admin navigation bar. Same look, sharper wayfinding.
+- **Desktop sidebar (from 900px):**
+  - The current page is a paper tab pulled out of the dark band and joined to the page, with a red edge. This is the reverse of the ink tabs that head each section.
+  - Links use condensed uppercase, like the public menu.
+  - Day-to-day pages (Dashboard, Cars, Events, Leads) come first. The superadmin's Settings and History sit under a rule.
+  - Counts show beside links: "10 in stock" by Cars, "1 live" by Events while a sale runs, and the red new-leads badge.
+  - The role shows as a sticker tag under the shop name, red for the superadmin.
+  - Lock is its own outlined "Lock admin" button at the very bottom, apart from View site and Dark mode.
+  - Focus rings on the band are paper-coloured (red is too faint there).
+  - Hover has no grey block (Clark didn't like it): the text brightens and a thin pale edge shows on the left. Pressing shows the red edge.
+- **Phone:**
+  - Bottom tabs: condensed uppercase labels, a bolder icon on the current tab, and press feedback.
+  - Top bar: the role tag, and a thin divider before Lock. Below 400px the shop name is slightly smaller, so a three-word name fits at 390px with four buttons. At 360px the superadmin's name may still end in "…".

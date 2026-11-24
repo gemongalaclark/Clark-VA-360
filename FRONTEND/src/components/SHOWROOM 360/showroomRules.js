@@ -1,5 +1,6 @@
 /* Showroom 360 — pure rules shared by the public site and the admin.
    No React, no browser APIs, so `node --test` can run them. */
+import { LEGAL_KINDS } from './legalText.js';
 
 const DAY = 864e5;
 
@@ -348,6 +349,7 @@ export function parseShowroomPath(pathname) {
   if (a?.toLowerCase() === 'admin') return { view: 'admin', sub: b || 'dashboard', id: c || null };
   if (a === 'cars' && b) return { view: 'car', id: b };
   if (a === 'cars') return { view: 'cars' };
+  if (LEGAL_KINDS.includes(a) && !b) return { view: a };
   if (!a) return { view: 'home' };
   return { view: 'notfound' };
 }
@@ -365,6 +367,9 @@ export function roleForPin(pin, settings) {
 }
 
 export const canOpen = (role, page) => role === 'superadmin' || (role === 'admin' && !SUPER_ONLY.has(page));
+
+/* The admin can edit and delete events; only the superadmin starts a new one */
+export const canAddEvent = (role) => role === 'superadmin';
 
 /* ── dark mode: the device's setting until the visitor flips the switch ── */
 
