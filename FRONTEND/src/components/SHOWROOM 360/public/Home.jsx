@@ -1,12 +1,12 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight, Phone, ExternalLink, ArrowRight, BellRing } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Phone, ExternalLink, ArrowRight, BellRing, Clock, MapPin } from 'lucide-react';
 import styles from '../Showroom360.module.css';
 import { useShowroom } from '../store.js';
-import { t, timeLeft } from '../i18n.js';
-import { useNav, Link, CarPhoto, PriceTag } from '../ui.jsx';
+import { t } from '../i18n.js';
+import { useNav, Link, CarPhoto, PriceTag, PhotoBand, SectionHead } from '../ui.jsx';
 import {
-  featuredCars, recentlySold, liveEventsWithCars, effectivePrice, monthlyFrom, carTitle, formatPeso, formatKm,
-  TRANSMISSIONS, FUELS, BODY_TYPES, mapsOpenUrl, filterCars,
+  featuredCars, recentlySold, effectivePrice, monthlyFrom, carTitle, formatPeso, formatKm,
+  TRANSMISSIONS, FUELS, BODY_TYPES, mapsOpenUrl, filterCars, bandCars,
 } from '../showroomRules.js';
 import { CarCard } from './Inventory.jsx';
 import LeadForm from './LeadForm.jsx';
@@ -43,22 +43,23 @@ export default function Home() {
   }, []);
 
   const sold = recentlySold(cars);
-  const live = liveEventsWithCars(events, cars, now);
   const forSale = filterCars(cars, {}, events, now);
 
   return (
     <>
-      <Ticker items={tickerItems(lang, { live, forSale, settings, now })} />
       <Featured slides={featuredCars(cars, events, now)} />
 
       {forSale.length > 0 && (
         <section className={styles.section} aria-labelledby="sr-latest">
-          <div className={styles.ruleHeadRow}>
-            <h2 id="sr-latest" className={styles.ruleHead}>{t(lang, 'cars.title')}</h2>
+          <SectionHead
+            id="sr-latest"
+            label={forSale.length === 1 ? t(lang, 'ticker.stock1') : t(lang, 'ticker.stock', { n: forSale.length })}
+            title={t(lang, 'cars.title')}
+          >
             <Link to="/showroom/cars" className={styles.arrowLink}>
               {t(lang, 'home.seeAll')} ({forSale.length})<ArrowRight size={18} strokeWidth={1.75} aria-hidden="true" />
             </Link>
-          </div>
+          </SectionHead>
           <ul className={styles.cardGrid}>
             {forSale.slice(0, 4).map(car => (
               <CarCard key={car.id} car={car} events={events} now={now} lang={lang} fin={settings.financing} />
@@ -69,18 +70,21 @@ export default function Home() {
 
       <section id="contact" className={`${styles.section} ${styles.about}`} aria-labelledby="sr-about">
         <div className={styles.aboutText}>
-          <h2 id="sr-about" className={styles.ruleHead}>{t(lang, 'home.about')}</h2>
-          <p className={styles.statement}>{settings.tagline || settings.shopName}</p>
+          <p className={styles.label}>{t(lang, 'home.about')}</p>
+          <h2 id="sr-about" className={styles.statement}>{settings.tagline || settings.shopName}</h2>
           {settings.about && <p className={styles.lead}>{settings.about}</p>}
           <dl className={styles.contactList}>
             {settings.phone && (
-              <div><dt>{t(lang, 'home.call')}</dt><dd><a href={telHref(settings.phone)}>{settings.phone}</a></dd></div>
+              <div>
+                <dt><Phone size={16} strokeWidth={1.75} aria-hidden="true" />{t(lang, 'home.call')}</dt>
+                <dd><a href={telHref(settings.phone)}>{settings.phone}</a></dd>
+              </div>
             )}
             {settings.hours && (
-              <div><dt>{t(lang, 'home.hours')}</dt><dd>{settings.hours}</dd></div>
+              <div><dt><Clock size={16} strokeWidth={1.75} aria-hidden="true" />{t(lang, 'home.hours')}</dt><dd>{settings.hours}</dd></div>
             )}
             {settings.address && (
-              <div><dt>{t(lang, 'home.address')}</dt><dd>{settings.address}</dd></div>
+              <div><dt><MapPin size={16} strokeWidth={1.75} aria-hidden="true" />{t(lang, 'home.address')}</dt><dd>{settings.address}</dd></div>
             )}
           </dl>
           <div className={styles.actions}>
@@ -103,81 +107,77 @@ export default function Home() {
         )}
       </section>
 
-      {sold.length > 0 && (
-        <section className={styles.section} aria-labelledby="sr-sold">
-          <h2 id="sr-sold" className={styles.ruleHead}>{t(lang, 'home.sold')}</h2>
-          <p className={`${styles.muted} ${styles.sectionHint}`}>{t(lang, 'home.soldHint')}</p>
-          <ul className={styles.soldRow}>
-            {sold.map(car => (
-              <li key={car.id} className={styles.soldCard}>
-                <div className={styles.soldMedia}>
-                  <CarPhoto car={car} />
-                  <span className={styles.soldStamp}>{t(lang, 'home.soldStamp')}</span>
-                </div>
-                <p className={styles.cardTitle}>{carTitle(car)}</p>
-                <p className={styles.muted}>
-                  {t(lang, 'home.soldOn', { date: new Date(car.soldAt).toLocaleDateString('en-PH', { month: 'short', day: 'numeric' }) })}
-                </p>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+      {sold.length > 0 && <RecentlySold sold={sold} lang={lang} />}
 
-      <WishBand lang={lang} />
+      <WishBand lang={lang} car={bandCars(cars)[1] ?? bandCars(cars)[0]} />
     </>
   );
 }
 
-/* The waitlist on the home page: for buyers who don't see their car */
-function WishBand({ lang }) {
-  const [open, setOpen] = useState(false);
+/* Recently sold: a row that swipes on phones; with a mouse, arrows scroll it a card at a time */
+function RecentlySold({ sold, lang }) {
+  const row = useRef(null);
+  const reduced = useReducedMotion();
+  const scroll = (dir) => {
+    const el = row.current;
+    const step = (el?.firstElementChild?.offsetWidth || 240) + 16;
+    el?.scrollBy({ left: dir * step, behavior: reduced ? 'auto' : 'smooth' });
+  };
   return (
-    <section className={styles.section} aria-labelledby="sr-wish">
-      <h2 id="sr-wish" className={styles.ruleHead}>{t(lang, 'wish.homeTitle')}</h2>
-      <div className={styles.wishBandBody}>
-        <p className={styles.lead}>{t(lang, 'wish.homeText')}</p>
-        <button type="button" className={styles.btnPrimary} onClick={() => setOpen(true)}>
-          <BellRing size={18} strokeWidth={1.75} aria-hidden="true" />{t(lang, 'wish.cta')}
-        </button>
-      </div>
-      {open && <LeadForm type="wish" query={{}} onClose={() => setOpen(false)} />}
+    <section className={styles.section} aria-labelledby="sr-sold">
+      <SectionHead id="sr-sold" label={t(lang, 'home.sold')} title={t(lang, 'home.soldHint')}>
+        {sold.length > 1 && (
+          <div className={styles.rowArrows}>
+            <button type="button" className={styles.roundBtn} onClick={() => scroll(-1)} aria-label={t(lang, 'home.prev')}>
+              <ChevronLeft size={20} strokeWidth={1.75} aria-hidden="true" />
+            </button>
+            <button type="button" className={styles.roundBtn} onClick={() => scroll(1)} aria-label={t(lang, 'home.next')}>
+              <ChevronRight size={20} strokeWidth={1.75} aria-hidden="true" />
+            </button>
+          </div>
+        )}
+      </SectionHead>
+      <ul ref={row} className={styles.soldRow}>
+        {sold.map(car => (
+          <li key={car.id} className={styles.soldCard}>
+            <div className={styles.soldMedia}>
+              <CarPhoto car={car} />
+              <span className={styles.soldStamp}>{t(lang, 'home.soldStamp')}</span>
+            </div>
+            <div className={styles.soldBody}>
+              <p className={styles.cardTitle}>{carTitle(car)}</p>
+              <p className={styles.muted}>
+                {t(lang, 'home.soldOn', { date: new Date(car.soldAt).toLocaleDateString('en-PH', { month: 'short', day: 'numeric' }) })}
+              </p>
+            </div>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }
 
-/* The shop's news for the red band: live sales first, then facts from its own
-   data (never a claim the dealer didn't make). */
-function tickerItems(lang, { live, forSale, settings, now }) {
-  const items = live.map(ev => t(lang, 'ticker.event', { name: ev.name, time: timeLeft(lang, ev.endsAt, now) }));
-  if (forSale.length) items.push(forSale.length === 1 ? t(lang, 'ticker.stock1') : t(lang, 'ticker.stock', { n: forSale.length }));
-  if (forSale.some(c => c.financing)) items.push(t(lang, 'ticker.financing'));
-  if (settings.hours) items.push(t(lang, 'ticker.hours', { hours: settings.hours }));
-  if (settings.address) items.push(settings.address);
-  return items;
-}
-
-/* A band that runs the items across, looping. Screen readers get the items once;
-   it holds still under a finger or mouse, and with reduced motion. */
-function Ticker({ items }) {
-  if (!items.length) return null;
-  const run = Array.from({ length: Math.ceil(8 / items.length) }, () => items).flat();
+/* The waitlist on the home page, for buyers who don't see their car: a dark photo
+   band (Drivehub's "Ready to find your next vehicle?"). The form sits outside the
+   band so it doesn't take the band's white-on-dark styles. */
+function WishBand({ lang, car }) {
+  const [open, setOpen] = useState(false);
   return (
-    <div className={styles.ticker}>
-      <p className={styles.srOnly}>{items.join('. ')}</p>
-      <div className={styles.tickerTrack} style={{ '--ticker-s': `${run.length * 5}s` }} aria-hidden="true">
-        {[0, 1].map(copy => (
-          <div key={copy} className={styles.tickerRun}>
-            {run.map((text, k) => <span key={k} className={styles.tickerItem}>{text}</span>)}
-          </div>
-        ))}
-      </div>
-    </div>
+    <>
+      <PhotoBand car={car} className={styles.wishBand} aria-labelledby="sr-wish">
+        <h2 id="sr-wish" className={styles.h2}>{t(lang, 'wish.homeTitle')}</h2>
+        <p className={styles.wishText}>{t(lang, 'wish.homeText')}</p>
+        <button type="button" className={styles.btnPrimary} onClick={() => setOpen(true)}>
+          <BellRing size={18} strokeWidth={1.75} aria-hidden="true" />{t(lang, 'wish.cta')}
+        </button>
+      </PhotoBand>
+      {open && <LeadForm type="wish" query={{}} onClose={() => setOpen(false)} />}
+    </>
   );
 }
 
 function Featured({ slides }) {
-  const { events, settings } = useShowroom();
+  const { events, settings, photoUrl } = useShowroom();
   const { lang, now } = useNav();
   const reduced = useReducedMotion();
   const [index, setIndex] = useState(0);
@@ -197,7 +197,8 @@ function Featured({ slides }) {
 
   return (
     <section
-      className={styles.featured}
+      className={`${styles.featured} ${styles.onDark} ${n ? '' : styles.featuredEmpty}`}
+      data-sr-hero={n > 0 ? '' : undefined}
       aria-roledescription="carousel"
       aria-labelledby="sr-featured"
       onMouseEnter={() => setHold(true)}
@@ -211,43 +212,58 @@ function Featured({ slides }) {
         setHold(false);
       }}
     >
-      <div className={styles.featuredInner}>
-        <div className={styles.featuredTop}>
-          <h1 id="sr-featured" className={styles.featuredLabel}>{t(lang, 'home.featured')}</h1>
-          {n > 1 && (
-            <p className={styles.slideCount} aria-hidden="true">
-              <strong>{String(i + 1).padStart(2, '0')}</strong> / {String(n).padStart(2, '0')}
-            </p>
-          )}
-        </div>
+      {/* the photos fill the band behind the text; a car without photos shows its drawing in the text column */}
+      <div className={styles.slides} aria-hidden="true">
+        {slides.map((car, k) => (
+          photoUrl(car.photoIds?.[0]) && (
+            <div key={car.id} className={`${styles.slideMedia} ${k === i ? styles.slideMediaActive : ''}`}>
+              <CarPhoto car={car} eager={k === 0} />
+            </div>
+          )
+        ))}
+        <div className={styles.slideShade} />
+      </div>
 
-        <div className={styles.slides}>
+      <div className={styles.featuredInner}>
+        <h1 id="sr-featured" className={`${styles.label} ${styles.featuredLabel}`}>{t(lang, 'home.featured')}</h1>
+
+        {n === 0 && (
+          <div className={styles.actions}>
+            <Link to="/showroom/cars" className={styles.btnPrimary}>{t(lang, 'home.seeAll')}</Link>
+          </div>
+        )}
+
+        <div className={styles.slideTexts}>
           {slides.map((car, k) => {
             const info = effectivePrice(car, events, now);
             const title = carTitle(car);
+            const drawn = !photoUrl(car.photoIds?.[0]);
             return (
               <div
                 key={car.id}
-                className={`${styles.slide} ${k === i ? styles.slideActive : ''}`}
+                className={`${styles.slide} ${k === i ? styles.slideActive : ''} ${drawn ? styles.slideDrawn : ''}`}
                 role="group"
                 aria-roledescription="slide"
                 aria-label={t(lang, 'home.slide', { n: k + 1, total: n })}
                 aria-hidden={k !== i}
               >
-                <div className={styles.slideMedia}>
-                  <CarPhoto car={car} label={title} mark />
-                  {car.stockNo && <span className={`${styles.mediaTag} ${styles.mediaTagLeft}`} aria-hidden="true">{car.stockNo}</span>}
-                  {BODY_TYPES[car.body] && <span className={`${styles.mediaTag} ${styles.mediaTagRight}`} aria-hidden="true">{BODY_TYPES[car.body]}</span>}
-                </div>
-                <div className={styles.slideText}>
+                {drawn && <div className={styles.heroArt}><CarPhoto car={car} label={title} /></div>}
+                <div className={styles.slideCopy}>
+                  {(car.stockNo || BODY_TYPES[car.body]) && (
+                    <p className={styles.heroTags} aria-hidden="true">
+                      {car.stockNo && <span className={styles.mediaTag}>{car.stockNo}</span>}
+                      {BODY_TYPES[car.body] && <span className={styles.mediaTag}>{BODY_TYPES[car.body]}</span>}
+                    </p>
+                  )}
                   <h2 className={styles.slideTitle}>{title}</h2>
                   <p className={styles.slideFacts}>
                     {[formatKm(car.odometer), TRANSMISSIONS[car.transmission], FUELS[car.fuel]].join(' · ')}
                   </p>
-                  <div className={`${styles.sticker} ${info.event || info.dropped ? styles.stickerSale : ''}`}>
-                    <span className={styles.stickerHead}>{info.event ? info.event.name : info.dropped ? t(lang, 'price.dropped') : t(lang, 'sticker.price')}</span>
-                    <PriceTag info={info} wasLabel={t(lang, 'car.was')} className={styles.slidePrice} />
-                    <span className={styles.stickerTear}>
+                  <div className={styles.heroPrice}>
+                    {info.event && <span className={styles.saleChip}>{info.event.name}</span>}
+                    {info.dropped && <span className={styles.saleChip}>{t(lang, 'price.dropped')}</span>}
+                    <PriceTag info={info} wasLabel={t(lang, 'car.was')} />
+                    <span className={styles.heroMonthly}>
                       {car.financing
                         ? t(lang, 'cars.fromMo', { amount: formatPeso(monthlyFrom(info.price, settings.financing)) })
                         : t(lang, 'cars.cashOnly')}
@@ -257,7 +273,7 @@ function Featured({ slides }) {
                     <Link to={`/showroom/cars/${car.id}`} className={styles.btnPrimary} tabIndex={k === i ? 0 : -1}>
                       {t(lang, 'home.viewCar')}
                     </Link>
-                    <Link to="/showroom/cars" className={styles.arrowLink} tabIndex={k === i ? 0 : -1}>
+                    <Link to="/showroom/cars" className={styles.btnGhost} tabIndex={k === i ? 0 : -1}>
                       {t(lang, 'home.seeAll')}<ArrowRight size={18} strokeWidth={1.75} aria-hidden="true" />
                     </Link>
                   </div>
@@ -288,6 +304,9 @@ function Featured({ slides }) {
             <button type="button" className={styles.roundBtn} onClick={() => go(1)} aria-label={t(lang, 'home.next')}>
               <ChevronRight size={20} strokeWidth={1.75} aria-hidden="true" />
             </button>
+            <p className={styles.slideCount} aria-hidden="true">
+              <strong>{String(i + 1).padStart(2, '0')}</strong> / {String(n).padStart(2, '0')}
+            </p>
           </div>
         )}
       </div>

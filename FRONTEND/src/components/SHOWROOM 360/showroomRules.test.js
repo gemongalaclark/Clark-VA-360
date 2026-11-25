@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { SAMPLE_ANGLES, isSamplePhoto, samplePhotoUrl, sampleCredit } from './samplePhotos.js';
 import {
-  carTitle, formatPeso, nextStockNo, eventStatus, effectivePrice, featuredCars, recentlySold,
+  carTitle, formatPeso, nextStockNo, eventStatus, effectivePrice, featuredCars, recentlySold, bandCars,
   loanQuote, monthlyFrom, filterCars, parseQuery, toQuery, daysInStock, AGING_DAYS,
   isPhMobile, validateCar, validateEvent, validateLead, inquiryText, fbCaption, DEFAULT_FINANCING,
   messengerUrl, viberUrl, toIntlMobile, mapsOpenUrl, parseShowroomPath,
@@ -102,6 +102,18 @@ test('recentlySold lists sold cars, latest sale first', () => {
   ];
   assert.deepEqual(recentlySold(cars).map(c => c.id), ['new', 'old']);
   assert.deepEqual(recentlySold(cars, 1).map(c => c.id), ['new']);
+});
+
+test('bandCars picks unsold cars with photos, newest listed first', () => {
+  const cars = [
+    car({ id: 'sold', status: 'sold', photoIds: ['p1'], listedAt: at(-2) }),
+    car({ id: 'bare', photoIds: [], listedAt: at(0) }),
+    car({ id: 'older', photoIds: ['p2'], listedAt: at(-5) }),
+    car({ id: 'reserved', status: 'reserved', photoIds: ['p3'], listedAt: at(-1) }),
+  ];
+  assert.deepEqual(bandCars(cars).map(c => c.id), ['reserved', 'older']);
+  assert.deepEqual(cars.map(c => c.id), ['sold', 'bare', 'older', 'reserved']);
+  assert.deepEqual(bandCars([]), []);
 });
 
 /* ── financing ── */

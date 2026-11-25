@@ -1,11 +1,11 @@
 import { useEffect, useId, useMemo, useState } from 'react';
-import { Search, SlidersHorizontal, SearchX, ArrowRight, BellRing } from 'lucide-react';
+import { Search, SlidersHorizontal, SearchX, ArrowRight, BellRing, Gauge, Cog, Fuel } from 'lucide-react';
 import styles from '../Showroom360.module.css';
 import { useShowroom } from '../store.js';
 import { t } from '../i18n.js';
-import { useNav, Link, CarPhoto, PriceTag, Sheet } from '../ui.jsx';
+import { useNav, Link, CarPhoto, PriceTag, Sheet, PhotoBand } from '../ui.jsx';
 import {
-  filterCars, parseQuery, toQuery, effectivePrice, monthlyFrom, carTitle, formatPeso, formatKm,
+  filterCars, parseQuery, toQuery, effectivePrice, monthlyFrom, carTitle, formatPeso, formatKm, bandCars,
   BODY_TYPES, TRANSMISSIONS, FUELS, SORT_KEYS,
   priceBounds, priceFilter, parsePesoInput, priceAtPosition, positionOfPrice, PRICE_POSITIONS,
 } from '../showroomRules.js';
@@ -54,85 +54,90 @@ export default function Inventory() {
   const countText = results.length === 1 ? t(lang, 'cars.count1') : t(lang, 'cars.count', { n: results.length });
 
   return (
-    <div className={styles.inventory}>
-      <div className={styles.inventoryHead}>
+    <>
+      {/* the banner: a photo of a car on the lot, the header see-through over it */}
+      <PhotoBand hero car={bandCars(cars)[0]} className={styles.invBanner}>
         <h1 className={styles.h1}>{t(lang, 'cars.title')}</h1>
-        <div className={styles.searchRow}>
-          <label htmlFor={searchId} className={styles.srOnly}>{t(lang, 'cars.search')}</label>
-          <div className={styles.searchBox}>
-            <Search size={18} strokeWidth={1.75} aria-hidden="true" />
-            <input
-              id={searchId}
-              type="search"
-              className={styles.searchInput}
-              placeholder={t(lang, 'cars.search')}
-              value={query.q || ''}
-              onChange={(e) => update({ q: e.target.value })}
-              enterKeyHint="search"
-            />
-          </div>
-          <button type="button" className={`${styles.btnGhost} ${styles.filterBtn}`} onClick={() => setSheetOpen(true)}>
-            <SlidersHorizontal size={18} strokeWidth={1.75} aria-hidden="true" />
-            {t(lang, 'cars.filters')}{activeFilters > 0 && <span className={styles.countBadge}>{activeFilters}</span>}
-          </button>
-        </div>
-      </div>
-
-      <div className={styles.inventoryBody}>
-        <aside className={styles.filterSide} aria-label={t(lang, 'cars.filters')}>
-          <Filters query={query} update={update} options={options} lang={lang} idPrefix="side" />
-          {activeFilters > 0 && <button type="button" className={styles.textBtn} onClick={clear}>{t(lang, 'cars.clear')}</button>}
-        </aside>
-
-        <section className={styles.results} aria-label={countText}>
-          <div className={styles.resultsBar}>
-            <p className={styles.muted} aria-live="polite">{countText}</p>
-            <label className={styles.sortLabel}>
-              <span>{t(lang, 'cars.sort')}</span>
-              <select className={styles.select} value={query.sort || 'newest'} onChange={(e) => update({ sort: e.target.value === 'newest' ? undefined : e.target.value })}>
-                {SORT_KEYS.map(k => <option key={k} value={k}>{t(lang, `sort.${k}`)}</option>)}
-              </select>
-            </label>
-          </div>
-
-          {results.length === 0 ? (
-            <div className={styles.empty}>
-              <SearchX size={40} strokeWidth={1.5} aria-hidden="true" />
-              <h2>{t(lang, 'cars.empty')}</h2>
-              <p>{t(lang, 'cars.emptyHint')}</p>
-              <p>{t(lang, 'wish.line')}</p>
-              <div className={styles.emptyActions}>
-                {wishBtn(styles.btnPrimary)}
-                <button type="button" className={styles.btnGhost} onClick={clear}>{t(lang, 'cars.clear')}</button>
-              </div>
+      </PhotoBand>
+      <div className={styles.inventory}>
+        <div className={styles.inventoryHead}>
+          <div className={styles.searchRow}>
+            <label htmlFor={searchId} className={styles.srOnly}>{t(lang, 'cars.search')}</label>
+            <div className={styles.searchBox}>
+              <Search size={18} strokeWidth={1.75} aria-hidden="true" />
+              <input
+                id={searchId}
+                type="search"
+                className={styles.searchInput}
+                placeholder={t(lang, 'cars.search')}
+                value={query.q || ''}
+                onChange={(e) => update({ q: e.target.value })}
+                enterKeyHint="search"
+              />
             </div>
-          ) : (
-            <>
-              <ul className={styles.cardGrid}>
-                {results.map(car => <CarCard key={car.id} car={car} events={events} now={now} lang={lang} fin={settings.financing} />)}
-              </ul>
-              <div className={styles.wishLine}>
-                <p>{t(lang, activeFilters > 0 || query.q ? 'wish.line' : 'wish.lineAny')}</p>
-                {wishBtn(styles.btnGhost)}
-              </div>
-            </>
-          )}
-        </section>
-      </div>
-
-      {/* mounted only while open: the form has no car to show when closed */}
-      {wishOpen && <LeadForm type="wish" query={wishQuery} onClose={() => setWishOpen(false)} />}
-
-      <Sheet open={sheetOpen} onClose={() => setSheetOpen(false)} title={t(lang, 'cars.filters')} closeLabel={t(lang, 'common.close')}>
-        <Filters query={query} update={update} options={options} lang={lang} idPrefix="sheet" />
-        <div className={styles.sheetActions}>
-          <button type="button" className={styles.btnGhost} onClick={clear}>{t(lang, 'cars.clear')}</button>
-          <button type="button" className={styles.btnPrimary} onClick={() => setSheetOpen(false)}>
-            {t(lang, 'cars.show', { n: results.length })}
-          </button>
+            <button type="button" className={`${styles.btnGhost} ${styles.filterBtn}`} onClick={() => setSheetOpen(true)}>
+              <SlidersHorizontal size={18} strokeWidth={1.75} aria-hidden="true" />
+              {t(lang, 'cars.filters')}{activeFilters > 0 && <span className={styles.countBadge}>{activeFilters}</span>}
+            </button>
+          </div>
         </div>
-      </Sheet>
-    </div>
+
+        <div className={styles.inventoryBody}>
+          <aside className={styles.filterSide} aria-label={t(lang, 'cars.filters')}>
+            <Filters query={query} update={update} options={options} lang={lang} idPrefix="side" />
+            {activeFilters > 0 && <button type="button" className={styles.textBtn} onClick={clear}>{t(lang, 'cars.clear')}</button>}
+          </aside>
+
+          <section className={styles.results} aria-label={countText}>
+            <div className={styles.resultsBar}>
+              <p className={styles.muted} aria-live="polite">{countText}</p>
+              <label className={styles.sortLabel}>
+                <span>{t(lang, 'cars.sort')}</span>
+                <select className={styles.select} value={query.sort || 'newest'} onChange={(e) => update({ sort: e.target.value === 'newest' ? undefined : e.target.value })}>
+                  {SORT_KEYS.map(k => <option key={k} value={k}>{t(lang, `sort.${k}`)}</option>)}
+                </select>
+              </label>
+            </div>
+
+            {results.length === 0 ? (
+              <div className={styles.empty}>
+                <SearchX size={40} strokeWidth={1.5} aria-hidden="true" />
+                <h2>{t(lang, 'cars.empty')}</h2>
+                <p>{t(lang, 'cars.emptyHint')}</p>
+                <p>{t(lang, 'wish.line')}</p>
+                <div className={styles.emptyActions}>
+                  {wishBtn(styles.btnPrimary)}
+                  <button type="button" className={styles.btnGhost} onClick={clear}>{t(lang, 'cars.clear')}</button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <ul className={styles.cardGrid}>
+                  {results.map(car => <CarCard key={car.id} car={car} events={events} now={now} lang={lang} fin={settings.financing} />)}
+                </ul>
+                <div className={styles.wishLine}>
+                  <p>{t(lang, activeFilters > 0 || query.q ? 'wish.line' : 'wish.lineAny')}</p>
+                  {wishBtn(styles.btnGhost)}
+                </div>
+              </>
+            )}
+          </section>
+        </div>
+
+        {/* mounted only while open: the form has no car to show when closed */}
+        {wishOpen && <LeadForm type="wish" query={wishQuery} onClose={() => setWishOpen(false)} />}
+
+        <Sheet open={sheetOpen} onClose={() => setSheetOpen(false)} title={t(lang, 'cars.filters')} closeLabel={t(lang, 'common.close')}>
+          <Filters query={query} update={update} options={options} lang={lang} idPrefix="sheet" />
+          <div className={styles.sheetActions}>
+            <button type="button" className={styles.btnGhost} onClick={clear}>{t(lang, 'cars.clear')}</button>
+            <button type="button" className={styles.btnPrimary} onClick={() => setSheetOpen(false)}>
+              {t(lang, 'cars.show', { n: results.length })}
+            </button>
+          </div>
+        </Sheet>
+      </div>
+    </>
   );
 }
 
@@ -246,7 +251,7 @@ export function CarCard({ car, events, now, lang, fin }) {
     <li className={styles.card}>
       <Link to={`/showroom/cars/${car.id}`} className={styles.cardLink}>
         <div className={styles.cardMedia}>
-          <CarPhoto car={car} mark />
+          <CarPhoto car={car} />
           <div className={styles.cardBadges}>
             {info.event && <span className={styles.saleChip}>{info.event.name}</span>}
             {info.dropped && <span className={styles.saleChip}>{t(lang, 'price.dropped')}</span>}
@@ -255,9 +260,15 @@ export function CarCard({ car, events, now, lang, fin }) {
           {car.stockNo && <span className={styles.cardStock} aria-hidden="true">{car.stockNo}</span>}
         </div>
         <div className={styles.cardBody}>
-          <h3 className={styles.cardTitle}>{title}</h3>
-          <PriceTag info={info} wasLabel={t(lang, 'car.was')} className={styles.cardPrice} />
-          <p className={styles.cardFacts}>{[formatKm(car.odometer), TRANSMISSIONS[car.transmission], FUELS[car.fuel]].join(' · ')}</p>
+          <div className={styles.cardHead}>
+            <h3 className={styles.cardTitle}>{title}</h3>
+            <PriceTag info={info} wasLabel={t(lang, 'car.was')} className={styles.cardPrice} />
+          </div>
+          <p className={styles.cardFacts}>
+            <span><Gauge size={14} strokeWidth={1.75} aria-hidden="true" />{formatKm(car.odometer)}</span>
+            <span><Cog size={14} strokeWidth={1.75} aria-hidden="true" />{TRANSMISSIONS[car.transmission]}</span>
+            <span><Fuel size={14} strokeWidth={1.75} aria-hidden="true" />{FUELS[car.fuel]}</span>
+          </p>
         </div>
         <p className={styles.cardMonthly}>
           <span>

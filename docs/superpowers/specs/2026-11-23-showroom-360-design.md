@@ -281,7 +281,7 @@ Clark's ask: a dark mode toggle for the whole showroom (public site and admin) t
   - Native controls and dialogs follow the theme. The Google map stays light.
 - **How:** `useTheme` sets `<html data-sr-theme>` while the showroom is open and removes it on leaving, so the portfolio is untouched. Only colour tokens change, so new UI must use the tokens and never raw colours.
 
-## Look v3: "sticker, turned up" (added 2026-11-23)
+## Look v3: "sticker, turned up" (added 2026-11-23; replaced by Look v4 on 2026-11-25)
 Clark's ask: "greatly enhance the UI/UX design… cool and unique but professional", leaving the car drawings as they are. From three directions (this one, "inspection report" and "race program"), Clark picked this one and "build straight away". It's a visual change only: behaviour, copy rules, accessibility and dark mode are kept.
 - **Section heads:** ink tabs sitting on a 2px rule, like the black bars on a real window sticker. One element does both: the heading's own background is the tab, and its `::after` paints paper over the rest of the line and draws the rule. The same goes for admin block heads, form legends and History days.
 - **Block shadow:** `--lift` (4px solid, no blur) under the price stickers, the hero frame, the map, the admin stats strip and the PIN card. Main buttons sit on a 3px shadow and press into it. In dark mode the shadow is black, so the light borders carry the shape.
@@ -301,7 +301,13 @@ Clark's ask: "greatly enhance the UI/UX design… cool and unique but profession
 - **Small phones:** under 380 px the shop name in the header is smaller, so "Demo Motors Cebu" fits whole next to EN | CEB. It was already cut off at 360 px before this change.
 - **New wording:** `ticker.*` and `sticker.price`. `home.endsIn` was removed, because the ticker carries the sale now. The Cebuano strings are Claude's; Clark should proofread them.
 
-## Sample car photos (added 2026-11-24)
+## Look v4: "dealer site" (added 2026-11-25, replaces v2 and v3)
+Clark's ask: the sticker look "seems to be like not really that kind of a car dealership design", so restyle the public site and the admin after two Drivehub template screenshots, keeping every feature and piece of content, as mobile-friendly as possible. Full design: `docs/superpowers/specs/2026-11-25-showroom-drivehub-look-design.md`; plan: `docs/superpowers/plans/2026-11-25-showroom-drivehub-look.md`.
+- **In short:** dark full-bleed photo bands (home hero = the featured carousel, Cars banner, waitlist band), white sections with "• label" headings, rounded photo cards, black/white buttons, Inter only (Barlow Condensed removed), a near-black footer with columns and the shop name in giant letters. Red only for sales and alerts.
+- **Shell:** a slim dark top strip (the ticker on home; phone, hours and address elsewhere) and a dark header that is see-through over a photo hero (`useOverHero` watches `[data-sr-hero]`). Contact is a white button on desktop.
+- **Admin:** same tokens; a dark sidebar with the current page as a white block, a dark PIN page with a white card, bordered stat cards, pills for tabs and chips.
+- **Kept:** all behaviour, copy, i18n (no new strings), accessibility, reduced motion and dark mode (same token names). The car drawings are untouched; the outline model name behind them is gone.
+
 Clark's ask: hardcode photos for the sample cars, showing front, back, left side and right side.
 - **Source (Clark's pick):** free-licence photos from Wikimedia Commons: CC BY-SA, CC BY, CC0 or public domain. Official brand photos were turned down because they're copyrighted. Dealer listing photos were ruled out because they're copyrighted and would show real dealers and plates.
 - **Always four (Clark's pick):** where no single car has all four angles, the gallery mixes cars of the same model (and roughly the same generation). Colour, wheels or facelift can therefore change between photos. True side profiles are rare on Commons, so "left" and "right" are often three-quarter views where that side dominates.

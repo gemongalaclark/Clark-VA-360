@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight, SearchX, CalendarCheck, BookmarkCheck, Expand, BellRing } from 'lucide-react';
+import { ChevronLeft, ChevronRight, SearchX, CalendarCheck, BookmarkCheck, Expand, BellRing, Calendar, Gauge, Cog, Fuel } from 'lucide-react';
 import styles from '../Showroom360.module.css';
 import { useShowroom } from '../store.js';
 import { t } from '../i18n.js';
@@ -39,10 +39,10 @@ export default function CarPage({ id }) {
   const reserved = car.status === 'reserved';
 
   const facts = [
-    ['spec.year', car.year],
-    ['spec.odometer', formatKm(car.odometer)],
-    ['spec.transmission', TRANSMISSIONS[car.transmission]],
-    ['spec.fuel', FUELS[car.fuel]],
+    ['spec.year', car.year, Calendar],
+    ['spec.odometer', formatKm(car.odometer), Gauge],
+    ['spec.transmission', TRANSMISSIONS[car.transmission], Cog],
+    ['spec.fuel', FUELS[car.fuel], Fuel],
   ];
   const specs = [
     ['spec.year', car.year],
@@ -76,7 +76,7 @@ export default function CarPage({ id }) {
 
         <aside className={styles.carSide}>
           <div className={styles.carSummary}>
-            {/* a sale is named on the sticker's red header below */}
+            {/* a sale is named by the red chip on the price card below */}
             {reserved && (
               <div className={styles.cardBadges}>
                 <span className={styles.reservedChip}>{t(lang, 'car.reserved')}</span>
@@ -84,22 +84,27 @@ export default function CarPage({ id }) {
             )}
             <h1 className={styles.carTitle}>{title}</h1>
             <dl className={styles.factStrip}>
-              {facts.map(([key, value]) => (
-                <div key={key}><dt>{t(lang, key)}</dt><dd>{value}</dd></div>
+              {facts.map(([key, value, Icon]) => (
+                <div key={key}>
+                  <dt><Icon size={14} strokeWidth={1.75} aria-hidden="true" />{t(lang, key)}</dt>
+                  <dd>{value}</dd>
+                </div>
               ))}
             </dl>
           </div>
 
-          {/* The car's window sticker: price, monthly, the ways to ask, the stock no. */}
-          <div className={`${styles.priceBox} ${info.event || info.dropped ? styles.priceBoxSale : ''}`}>
+          {/* The price card: price, monthly, the ways to ask, the stock no. */}
+          <div className={styles.priceBox}>
             <p className={styles.priceBoxHead}>
-              <span>{info.event ? info.event.name : info.dropped ? t(lang, 'price.dropped') : t(lang, 'sticker.price')}</span>
-              {car.negotiable && !sold && <span>{t(lang, 'car.negotiable')}</span>}
+              {info.event || info.dropped
+                ? <span className={styles.saleChip}>{info.event ? info.event.name : t(lang, 'price.dropped')}</span>
+                : <span>{t(lang, 'sticker.price')}</span>}
+              {car.negotiable && !sold && <span className={styles.negChip}>{t(lang, 'car.negotiable')}</span>}
             </p>
             <div className={styles.priceBoxBody}>
               <PriceTag info={info} wasLabel={t(lang, 'car.was')} className={styles.carPrice} />
               {!sold && (
-                <p className={styles.stickerTear}>
+                <p className={styles.monthlyLine}>
                   {car.financing
                     ? t(lang, 'cars.fromMo', { amount: formatPeso(monthlyFrom(info.price, settings.financing)) })
                     : t(lang, 'cars.cashOnly')}
@@ -127,7 +132,7 @@ export default function CarPage({ id }) {
                 </button>
               )}
               {car.stockNo && (
-                <p className={styles.barcode}><span className={styles.srOnly}>{t(lang, 'spec.stock')} </span>{car.stockNo}</p>
+                <p className={styles.stockLine}>{t(lang, 'spec.stock')} <strong>{car.stockNo}</strong></p>
               )}
             </div>
           </div>
@@ -228,7 +233,7 @@ function Gallery({ car, title, lang }) {
           if (total > 1 && Math.abs(dx) > 40) go(dx < 0 ? 1 : -1);
         }}
       >
-        <CarPhoto car={car} index={i} label={total > 1 ? `${title}, ${t(lang, 'car.photo', { n: i + 1, total })}` : title} mark />
+        <CarPhoto car={car} index={i} label={total > 1 ? `${title}, ${t(lang, 'car.photo', { n: i + 1, total })}` : title} />
         {zoomable && (
           <button type="button" className={styles.galleryZoom} onClick={() => setViewer(true)} aria-label={t(lang, 'car.zoomOpen', { n: i + 1, total })}>
             <span className={styles.galleryZoomIcon}><Expand size={18} strokeWidth={2} aria-hidden="true" /></span>

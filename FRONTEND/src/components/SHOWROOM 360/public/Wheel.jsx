@@ -17,9 +17,9 @@ const point = (deg, r = R) => {
 };
 
 /* Room for a label along the radius, hub to rim, and one character's width in
-   Barlow Condensed as a share of the font size */
+   Inter (semibold, as typed) as a share of the font size */
 const ROOM = 60;
-const CHAR = 0.47;
+const CHAR = 0.56;
 const fit = (label, max) => (label.length > max ? `${label.slice(0, Math.max(1, max - 1)).trimEnd()}…` : label);
 
 /* A slice's colour by its place: red and cream in turn; with an odd count the last one

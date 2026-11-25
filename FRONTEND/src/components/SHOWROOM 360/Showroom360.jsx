@@ -6,24 +6,16 @@ import { useLang, t } from './i18n.js';
 import { NavContext, useNav, ToastProvider, ShopLogo, useTheme, ThemeToggle } from './ui.jsx';
 import { parseShowroomPath, carTitle } from './showroomRules.js';
 import { sampleCredit } from './samplePhotos.js';
-import Home from './public/Home.jsx';
+import Home, { telHref } from './public/Home.jsx';
 import Inventory from './public/Inventory.jsx';
 import CarPage from './public/CarPage.jsx';
 import Legal from './public/Legal.jsx';
 import PromoPopup from './public/PromoPopup.jsx';
+import TopStrip from './public/TopStrip.jsx';
 import { LEGAL_KINDS } from './legalText.js';
 
 /* The admin is its own download: buyers never load it */
 const Admin = lazy(() => import('./admin/Admin.jsx'));
-
-/* The condensed display face is only used here, so only this chunk asks for it */
-const DISPLAY_FONT = 'https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&display=swap';
-if (typeof document !== 'undefined' && !document.querySelector(`link[href="${DISPLAY_FONT}"]`)) {
-  const link = document.createElement('link');
-  link.rel = 'stylesheet';
-  link.href = DISPLAY_FONT;
-  document.head.appendChild(link);
-}
 
 export const readLocation = () => ({ ...parseShowroomPath(window.location.pathname), search: window.location.search });
 
@@ -129,6 +121,24 @@ function useContactInView(onHome) {
   return inView;
 }
 
+/* True while the page's photo hero ([data-sr-hero]) is still under the header, so
+   the header can be see-through over it. Pages without one get the solid header
+   straight away, measured before the first paint of each page. */
+function useOverHero(pageKey) {
+  const [over, setOver] = useState(false);
+  useLayoutEffect(() => {
+    const el = document.querySelector('[data-sr-hero]');
+    if (!el) { setOver(false); return undefined; }
+    const headerH = parseFloat(getComputedStyle(el).getPropertyValue('--header-h')) || 64;
+    setOver(el.getBoundingClientRect().bottom > headerH + 1);
+    if (typeof IntersectionObserver === 'undefined') return undefined;
+    const io = new IntersectionObserver(([entry]) => setOver(entry.isIntersecting), { rootMargin: `-${headerH + 1}px 0px 0px 0px` });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [pageKey]);
+  return over;
+}
+
 function PublicShell() {
   const { settings, persistent, cars } = useShowroom();
   const { loc, navigate, lang, setLang, onBackToPortfolio } = useNav();
@@ -137,6 +147,7 @@ function PublicShell() {
     .map(id => ({ id, car, credit: sampleCredit(id) }))
     .filter(x => x.credit));
   const atContact = useContactInView(loc.view === 'home');
+  const overHero = useOverHero(`${loc.view}/${loc.id || ''}`);
 
   const go = (url) => (e) => { e.preventDefault(); navigate(url); };
   const goContact = (e) => {
@@ -155,9 +166,10 @@ function PublicShell() {
   /* Contact is a place on the home page, not a page of its own */
   const ariaCurrent = (id) => (current !== id ? undefined : id === 'contact' ? 'location' : 'page');
 
-  const navItems = (cls) => (
+  /* the top nav leaves Contact out: on wide screens it's the white button at the right */
+  const navItems = (cls, only) => (
     <nav className={cls} aria-label={t(lang, 'nav.menu')}>
-      {links.map(l => (
+      {links.filter(l => !only || only.includes(l.id)).map(l => (
         <a key={l.id} href={l.href} onClick={l.onClick} className={styles.navLink} aria-current={ariaCurrent(l.id)}>
           <l.Icon size={20} strokeWidth={1.75} aria-hidden="true" />
           <span>{l.label}</span>
@@ -165,26 +177,36 @@ function PublicShell() {
       ))}
     </nav>
   );
+  const contact = links.find(l => l.id === 'contact');
+  const footLink = (href, onClick, label, current) => (
+    <a href={href} onClick={onClick} className={styles.footerLink} aria-current={current}>{label}</a>
+  );
 
   return (
     <div className={styles.app}>
-      <header className={styles.header}>
+      {/* the notice comes first: a photo hero slides up under the header */}
+      {!persistent && <p className={styles.notice} role="status">{t(lang, 'storage.off')}</p>}
+      <TopStrip />
+      <header className={`${styles.header} ${styles.onDark} ${overHero ? styles.headerClear : ''}`}>
         <div className={styles.headerInner}>
           <a href="/showroom" className={styles.brand} onClick={go('/showroom')}>
             <ShopLogo settings={settings} />
             <span>{settings.shopName}</span>
           </a>
-          {navItems(styles.topNav)}
-          <div className={styles.langSwitch} role="group" aria-label={t(lang, 'lang.switch')}>
-            {[['en', 'EN'], ['ceb', 'CEB']].map(([id, label]) => (
-              <button key={id} type="button" aria-pressed={lang === id} onClick={() => setLang(id)}>{label}</button>
-            ))}
+          {navItems(styles.topNav, ['home', 'cars'])}
+          <div className={styles.headerEnd}>
+            <div className={styles.langSwitch} role="group" aria-label={t(lang, 'lang.switch')}>
+              {[['en', 'EN'], ['ceb', 'CEB']].map(([id, label]) => (
+                <button key={id} type="button" aria-pressed={lang === id} onClick={() => setLang(id)}>{label}</button>
+              ))}
+            </div>
+            <ThemeToggle className={styles.iconBtn} />
+            <a href={contact.href} onClick={contact.onClick} className={styles.contactBtn} aria-current={ariaCurrent('contact')}>
+              {contact.label}
+            </a>
           </div>
-          <ThemeToggle className={styles.iconBtn} />
         </div>
       </header>
-
-      {!persistent && <p className={styles.notice} role="status">{t(lang, 'storage.off')}</p>}
 
       <main className={styles.main}>
         {loc.view === 'home' && <Home />}
@@ -203,20 +225,33 @@ function PublicShell() {
       {/* the event's prize wheel: a gift button on the home page (public pages only) */}
       <PromoPopup />
 
-      <footer className={`${styles.footer} ${loc.view === 'car' ? styles.footerCar : ''}`}>
+      <footer className={`${styles.footer} ${styles.onDark} ${loc.view === 'car' ? styles.footerCar : ''}`}>
         <div className={styles.footerInner}>
-          <p className={styles.footerShop}>{settings.shopName}</p>
-          {(settings.address || settings.hours) && (
-            <p className={styles.footerFacts}>{[settings.address, settings.hours].filter(Boolean).join(' · ')}</p>
-          )}
-          <p className={styles.footerNote}>{t(lang, 'footer.note')}</p>
-          <nav className={styles.footerLinks} aria-label={t(lang, 'legal.nav')}>
-            {LEGAL_KINDS.map(k => (
-              <a key={k} href={`/showroom/${k}`} onClick={go(`/showroom/${k}`)} aria-current={loc.view === k ? 'page' : undefined}>
-                {t(lang, `legal.${k}`)}
-              </a>
-            ))}
-          </nav>
+          <div className={styles.footerGrid}>
+            <div className={`${styles.footerCol} ${styles.footerShopCol}`}>
+              <p className={styles.footerShop}><ShopLogo settings={settings} /><span>{settings.shopName}</span></p>
+              <p className={styles.footerNote}>{t(lang, 'footer.note')}</p>
+              <p className={styles.footerNote}>© {new Date().getFullYear()} {settings.shopName}</p>
+            </div>
+            <nav className={styles.footerCol} aria-label={t(lang, 'nav.menu')}>
+              <p className={styles.footerHead}>{t(lang, 'nav.menu')}</p>
+              {links.map(l => <span key={l.id}>{footLink(l.href, l.onClick, l.label, ariaCurrent(l.id))}</span>)}
+            </nav>
+            <nav className={styles.footerCol} aria-label={t(lang, 'legal.nav')}>
+              <p className={styles.footerHead}>{t(lang, 'legal.nav')}</p>
+              {LEGAL_KINDS.map(k => (
+                <span key={k}>{footLink(`/showroom/${k}`, go(`/showroom/${k}`), t(lang, `legal.${k}`), loc.view === k ? 'page' : undefined)}</span>
+              ))}
+            </nav>
+            {(settings.phone || settings.hours || settings.address) && (
+              <div className={`${styles.footerCol} ${styles.footerContact}`}>
+                <p className={styles.footerHead}>{t(lang, 'nav.contact')}</p>
+                {settings.phone && footLink(telHref(settings.phone), undefined, settings.phone)}
+                {settings.hours && <p className={styles.footerFact}>{settings.hours}</p>}
+                {settings.address && <p className={styles.footerFact}>{settings.address}</p>}
+              </div>
+            )}
+          </div>
           {credits.length > 0 && (
             <details className={styles.credits}>
               <summary>{t(lang, 'photo.credits')}</summary>
@@ -233,6 +268,9 @@ function PublicShell() {
           )}
           <button type="button" className={styles.textBtn} onClick={onBackToPortfolio}>{t(lang, 'footer.madeBy')}</button>
         </div>
+        <p className={styles.wordmark} style={{ '--len': Math.max(6, String(settings.shopName || '').length) }} aria-hidden="true">
+          {settings.shopName}
+        </p>
       </footer>
 
       {loc.view !== 'car' && navItems(styles.bottomNav)}

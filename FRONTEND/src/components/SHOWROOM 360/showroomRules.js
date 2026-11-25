@@ -113,6 +113,12 @@ export function featuredCars(cars, events, now, max = 8) {
   return picked.length ? picked : available.slice(0, 5);
 }
 
+/* Cars whose photos can sit behind the dark photo bands (Cars banner, waitlist band):
+   still on the lot, with a photo, newest listed first. Photos on cars are covered by
+   the footer's credit list. */
+export const bandCars = (cars) =>
+  cars.filter(c => c.status !== 'sold' && c.photoIds?.length > 0).sort(byNewest);
+
 export const recentlySold = (cars, n = 6) =>
   cars.filter(c => c.status === 'sold')
     .sort((a, b) => Date.parse(b.soldAt || 0) - Date.parse(a.soldAt || 0))

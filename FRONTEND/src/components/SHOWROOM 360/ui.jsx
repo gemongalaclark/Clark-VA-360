@@ -145,19 +145,55 @@ export function ShopLogo({ settings, size = 'md' }) {
     : <span className={`${styles.logo} ${styles.logoMark} ${styles[`logo_${size}`]}`} aria-hidden="true">{initials}</span>;
 }
 
-/* The car's photo, or its silhouette when it has none. `mark` puts the model's
-   name in giant outline letters behind the silhouette (decoration only). */
-export function CarPhoto({ car, index = 0, label, className, mark = false }) {
+/* The car's photo, or its silhouette when it has none. `eager` is for the first
+   thing on screen (the hero), so the browser fetches it right away. */
+export function CarPhoto({ car, index = 0, label, className, eager = false }) {
   const { photoUrl } = useShowroom();
   const url = photoUrl(car.photoIds?.[index]);
-  if (url) return <img src={url} alt={label || ''} className={`${styles.photo} ${className || ''}`} loading="lazy" decoding="async" />;
-  const model = String(car.model || '').trim();
+  if (url) {
+    return (
+      <img
+        src={url} alt={label || ''} className={`${styles.photo} ${className || ''}`}
+        loading={eager ? 'eager' : 'lazy'} fetchpriority={eager ? 'high' : undefined} decoding="async"
+      />
+    );
+  }
   return (
     <div className={`${styles.photo} ${styles.photoArt} ${className || ''}`}>
-      {mark && model && (
-        <span className={styles.modelMark} style={{ '--len': Math.max(4, model.length) }} aria-hidden="true">{model}</span>
-      )}
       <CarArt body={car.body} color={car.color} label={label} />
+    </div>
+  );
+}
+
+/* A full-bleed dark band with a car's photo behind a fade (Cars banner, waitlist
+   band). No car, or no photo: just the dark band. `hero` marks it as the page's
+   top band, so the header turns clear over it. */
+export function PhotoBand({ car, index = 0, hero = false, className = '', children, ...rest }) {
+  const { photoUrl } = useShowroom();
+  const url = car ? photoUrl(car.photoIds?.[index]) : null;
+  return (
+    <section className={`${styles.band} ${styles.onDark} ${className}`} data-sr-hero={hero ? '' : undefined} {...rest}>
+      {url && (
+        <img
+          src={url} alt="" className={styles.bandPhoto}
+          loading={hero ? 'eager' : 'lazy'} fetchpriority={hero ? 'high' : undefined} decoding="async"
+        />
+      )}
+      <div className={styles.bandShade} aria-hidden="true" />
+      <div className={styles.bandInner}>{children}</div>
+    </section>
+  );
+}
+
+/* "• label" over a section heading, with a link or arrows at the other end */
+export function SectionHead({ id, label, title, children }) {
+  return (
+    <div className={styles.sectionHead}>
+      <div>
+        <p className={styles.label}>{label}</p>
+        <h2 id={id} className={styles.h2}>{title}</h2>
+      </div>
+      {children && <div className={styles.sectionAside}>{children}</div>}
     </div>
   );
 }
