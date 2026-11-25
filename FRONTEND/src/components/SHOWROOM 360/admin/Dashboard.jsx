@@ -11,7 +11,7 @@ import TaskList from './TaskList.jsx';
 import WeekReport from './WeekReport.jsx';
 
 export default function Dashboard({ role }) {
-  const { cars, events, leads, history, settings } = useShowroom();
+  const { cars, events, leads, history, settings, agents } = useShowroom();
   const { now } = useNav();
 
   const available = cars.filter(c => c.status === 'available');
@@ -30,7 +30,7 @@ export default function Dashboard({ role }) {
     .filter(x => x.days >= AGING_DAYS)
     .sort((x, y) => y.days - x.days)
     .slice(0, 5);
-  const tasks = todoList({ leads, cars, events, settings }, now);
+  const tasks = todoList({ leads, cars, events, settings, agents }, now);
   /* the price-drop rule's "Drop price?" tasks replace the aging list */
   const showAging = !settings.priceRule?.on;
 
@@ -116,7 +116,11 @@ export default function Dashboard({ role }) {
                   <Link to="/showroom/admin/leads" className={a.row}>
                     <span className={a.rowMain}>
                       <strong>{l.name} {l.status === 'new' && <span className={a.newDot}>New</span>}</strong>
-                      <span className={s.muted}>{l.type === 'test-drive' ? 'Test drive' : l.type === 'wish' ? 'Waitlist' : 'Reservation'} · {l.carLabel}</span>
+                      <span className={s.muted}>
+                        {l.type === 'trade-in'
+                          ? `Trade-in · ${l.tradeIn?.car || ''}`
+                          : `${l.type === 'test-drive' ? 'Test drive' : l.type === 'wish' ? 'Waitlist' : 'Reservation'} · ${l.carLabel}`}
+                      </span>
                     </span>
                     <ChevronRight size={18} aria-hidden="true" className={a.rowChevron} />
                   </Link>

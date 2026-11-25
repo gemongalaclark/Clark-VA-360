@@ -305,7 +305,7 @@ Clark's ask: "greatly enhance the UI/UX design… cool and unique but profession
 Clark's ask: the sticker look "seems to be like not really that kind of a car dealership design", so restyle the public site and the admin after two Drivehub template screenshots, keeping every feature and piece of content, as mobile-friendly as possible. Full design: `docs/superpowers/specs/2026-11-25-showroom-drivehub-look-design.md`; plan: `docs/superpowers/plans/2026-11-25-showroom-drivehub-look.md`.
 - **In short:** dark full-bleed photo bands (home hero = the featured carousel, Cars banner, waitlist band), white sections with "• label" headings, rounded photo cards, black/white buttons, Inter only (Barlow Condensed removed), a near-black footer with columns and the shop name in giant letters. Red only for sales and alerts.
 - **Shell:** a slim dark top strip (the ticker on home; phone, hours and address elsewhere) and a dark header that is see-through over a photo hero (`useOverHero` watches `[data-sr-hero]`). Contact is a white button on desktop.
-- **Admin:** same tokens; a dark sidebar with the current page as a white block, a dark PIN page with a white card, bordered stat cards, pills for tabs and chips.
+- **Admin:** same tokens; a sidebar that follows the theme (light grey with a black current-page block in light mode, dark grey with a white block in dark mode; changed after Clark's review on 2026-11-25), a dark PIN page with a white card, bordered stat cards, pills for tabs and chips.
 - **Kept:** all behaviour, copy, i18n (no new strings), accessibility, reduced motion and dark mode (same token names). The car drawings are untouched; the outline model name behind them is gone.
 
 Clark's ask: hardcode photos for the sample cars, showing front, back, left side and right side.
@@ -399,3 +399,24 @@ Waitlist, follow-up tasks, price-drop rules and a week report, all without a ser
 ## Promos: prize wheel (added 2026-11-24)
 
 Superadmin-made prize wheels attached to an event by promo code; buyers spin once and claim a voucher. See [2026-11-24-showroom-promos-design.md](2026-11-24-showroom-promos-design.md).
+
+## Similar cars and Share (added 2026-11-25)
+
+Clark asked what the site was lacking and picked the first two suggestions: a buyer who opens a car from a Facebook link reached a dead end, and had no easy way to send the car to family before buying.
+- **You might also like:** under every car page (sold ones too), up to 4 cars a buyer can still ask about (available only: not sold, not reserved, never the car itself). The same body type comes first, then the closest price the buyer pays now (sale prices count), then the newest listed (`similarCars` in showroomRules.js). It uses the usual car cards and a "See all cars" link, and is hidden when nothing matches.
+- **Share:** a button in the "← All cars" row, hidden on sold cars. Where the browser has a share sheet (phones), it opens it with the car's name, price and link, so Messenger, Facebook or Viber is one tap away; closing the sheet does nothing. Without one, or if sharing fails, the link is copied and a toast says so.
+- **Limit (demo):** data lives in each browser, so a shared link to a car the dealer added only opens in the dealer's own browser; the sample cars open anywhere.
+- **New strings:** `car.similarLabel`, `car.similarTitle`, `car.share`, `car.linkCopied`, `car.linkFailed`, in English and Bisaya (Bisaya is Claude's; Clark to proofread).
+
+## Saved cars, financing help and trade-ins (added 2026-11-25)
+
+Clark asked for the other three suggestions from "what is the site lacking". All of Claude's calls below are open to change.
+- **Saved cars:** a heart on every car card (over the photo, top right) and a "Save" button beside Share on the car page; a toast confirms. The list lives in the buyer's browser only (`showroom360:saved`, like the theme), newest first (`toggleSaved`, `parseSaved`). Once one car is saved, a heart with the count shows in the header and opens the Cars page filtered to saved cars (`?saved=1`, also a "Saved cars only" box in the filters; the banner reads "Saved cars"). Sold cars drop out of the list and the count. Nothing reaches the dealer: it's for the buyer. Hearts follow the palette (ink, not red: red stays for sales and alerts).
+- **Financing help:** "What you need for bank financing" folds out under the loan calculator (financing cars only) with Employed / Business owner / OFW: 3 lines for everyone plus 3 for the chosen kind, marked as a sample list (each bank asks for its own). The same list answers the first FAQ question.
+- **FAQ:** "Questions buyers ask" on the home page (after Recently sold): bank financing, downpayment (names the shop's own minimum from Settings), reserving, trade-ins (with a button to the form), having the car checked, test drives. Native `<details>`, marked as sample answers, like the legal pages; not editable in admin (a follow-up if a dealer asks). The footer's Pages list links to `/showroom#faq`.
+- **Trade-in or sell:** a new request type `trade-in` with the car's year/make/model (required), odometer and asking price (optional). From a car page ("Have a car to trade in?", available cars only) it's toward that car; from the home page's grey "Have a car to trade in or sell?" box or the FAQ it stands alone. Admin: a Trade-ins tab and card ("Selling … · km · asking …", "Toward …"), dashboard and to-do lines, History names it, the week report counts it. Autopilot: the first reply asks for photos (front, back, sides, interior, odometer); a quiet one gets its own follow-up. No photo upload (storage); the dealer asks on Viber.
+- **New strings:** `save.*`, `cars.saved*`, `req.*`, `faq.*`, `nav.faq`, `trade.*`, `err.tradeCar`, `auto.reply.trade-in`, `auto.follow.trade`, in English and Bisaya (Claude's Bisaya; Clark to proofread).
+
+## Dealer tools (added 2026-11-25)
+
+Reservation end dates and terms, inspection reports, HPG clearance, photo watermark, registered-business details, consignment, agents and commissions, after-sale paper updates and renewal reminders, "What can I afford?", buyer reviews, and comparing saved cars. See [2026-11-25-showroom-dealer-tools-design.md](2026-11-25-showroom-dealer-tools-design.md). Going live (a shared database, lead alerts) is not built: Clark to decide.

@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight, SearchX, CalendarCheck, BookmarkCheck, Expand, BellRing, Calendar, Gauge, Cog, Fuel } from 'lucide-react';
+import { ChevronLeft, ChevronRight, SearchX, CalendarCheck, BookmarkCheck, Expand, BellRing, Calendar, Gauge, Cog, Fuel, Share2, ArrowRight, Repeat, ChevronDown } from 'lucide-react';
 import styles from '../Showroom360.module.css';
 import { useShowroom } from '../store.js';
 import { t } from '../i18n.js';
-import { useNav, Link, CarPhoto, PriceTag } from '../ui.jsx';
+import { useNav, useToast, copyText, Link, CarPhoto, PriceTag, SectionHead, SaveButton } from '../ui.jsx';
 import {
-  effectivePrice, carTitle, formatKm, formatPeso, monthlyFrom, COLORS, BODY_TYPES, TRANSMISSIONS, FUELS, DRIVES,
+  effectivePrice, carTitle, formatKm, formatPeso, monthlyFrom, similarCars, COLORS, BODY_TYPES, TRANSMISSIONS, FUELS, DRIVES,
 } from '../showroomRules.js';
 import { sampleCredit } from '../samplePhotos.js';
 import ConditionCard from './ConditionCard.jsx';
@@ -13,6 +13,9 @@ import LoanCalc from './LoanCalc.jsx';
 import InquiryBar from './InquiryBar.jsx';
 import LeadForm from './LeadForm.jsx';
 import PhotoViewer from './PhotoViewer.jsx';
+import { CarCard } from './Inventory.jsx';
+import Requirements from './Requirements.jsx';
+import InspectionReport from './InspectionReport.jsx';
 import { similarQuery } from '../autoRules.js';
 
 export default function CarPage({ id }) {
@@ -37,6 +40,7 @@ export default function CarPage({ id }) {
   const title = carTitle(car);
   const sold = car.status === 'sold';
   const reserved = car.status === 'reserved';
+  const more = similarCars(cars, car, events, now);
 
   const facts = [
     ['spec.year', car.year, Calendar],
@@ -60,9 +64,17 @@ export default function CarPage({ id }) {
 
   return (
     <div className={styles.carPage}>
-      <Link to="/showroom/cars" className={styles.crumb}>
-        <ChevronLeft size={18} strokeWidth={1.75} aria-hidden="true" />{t(lang, 'car.back')}
-      </Link>
+      <div className={styles.crumbRow}>
+        <Link to="/showroom/cars" className={styles.crumb}>
+          <ChevronLeft size={18} strokeWidth={1.75} aria-hidden="true" />{t(lang, 'car.back')}
+        </Link>
+        {!sold && (
+          <div className={styles.crumbActions}>
+            <SaveButton car={car} withLabel className={styles.crumbBtn} />
+            <ShareButton car={car} title={title} info={info} lang={lang} />
+          </div>
+        )}
+      </div>
 
       {sold && (
         <div className={styles.soldBanner} role="status">
@@ -124,6 +136,16 @@ export default function CarPage({ id }) {
                     )}
                   </div>
                   {reserved && <p className={styles.reservedNote}>{t(lang, 'car.reservedNoContact')}</p>}
+                  {reserved && car.reservedUntil && (
+                    <p className={styles.reservedNote}>
+                      {t(lang, 'car.reservedUntil', { date: new Date(`${car.reservedUntil}T12:00`).toLocaleDateString('en-PH', { month: 'short', day: 'numeric' }) })}
+                    </p>
+                  )}
+                  {car.status === 'available' && (
+                    <button type="button" className={`${styles.textBtn} ${styles.tradeLink}`} onClick={() => setLead('trade-in')}>
+                      <Repeat size={16} strokeWidth={1.75} aria-hidden="true" />{t(lang, 'trade.carLink')}
+                    </button>
+                  )}
                 </>
               )}
               {(sold || reserved) && (
@@ -138,10 +160,17 @@ export default function CarPage({ id }) {
           </div>
 
           {!sold && car.financing && <LoanCalc key={info.price} price={info.price} fin={settings.financing} />}
+          {!sold && car.financing && (
+            <details className={styles.reqBox}>
+              <summary>{t(lang, 'req.title')}<ChevronDown size={18} strokeWidth={1.75} aria-hidden="true" /></summary>
+              <Requirements lang={lang} />
+            </details>
+          )}
         </aside>
 
         <div className={styles.carDetails}>
           <ConditionCard car={car} />
+          <InspectionReport car={car} />
 
           <section className={styles.panel} aria-labelledby="sr-specs">
             <h2 id="sr-specs" className={styles.h3}>{t(lang, 'car.specs')}</h2>
@@ -168,9 +197,45 @@ export default function CarPage({ id }) {
         </div>
       </div>
 
+      {more.length > 0 && (
+        <section className={styles.moreCars} aria-labelledby="sr-similar">
+          <SectionHead id="sr-similar" label={t(lang, 'car.similarLabel')} title={t(lang, 'car.similarTitle')}>
+            <Link to="/showroom/cars" className={styles.arrowLink}>
+              {t(lang, 'home.seeAll')}<ArrowRight size={18} strokeWidth={1.75} aria-hidden="true" />
+            </Link>
+          </SectionHead>
+          <ul className={styles.cardGrid}>
+            {more.map(c => <CarCard key={c.id} car={c} events={events} now={now} lang={lang} fin={settings.financing} />)}
+          </ul>
+        </section>
+      )}
+
       <LeadForm key={lead || 'none'} type={lead} car={car} query={lead === 'wish' ? similarQuery(car, info.price) : undefined} onClose={() => setLead(null)} />
       {car.status === 'reserved' && !seenReserved && <ReservedOverlay lang={lang} onView={() => setSeenReserved(true)} />}
     </div>
+  );
+}
+
+/* Share: the phone's share sheet (Messenger, Facebook, Viber…). Without one, or if it
+   fails, the link is copied instead. Closing the sheet without sharing does nothing. */
+function ShareButton({ car, title, info, lang }) {
+  const toast = useToast();
+  const share = async () => {
+    const url = `${window.location.origin}/showroom/cars/${car.id}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title, text: `${title}, ${formatPeso(info.price)}`, url });
+        return;
+      } catch (e) {
+        if (e?.name === 'AbortError') return;
+      }
+    }
+    toast(t(lang, (await copyText(url)) ? 'car.linkCopied' : 'car.linkFailed'));
+  };
+  return (
+    <button type="button" className={styles.crumbBtn} onClick={share}>
+      <Share2 size={17} strokeWidth={1.75} aria-hidden="true" />{t(lang, 'car.share')}
+    </button>
   );
 }
 

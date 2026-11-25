@@ -1,15 +1,16 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight, Phone, ExternalLink, ArrowRight, BellRing, Clock, MapPin } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown, Phone, ExternalLink, ArrowRight, BellRing, Clock, MapPin, Repeat, ShieldCheck } from 'lucide-react';
 import styles from '../Showroom360.module.css';
 import { useShowroom } from '../store.js';
-import { t } from '../i18n.js';
+import { t, FAQ_IDS } from '../i18n.js';
 import { useNav, Link, CarPhoto, PriceTag, PhotoBand, SectionHead } from '../ui.jsx';
 import {
   featuredCars, recentlySold, effectivePrice, monthlyFrom, carTitle, formatPeso, formatKm,
-  TRANSMISSIONS, FUELS, BODY_TYPES, mapsOpenUrl, filterCars, bandCars,
+  TRANSMISSIONS, FUELS, BODY_TYPES, mapsOpenUrl, filterCars, bandCars, DEFAULT_RESERVATION,
 } from '../showroomRules.js';
 import { CarCard } from './Inventory.jsx';
 import LeadForm from './LeadForm.jsx';
+import Requirements from './Requirements.jsx';
 
 export const telHref = (phone) => `tel:${String(phone || '').replace(/[^\d+]/g, '')}`;
 const mapsEmbedUrl = (s) =>
@@ -35,11 +36,14 @@ export default function Home() {
   const { cars, events, settings } = useShowroom();
   const { lang, now } = useNav();
 
-  /* Arriving from another page: jump straight to the contact section before the
-     first paint. 'instant' overrides the portfolio's smooth scrolling, which would
-     otherwise glide down from the top while the nav still says Home. */
+  const [tradeOpen, setTradeOpen] = useState(false);
+
+  /* Arriving from another page: jump straight to the contact section (or the FAQ)
+     before the first paint. 'instant' overrides the portfolio's smooth scrolling,
+     which would otherwise glide down from the top while the nav still says Home. */
   useLayoutEffect(() => {
-    if (window.location.hash === '#contact') document.getElementById('contact')?.scrollIntoView({ behavior: 'instant' });
+    const id = window.location.hash.slice(1);
+    if (id === 'contact' || id === 'faq') document.getElementById(id)?.scrollIntoView({ behavior: 'instant' });
   }, []);
 
   const sold = recentlySold(cars);
@@ -87,6 +91,16 @@ export default function Home() {
               <div><dt><MapPin size={16} strokeWidth={1.75} aria-hidden="true" />{t(lang, 'home.address')}</dt><dd>{settings.address}</dd></div>
             )}
           </dl>
+          {(settings.dtiNo || settings.permitNo || settings.since) && (
+            <div className={styles.trustBox}>
+              <p className={styles.trustHead}><ShieldCheck size={18} strokeWidth={1.75} aria-hidden="true" />{t(lang, 'trust.title')}</p>
+              <ul className={styles.trustList}>
+                {settings.dtiNo && <li>{t(lang, 'trust.dti', { no: settings.dtiNo })}</li>}
+                {settings.permitNo && <li>{t(lang, 'trust.permit', { no: settings.permitNo })}</li>}
+                {settings.since && <li>{t(lang, 'trust.since', { year: settings.since })}</li>}
+              </ul>
+            </div>
+          )}
           <div className={styles.actions}>
             {settings.phone && (
               <a className={styles.btnPrimary} href={telHref(settings.phone)}>
@@ -109,7 +123,11 @@ export default function Home() {
 
       {sold.length > 0 && <RecentlySold sold={sold} lang={lang} />}
 
+      <TradeIn lang={lang} onOpen={() => setTradeOpen(true)} />
+      <Faq lang={lang} settings={settings} onTrade={() => setTradeOpen(true)} />
+
       <WishBand lang={lang} car={bandCars(cars)[1] ?? bandCars(cars)[0]} />
+      {tradeOpen && <LeadForm type="trade-in" onClose={() => setTradeOpen(false)} />}
     </>
   );
 }
@@ -138,21 +156,86 @@ function RecentlySold({ sold, lang }) {
         )}
       </SectionHead>
       <ul ref={row} className={styles.soldRow}>
-        {sold.map(car => (
-          <li key={car.id} className={styles.soldCard}>
-            <div className={styles.soldMedia}>
-              <CarPhoto car={car} />
-              <span className={styles.soldStamp}>{t(lang, 'home.soldStamp')}</span>
-            </div>
-            <div className={styles.soldBody}>
-              <p className={styles.cardTitle}>{carTitle(car)}</p>
-              <p className={styles.muted}>
-                {t(lang, 'home.soldOn', { date: new Date(car.soldAt).toLocaleDateString('en-PH', { month: 'short', day: 'numeric' }) })}
-              </p>
-            </div>
-          </li>
-        ))}
+        {sold.map(car => {
+          /* a buyer's words and release photo, only with their consent */
+          const review = car.sale?.review?.consent && car.sale.review.quote ? car.sale.review : null;
+          return (
+            <li key={car.id} className={styles.soldCard}>
+              <div className={styles.soldMedia}>
+                <CarPhoto car={review?.photoId ? { ...car, photoIds: [review.photoId] } : car} />
+                <span className={styles.soldStamp}>{t(lang, 'home.soldStamp')}</span>
+              </div>
+              <div className={styles.soldBody}>
+                <p className={styles.cardTitle}>{carTitle(car)}</p>
+                <p className={styles.muted}>
+                  {t(lang, 'home.soldOn', { date: new Date(car.soldAt).toLocaleDateString('en-PH', { month: 'short', day: 'numeric' }) })}
+                </p>
+                {review && (
+                  <figure className={styles.soldQuote}>
+                    <blockquote>“{review.quote}”</blockquote>
+                    <figcaption>
+                      {review.name && <span>{review.name}</span>}
+                      {review.sample && <span className={styles.sampleTag}>{t(lang, 'home.reviewSample')}</span>}
+                    </figcaption>
+                  </figure>
+                )}
+              </div>
+            </li>
+          );
+        })}
       </ul>
+    </section>
+  );
+}
+
+/* Trade-in or sell: buyers with a car to let go of, and stock for the dealer */
+function TradeIn({ lang, onOpen }) {
+  return (
+    <section className={styles.section} aria-labelledby="sr-trade">
+      <div className={styles.tradeBox}>
+        <div className={styles.tradeText}>
+          <p className={styles.label}>{t(lang, 'trade.label')}</p>
+          <h2 id="sr-trade" className={styles.h2}>{t(lang, 'trade.homeTitle')}</h2>
+          <p className={styles.lead}>{t(lang, 'trade.homeText')}</p>
+        </div>
+        <button type="button" className={styles.btnPrimary} onClick={onOpen}>
+          <Repeat size={18} strokeWidth={1.75} aria-hidden="true" />{t(lang, 'trade.cta')}
+        </button>
+      </div>
+    </section>
+  );
+}
+
+/* Questions buyers ask, each answer opening on its own (native <details>: keyboard
+   and screen reader support for free) */
+function Faq({ lang, settings, onTrade }) {
+  const pct = settings.financing?.minDownPct ?? 30;
+  const res = settings.reservation || DEFAULT_RESERVATION;
+  return (
+    <section id="faq" className={`${styles.section} ${styles.faq}`} aria-labelledby="sr-faq">
+      <div>
+        <SectionHead id="sr-faq" label={t(lang, 'faq.label')} title={t(lang, 'faq.title')} />
+        <p className={styles.hint}>{t(lang, 'faq.sample')}</p>
+      </div>
+      <div className={styles.faqList}>
+        {FAQ_IDS.map(id => (
+          <details key={id} className={styles.faqItem}>
+            <summary>{t(lang, `faq.q.${id}`)}<ChevronDown size={20} strokeWidth={1.75} aria-hidden="true" /></summary>
+            <div className={styles.faqAnswer}>
+              <p>{t(lang, `faq.a.${id}`, { pct })}</p>
+              {id === 'reserve' && (
+                <p>{t(lang, 'res.terms', { fee: formatPeso(res.fee), days: res.days })} {t(lang, `res.refund.${res.refund}`)}</p>
+              )}
+              {id === 'financing' && <Requirements lang={lang} />}
+              {id === 'trade' && (
+                <button type="button" className={styles.btnGhost} onClick={onTrade}>
+                  <Repeat size={18} strokeWidth={1.75} aria-hidden="true" />{t(lang, 'trade.cta')}
+                </button>
+              )}
+            </div>
+          </details>
+        ))}
+      </div>
     </section>
   );
 }

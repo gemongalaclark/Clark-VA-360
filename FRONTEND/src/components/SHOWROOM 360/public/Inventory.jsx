@@ -1,17 +1,17 @@
 import { useEffect, useId, useMemo, useState } from 'react';
-import { Search, SlidersHorizontal, SearchX, ArrowRight, BellRing, Gauge, Cog, Fuel } from 'lucide-react';
+import { Search, SlidersHorizontal, SearchX, ArrowRight, BellRing, Gauge, Cog, Fuel, Heart, ChevronDown, Columns3 } from 'lucide-react';
 import styles from '../Showroom360.module.css';
 import { useShowroom } from '../store.js';
 import { t } from '../i18n.js';
-import { useNav, Link, CarPhoto, PriceTag, Sheet, PhotoBand } from '../ui.jsx';
+import { useNav, Link, CarPhoto, PriceTag, Sheet, PhotoBand, SaveButton, useSaved } from '../ui.jsx';
 import {
   filterCars, parseQuery, toQuery, effectivePrice, monthlyFrom, carTitle, formatPeso, formatKm, bandCars,
-  BODY_TYPES, TRANSMISSIONS, FUELS, SORT_KEYS,
+  BODY_TYPES, TRANSMISSIONS, FUELS, SORT_KEYS, affordablePrice,
   priceBounds, priceFilter, parsePesoInput, priceAtPosition, positionOfPrice, PRICE_POSITIONS,
 } from '../showroomRules.js';
 import LeadForm from './LeadForm.jsx';
 
-const FILTER_KEYS = ['make', 'body', 'transmission', 'fuel', 'priceMin', 'priceMax', 'yearMin', 'yearMax', 'onSale'];
+const FILTER_KEYS = ['make', 'body', 'transmission', 'fuel', 'priceMin', 'priceMax', 'yearMin', 'yearMax', 'onSale', 'saved'];
 
 export default function Inventory() {
   const { cars, events, settings } = useShowroom();
@@ -19,6 +19,7 @@ export default function Inventory() {
   const [query, setQuery] = useState(() => parseQuery(loc.search));
   const [sheetOpen, setSheetOpen] = useState(false);
   const [wishOpen, setWishOpen] = useState(false);
+  const [saved] = useSaved();
   const searchId = useId();
 
   /* Back/Forward changed the URL: follow it */
@@ -42,10 +43,13 @@ export default function Inventory() {
     prices: priceBounds(cars, events, now),
   }), [cars, events, now]);
 
-  const results = filterCars(cars, query, events, now);
+  /* "Saved cars only": the cars this buyer hearted, still for sale */
+  const savedCount = forSale.filter(c => saved.includes(c.id)).length;
+  const results = filterCars(query.saved ? cars.filter(c => saved.includes(c.id)) : cars, query, events, now);
   const activeFilters = FILTER_KEYS.filter(k => query[k]).length;
-  /* the waitlist saves the search, not the sort order */
-  const wishQuery = Object.fromEntries(Object.entries(query).filter(([k]) => k !== 'sort'));
+  const noSaved = query.saved && savedCount === 0;
+  /* the waitlist saves the search, not the sort order or the hearts */
+  const wishQuery = Object.fromEntries(Object.entries(query).filter(([k]) => k !== 'sort' && k !== 'saved'));
   const wishBtn = (cls) => (
     <button type="button" className={cls} onClick={() => setWishOpen(true)}>
       <BellRing size={18} strokeWidth={1.75} aria-hidden="true" />{t(lang, 'wish.cta')}
@@ -57,7 +61,7 @@ export default function Inventory() {
     <>
       {/* the banner: a photo of a car on the lot, the header see-through over it */}
       <PhotoBand hero car={bandCars(cars)[0]} className={styles.invBanner}>
-        <h1 className={styles.h1}>{t(lang, 'cars.title')}</h1>
+        <h1 className={styles.h1}>{t(lang, query.saved ? 'cars.savedTitle' : 'cars.title')}</h1>
       </PhotoBand>
       <div className={styles.inventory}>
         <div className={styles.inventoryHead}>
@@ -84,11 +88,17 @@ export default function Inventory() {
 
         <div className={styles.inventoryBody}>
           <aside className={styles.filterSide} aria-label={t(lang, 'cars.filters')}>
-            <Filters query={query} update={update} options={options} lang={lang} idPrefix="side" />
+            <Filters query={query} update={update} options={options} lang={lang} idPrefix="side" savedCount={savedCount} />
             {activeFilters > 0 && <button type="button" className={styles.textBtn} onClick={clear}>{t(lang, 'cars.clear')}</button>}
           </aside>
 
           <section className={styles.results} aria-label={countText}>
+            <AffordBox lang={lang} fin={settings.financing} onShow={(max) => update({ priceMax: max, priceMin: undefined })} />
+            {query.saved && savedCount >= 2 && (
+              <Link to="/showroom/compare" className={`${styles.btnGhost} ${styles.compareBtn}`}>
+                <Columns3 size={18} strokeWidth={1.75} aria-hidden="true" />{t(lang, 'compare.open')} ({Math.min(savedCount, 4)})
+              </Link>
+            )}
             <div className={styles.resultsBar}>
               <p className={styles.muted} aria-live="polite">{countText}</p>
               <label className={styles.sortLabel}>
@@ -99,7 +109,16 @@ export default function Inventory() {
               </label>
             </div>
 
-            {results.length === 0 ? (
+            {noSaved ? (
+              <div className={styles.empty}>
+                <Heart size={40} strokeWidth={1.5} aria-hidden="true" />
+                <h2>{t(lang, 'cars.savedEmpty')}</h2>
+                <p>{t(lang, 'cars.savedEmptyHint')}</p>
+                <div className={styles.emptyActions}>
+                  <button type="button" className={styles.btnPrimary} onClick={() => update({ saved: undefined })}>{t(lang, 'home.seeAll')}</button>
+                </div>
+              </div>
+            ) : results.length === 0 ? (
               <div className={styles.empty}>
                 <SearchX size={40} strokeWidth={1.5} aria-hidden="true" />
                 <h2>{t(lang, 'cars.empty')}</h2>
@@ -128,7 +147,7 @@ export default function Inventory() {
         {wishOpen && <LeadForm type="wish" query={wishQuery} onClose={() => setWishOpen(false)} />}
 
         <Sheet open={sheetOpen} onClose={() => setSheetOpen(false)} title={t(lang, 'cars.filters')} closeLabel={t(lang, 'common.close')}>
-          <Filters query={query} update={update} options={options} lang={lang} idPrefix="sheet" />
+          <Filters query={query} update={update} options={options} lang={lang} idPrefix="sheet" savedCount={savedCount} />
           <div className={styles.sheetActions}>
             <button type="button" className={styles.btnGhost} onClick={clear}>{t(lang, 'cars.clear')}</button>
             <button type="button" className={styles.btnPrimary} onClick={() => setSheetOpen(false)}>
@@ -141,7 +160,41 @@ export default function Inventory() {
   );
 }
 
-function Filters({ query, update, options, lang, idPrefix }) {
+/* What can I afford? Pay and cash in, a price ceiling out (affordablePrice), and a
+   button that sets it as the max price filter */
+function AffordBox({ lang, fin, onShow }) {
+  const [v, setV] = useState({ income: '', cash: '' });
+  const id = useId();
+  const max = affordablePrice(v, fin);
+  const set = (k) => (e) => setV(x => ({ ...x, [k]: e.target.value.replace(/\D/g, '') }));
+  const typed = Number(v.income) > 0 && Number(v.cash) > 0;
+  return (
+    <details className={styles.affordBox}>
+      <summary>{t(lang, 'afford.title')}<ChevronDown size={18} strokeWidth={1.75} aria-hidden="true" /></summary>
+      <div className={styles.affordBody}>
+        <div className={styles.affordFields}>
+          <div className={styles.field}>
+            <label className={styles.fieldLabel} htmlFor={`${id}-income`}>{t(lang, 'afford.income')}</label>
+            <input id={`${id}-income`} className={styles.input} inputMode="numeric" placeholder="35000" value={v.income} onChange={set('income')} />
+          </div>
+          <div className={styles.field}>
+            <label className={styles.fieldLabel} htmlFor={`${id}-cash`}>{t(lang, 'afford.cash')}</label>
+            <input id={`${id}-cash`} className={styles.input} inputMode="numeric" placeholder="200000" value={v.cash} onChange={set('cash')} />
+          </div>
+        </div>
+        <p className={styles.affordResult} aria-live="polite">
+          {max > 0 ? t(lang, 'afford.result', { amount: formatPeso(max) }) : typed ? t(lang, 'afford.low') : ''}
+        </p>
+        {max > 0 && (
+          <button type="button" className={styles.btnPrimary} onClick={() => onShow(max)}>{t(lang, 'afford.show', { amount: formatPeso(max) })}</button>
+        )}
+        <p className={styles.hint}>{t(lang, 'afford.note')}</p>
+      </div>
+    </details>
+  );
+}
+
+function Filters({ query, update, options, lang, idPrefix, savedCount }) {
   const any = t(lang, 'cars.any');
   const sel = (key, label, entries, numeric = false) => (
     <div className={styles.field}>
@@ -174,6 +227,12 @@ function Filters({ query, update, options, lang, idPrefix }) {
         <input type="checkbox" checked={!!query.onSale} onChange={(e) => update({ onSale: e.target.checked || undefined })} />
         <span>{t(lang, 'cars.onSale')}</span>
       </label>
+      {(savedCount > 0 || query.saved) && (
+        <label className={styles.checkRow}>
+          <input type="checkbox" checked={!!query.saved} onChange={(e) => update({ saved: e.target.checked || undefined })} />
+          <span>{t(lang, 'cars.savedOnly')} ({savedCount})</span>
+        </label>
+      )}
     </div>
   );
 }
@@ -279,6 +338,7 @@ export function CarCard({ car, events, now, lang, fin }) {
           <ArrowRight size={16} strokeWidth={2} aria-hidden="true" />
         </p>
       </Link>
+      {car.status !== 'sold' && <SaveButton car={car} className={styles.cardSave} />}
     </li>
   );
 }

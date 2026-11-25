@@ -13,7 +13,7 @@ const KIND = {
   car: ['Car', CarFront], event: ['Event', CalendarRange], settings: ['Settings', SettingsIcon], promo: ['Promo', Gift],
   lead: ['Lead', Inbox], demo: ['Demo', RotateCcw],
 };
-const BY = { admin: 'Admin', superadmin: 'Superadmin' };
+const BY = { admin: 'Admin', superadmin: 'Superadmin', auto: 'the autopilot' };
 
 export const timeOf = (iso) => new Date(iso).toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit' });
 

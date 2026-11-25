@@ -6,11 +6,11 @@ import { ImagePlus, Trash2, RotateCcw } from 'lucide-react';
 import s from '../Showroom360.module.css';
 import a from './Admin.module.css';
 import { useShowroom } from '../store.js';
-import { useNav, Sheet, useToast, ShopLogo, adminSaveError } from '../ui.jsx';
-import { isPhMobile, loanTerms, saveErrorKind } from '../showroomRules.js';
+import { useNav, Sheet, useToast, ShopLogo, adminSaveError, Link } from '../ui.jsx';
+import { isPhMobile, loanTerms, saveErrorKind, formatPeso, REFUND_RULES, DEFAULT_RESERVATION } from '../showroomRules.js';
 import { pinFromMapsLink } from '../../CARMARK 360/carmarkRules.js';
 
-const TEXT_FIELDS = ['shopName', 'tagline', 'about', 'phone', 'messenger', 'viber', 'address', 'mapsUrl', 'hours', 'pin', 'superPin'];
+const TEXT_FIELDS = ['shopName', 'tagline', 'about', 'phone', 'messenger', 'viber', 'address', 'mapsUrl', 'hours', 'pin', 'superPin', 'dtiNo', 'permitNo'];
 
 const toForm = (st) => ({
   ...Object.fromEntries(TEXT_FIELDS.map(k => [k, st[k] ?? ''])),
@@ -22,6 +22,11 @@ const toForm = (st) => ({
   ruleOn: !!st.priceRule?.on,
   ruleDays: String(st.priceRule?.days ?? 45),
   rulePct: String(st.priceRule?.pct ?? 3),
+  since: st.since ? String(st.since) : '',
+  watermark: st.watermark !== false,
+  resFee: String(st.reservation?.fee ?? DEFAULT_RESERVATION.fee),
+  resDays: String(st.reservation?.days ?? DEFAULT_RESERVATION.days),
+  resRefund: st.reservation?.refund || DEFAULT_RESERVATION.refund,
 });
 
 function validate(f) {
@@ -38,6 +43,9 @@ function validate(f) {
   if (Object.values(f.addOn).some(v => !inRange(v, 0, 100))) e.addOn = 'Each rate must be between 0 and 100.';
   if (f.ruleOn && !(inRange(f.ruleDays, 1, 365) && Number.isInteger(Number(f.ruleDays)))) e.ruleDays = 'Whole days, from 1 to 365.';
   if (f.ruleOn && !inRange(f.rulePct, 1, 20)) e.rulePct = 'Between 1 and 20.';
+  if (f.since !== '' && !(Number.isInteger(Number(f.since)) && inRange(f.since, 1950, new Date().getFullYear()))) e.since = 'A year, like 2014.';
+  if (!(Number.isInteger(Number(f.resFee)) && inRange(f.resFee, 0, 1000000))) e.resFee = 'Whole pesos, up to ₱1,000,000.';
+  if (!(Number.isInteger(Number(f.resDays)) && inRange(f.resDays, 1, 60))) e.resDays = 'Whole days, from 1 to 60.';
   return e;
 }
 
@@ -100,6 +108,9 @@ export default function Settings() {
       priceRule: form.ruleOn
         ? { on: true, days: Number(form.ruleDays), pct: Number(form.rulePct) }
         : { ...settings.priceRule, on: false },
+      since: form.since === '' ? '' : Number(form.since),
+      watermark: form.watermark,
+      reservation: { fee: Number(form.resFee), days: Number(form.resDays), refund: form.resRefund },
     };
     try {
       await saveSettings(next);
@@ -139,7 +150,10 @@ export default function Settings() {
       <div className={a.pageHead}>
         <h1 className={s.h1}>Settings</h1>
       </div>
-      <p className={`${s.muted} ${a.intro}`}>Everything here shows on the public site. Change the name, logo and numbers to make it a prospect’s own shop.</p>
+      <p className={`${s.muted} ${a.intro}`}>
+        Everything here shows on the public site. Change the name, logo and numbers to make it a prospect’s own shop.
+        Agents and their commissions are on the <Link to="/showroom/admin/agents" className={a.inlineLink}>Agents</Link> page.
+      </p>
 
       <fieldset className={a.fieldset}>
         <legend>Shop</legend>
@@ -166,6 +180,25 @@ export default function Settings() {
           {field('messenger', 'Messenger page', text('messenger', { placeholder: 'yourpage or m.me/yourpage' }), { hint: 'The Facebook page name buyers message.' })}
           {field('viber', 'Viber number', text('viber', { type: 'tel', inputMode: 'tel', placeholder: '0917 123 4567' }))}
         </div>
+      </fieldset>
+
+      <fieldset className={a.fieldset}>
+        <legend>Registered business</legend>
+        <p className={s.hint}>Shown under About on the home page, so buyers can see the shop is legit. Leave a line empty to hide it.</p>
+        <div className={a.formCols}>
+          {field('dtiNo', 'DTI business name no.', text('dtiNo'))}
+          {field('permitNo', 'Mayor’s permit no.', text('permitNo'))}
+          {field('since', 'In business since (year)', text('since', { inputMode: 'numeric', maxLength: 4, placeholder: '2014' }))}
+        </div>
+      </fieldset>
+
+      <fieldset className={a.fieldset}>
+        <legend>Car photos</legend>
+        <label className={s.checkRow}>
+          <input type="checkbox" checked={form.watermark} onChange={(e) => setForm(f => ({ ...f, watermark: e.target.checked }))} />
+          <span>Watermark new car photos</span>
+        </label>
+        <p className={s.hint}>Writes the shop name and phone in the corner of each photo you add, so a photo reposted elsewhere still points buyers to this shop. Photos already added stay as they are.</p>
       </fieldset>
 
       <fieldset className={a.fieldset}>
@@ -198,6 +231,19 @@ export default function Settings() {
           ))}
         </div>
         {errors.addOn && <p className={s.error}>{errors.addOn}</p>}
+      </fieldset>
+
+      <fieldset className={a.fieldset}>
+        <legend>Reservations</legend>
+        <p className={s.hint}>Shown to buyers when they reserve. A reserved car goes back on sale by itself after its last day, and the to-do list warns you two days before.</p>
+        <div className={a.formCols}>
+          {field('resFee', 'Reservation fee (₱)', text('resFee', { inputMode: 'numeric' }), { hint: form.resFee ? formatPeso(form.resFee) : undefined })}
+          {field('resDays', 'Days the car is held', text('resDays', { inputMode: 'numeric', maxLength: 2 }))}
+          {field('resRefund', 'Refund',
+            <select id="st-resRefund" className={s.select} value={form.resRefund} onChange={set('resRefund')}>
+              {Object.entries(REFUND_RULES).map(([v, label]) => <option key={v} value={v}>{label}</option>)}
+            </select>, { wide: true })}
+        </div>
       </fieldset>
 
       <fieldset className={a.fieldset}>

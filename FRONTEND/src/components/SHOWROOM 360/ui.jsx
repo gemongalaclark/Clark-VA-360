@@ -1,9 +1,9 @@
 /* Small pieces shared by the public site and the admin */
-import { createContext, useCallback, useContext, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
-import { X, Moon, Sun } from 'lucide-react';
+import { createContext, useCallback, useContext, useEffect, useId, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { X, Moon, Sun, Heart } from 'lucide-react';
 import styles from './Showroom360.module.css';
 import { useShowroom } from './store.js';
-import { formatPeso, saveErrorKind, themeFor, themeToSave } from './showroomRules.js';
+import { formatPeso, saveErrorKind, themeFor, themeToSave, carTitle, toggleSaved, parseSaved, refCode } from './showroomRules.js';
 import { t } from './i18n.js';
 import CarArt from './CarArt.jsx';
 
@@ -72,6 +72,73 @@ export function ThemeToggle({ className, children }) {
       <Icon size={children ? 18 : 20} strokeWidth={1.75} aria-hidden="true" />{children}
     </button>
   );
+}
+
+/* ── saved cars ──
+   Kept in this browser only (like the theme). Every heart on the page shares one
+   list, and other open tabs follow along through the storage event. */
+
+const SAVED_KEY = 'showroom360:saved';
+const savedListeners = new Set();
+let savedCache = null;
+const readSaved = () => {
+  if (savedCache === null) {
+    try { savedCache = parseSaved(localStorage.getItem(SAVED_KEY)); } catch { savedCache = []; }
+  }
+  return savedCache;
+};
+function subscribeSaved(fn) {
+  const onStorage = (e) => { if (e.key === SAVED_KEY) { savedCache = null; fn(); } };
+  savedListeners.add(fn);
+  window.addEventListener('storage', onStorage);
+  return () => { savedListeners.delete(fn); window.removeEventListener('storage', onStorage); };
+}
+
+/* [saved car ids, toggle(id) → true when the car is now saved] */
+export function useSaved() {
+  const ids = useSyncExternalStore(subscribeSaved, readSaved);
+  const toggle = useCallback((id) => {
+    savedCache = toggleSaved(readSaved(), id);
+    try { localStorage.setItem(SAVED_KEY, JSON.stringify(savedCache)); } catch { /* private mode: this visit only */ }
+    savedListeners.forEach(fn => fn());
+    return savedCache.includes(id);
+  }, []);
+  return [ids, toggle];
+}
+
+/* The heart: an icon on car cards, "Save" with the icon on the car page. A toast
+   confirms, and the first one tells the buyer where saved cars are kept. */
+export function SaveButton({ car, className, withLabel = false }) {
+  const [saved, toggle] = useSaved();
+  const { lang } = useNav();
+  const toast = useToast();
+  const on = saved.includes(car.id);
+  const click = () => toast(t(lang, toggle(car.id) ? 'save.added' : 'save.removed'));
+  return (
+    <button
+      type="button" className={className} onClick={click} aria-pressed={on}
+      aria-label={withLabel ? undefined : t(lang, 'save.car', { car: carTitle(car) })}
+    >
+      <Heart size={withLabel ? 17 : 18} strokeWidth={1.75} fill={on ? 'currentColor' : 'none'} aria-hidden="true" />
+      {withLabel && t(lang, 'save.label')}
+    </button>
+  );
+}
+
+/* ── agent links: /showroom?ref=ana tags this browser's requests for 30 days ── */
+
+const REF_KEY = 'showroom360:ref';
+const REF_DAYS = 30;
+export function rememberRef(search) {
+  const code = refCode(search);
+  if (!code) return;
+  try { localStorage.setItem(REF_KEY, JSON.stringify({ code, at: Date.now() })); } catch { /* private mode */ }
+}
+export function currentRef() {
+  try {
+    const v = JSON.parse(localStorage.getItem(REF_KEY));
+    return v?.code && Date.now() - Number(v.at) < REF_DAYS * 864e5 ? String(v.code) : '';
+  } catch { return ''; }
 }
 
 /* ── toasts ── */

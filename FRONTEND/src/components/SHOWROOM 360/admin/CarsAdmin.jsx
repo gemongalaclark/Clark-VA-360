@@ -4,13 +4,14 @@ import s from '../Showroom360.module.css';
 import a from './Admin.module.css';
 import { useShowroom } from '../store.js';
 import { useNav, Link, CarPhoto, PriceTag, Sheet, useToast } from '../ui.jsx';
-import { carTitle, effectivePrice, daysInStock, AGING_DAYS, formatKm } from '../showroomRules.js';
+import { carTitle, effectivePrice, daysInStock, AGING_DAYS, formatKm, reservedUntilFor, DEFAULT_RESERVATION } from '../showroomRules.js';
+import { localISODate } from '../public/LeadForm.jsx';
 import FbPost from './FbPost.jsx';
 
 const STATUSES = [['', 'All'], ['available', 'Available'], ['reserved', 'Reserved'], ['sold', 'Sold']];
 
 export default function CarsAdmin() {
-  const { cars, events, saveCar, deleteCar } = useShowroom();
+  const { cars, events, settings, saveCar, deleteCar } = useShowroom();
   const { loc, navigate, now } = useNav();
   const toast = useToast();
   const status = new URLSearchParams(loc.search).get('status') || '';
@@ -24,9 +25,12 @@ export default function CarsAdmin() {
     .filter(c => words.every(w => `${carTitle(c)} ${c.stockNo}`.toLowerCase().includes(w)))
     .sort((x, y) => Date.parse(y.listedAt) - Date.parse(x.listedAt));
 
+  /* Reserving here holds the car for the shop's usual days (Settings → Reservations) */
   const setStatus = (car, next) => {
     const soldAt = next === 'sold' ? (car.soldAt || new Date().toISOString()) : null;
-    saveCar({ ...car, status: next, soldAt });
+    const reservedUntil = next === 'reserved'
+      ? (car.reservedUntil || reservedUntilFor(localISODate(), (settings.reservation || DEFAULT_RESERVATION).days)) : null;
+    saveCar({ ...car, status: next, soldAt, reservedUntil });
     toast(`${car.stockNo} marked ${next}.`);
   };
 
@@ -89,6 +93,7 @@ export default function CarsAdmin() {
                       </span>
                     )}
                     {info.event && <span className={a.eventMini}>{info.event.name}</span>}
+                    {car.consign && <span className={a.daysChip}>Consigned</span>}
                   </p>
                   <PriceTag info={info} className={a.carPrice} />
                 </div>

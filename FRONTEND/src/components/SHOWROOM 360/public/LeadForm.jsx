@@ -3,8 +3,8 @@ import { CircleCheck } from 'lucide-react';
 import styles from '../Showroom360.module.css';
 import { useShowroom, newId } from '../store.js';
 import { t } from '../i18n.js';
-import { useNav, Sheet } from '../ui.jsx';
-import { validateLead, carTitle, saveErrorKind, formatPeso, BODY_TYPES } from '../showroomRules.js';
+import { useNav, Sheet, currentRef } from '../ui.jsx';
+import { validateLead, carTitle, saveErrorKind, formatPeso, BODY_TYPES, affordablePrice, DEFAULT_RESERVATION } from '../showroomRules.js';
 import { describeQuery, mergeWishQuery } from '../autoRules.js';
 import { MODELS } from '../../CARMARK 360/carData.js';
 
@@ -15,12 +15,13 @@ const MAKES = [...new Set(MODELS.map(m => m.make))].sort();
 export const localISODate = (d = new Date()) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
-/* type: 'test-drive' | 'reserve' for a car, or 'wish' (waitlist) for a saved search (`query`) */
+/* type: 'test-drive' | 'reserve' for a car, 'wish' (waitlist) for a saved search (`query`),
+   or 'trade-in' for the buyer's own car, toward `car` when they came from one */
 export default function LeadForm({ type, car, query, onClose }) {
-  const { saveLead, cars } = useShowroom();
+  const { saveLead, cars, settings } = useShowroom();
   const { lang } = useNav();
   const today = localISODate();
-  const [form, setForm] = useState({ name: '', mobile: '', date: today, slot: '', note: '' });
+  const [form, setForm] = useState({ name: '', mobile: '', date: today, slot: '', note: '', tradeCar: '', km: '', asking: '', income: '', cash: '' });
   const [errors, setErrors] = useState({});
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -29,6 +30,12 @@ export default function LeadForm({ type, car, query, onClose }) {
   const uid = useId();
   const testDrive = type === 'test-drive';
   const wish = type === 'wish';
+  const tradeIn = type === 'trade-in';
+  const reserve = type === 'reserve';
+  /* test drives and reservations may say what the buyer can afford */
+  const asksBudget = testDrive || reserve;
+  const budgetMax = asksBudget ? affordablePrice({ income: form.income, cash: form.cash }, settings.financing) : 0;
+  const res = settings.reservation || DEFAULT_RESERVATION;
   /* the waitlist's own fields, filled from the search or car the buyer came from */
   const [want, setWant] = useState(() => ({
     body: query?.body || '', make: query?.make || '', q: query?.q || '', priceMax: query?.priceMax ? String(query.priceMax) : '',
@@ -43,13 +50,14 @@ export default function LeadForm({ type, car, query, onClose }) {
     setErrors(er => (er[k] ? { ...er, [k]: undefined } : er));
   };
   const set = (k) => (e) => change(k, e.target.value);
+  const setDigits = (k) => (e) => change(k, e.target.value.replace(/\D/g, ''));
 
   const submit = async (e) => {
     e.preventDefault();
     const errs = validateLead({ type, ...form }, today);
     setErrors(errs);
     if (Object.values(errs).some(Boolean)) {
-      const first = ['name', 'mobile', 'date', 'slot'].find(k => errs[k]);
+      const first = ['tradeCar', 'name', 'mobile', 'date', 'slot'].find(k => errs[k]);
       formRef.current?.querySelector(`[data-field="${first}"]`)?.focus();
       return;
     }
@@ -61,7 +69,10 @@ export default function LeadForm({ type, car, query, onClose }) {
         type,
         ...(wish
           ? { carId: null, carLabel: describeQuery(wishQuery, 'en'), query: wishQuery, notifiedCarIds: [] }
-          : { carId: car.id, carLabel: `${carTitle(car)} (${car.stockNo})` }),
+          : { carId: car?.id ?? null, carLabel: car ? `${carTitle(car)} (${car.stockNo})` : '' }),
+        ...(tradeIn && { tradeIn: { car: form.tradeCar.trim(), km: Number(form.km) || null, asking: Number(form.asking) || null } }),
+        ...(budgetMax > 0 && { budget: { income: Number(form.income), cash: Number(form.cash), max: budgetMax } }),
+        ...(currentRef() && { agentCode: currentRef() }),
         name: form.name.trim(),
         mobile: form.mobile.trim(),
         date: testDrive ? form.date : '',
@@ -94,22 +105,42 @@ export default function LeadForm({ type, car, query, onClose }) {
   });
 
   return (
-    <Sheet open={!!type} onClose={onClose} title={t(lang, wish ? 'wish.title' : testDrive ? 'lead.testDrive' : 'lead.reserve')} closeLabel={t(lang, 'common.close')}>
+    <Sheet open={!!type} onClose={onClose} title={t(lang, wish ? 'wish.title' : tradeIn ? 'trade.title' : testDrive ? 'lead.testDrive' : 'lead.reserve')} closeLabel={t(lang, 'common.close')}>
       {sent ? (
         <div className={styles.sentBox}>
           <CircleCheck size={44} strokeWidth={1.5} aria-hidden="true" />
           <h3 className={styles.h3}>{t(lang, 'lead.sent')}</h3>
-          <p className={styles.muted}>{t(lang, wish ? 'wish.sentHint' : 'lead.sentHint')}</p>
+          <p className={styles.muted}>{t(lang, wish ? 'wish.sentHint' : tradeIn ? 'trade.sentHint' : 'lead.sentHint')}</p>
           <button type="button" className={`${styles.btnPrimary} ${styles.btnBlock}`} onClick={onClose}>{t(lang, 'lead.done')}</button>
         </div>
       ) : (
         <form ref={formRef} className={styles.formGrid} onSubmit={submit} noValidate>
           {wish ? (
             <p className={styles.leadCar} aria-live="polite"><span className={styles.srOnly}>{t(lang, 'wish.looking')}: </span>{describeQuery(wishQuery, lang)}</p>
+          ) : tradeIn ? (
+            car && <p className={styles.leadCar}>{t(lang, 'trade.toward', { car: carTitle(car) })}</p>
           ) : (
             <p className={styles.leadCar}>{carTitle(car)} · {car.stockNo}</p>
           )}
-          <p className={styles.muted}>{t(lang, wish ? 'wish.hint' : testDrive ? 'lead.testDriveHint' : 'lead.reserveHint')}</p>
+          <p className={styles.muted}>{t(lang, wish ? 'wish.hint' : tradeIn ? 'trade.hint' : testDrive ? 'lead.testDriveHint' : 'lead.reserveHint')}</p>
+          {reserve && (
+            <p className={styles.resTerms}>
+              {t(lang, 'res.terms', { fee: formatPeso(res.fee), days: res.days })} {t(lang, `res.refund.${res.refund}`)}
+            </p>
+          )}
+          {tradeIn && (
+            <>
+              {field('tradeCar', t(lang, 'trade.car'),
+                <input className={styles.input} placeholder="2016 Toyota Vios 1.3 E MT" value={form.tradeCar} onChange={set('tradeCar')} {...aria('tradeCar')} />)}
+              {field('km', t(lang, 'trade.km'),
+                <input className={styles.input} inputMode="numeric" placeholder="80000" value={form.km} onChange={setDigits('km')} {...aria('km')} />)}
+              <div className={styles.field}>
+                <label className={styles.fieldLabel} htmlFor={`${uid}-asking`}>{t(lang, 'trade.asking')}</label>
+                <input id={`${uid}-asking`} className={styles.input} inputMode="numeric" placeholder="350000" value={form.asking} onChange={setDigits('asking')} />
+                {Number(form.asking) > 0 && <p className={styles.hint}>{formatPeso(form.asking)}</p>}
+              </div>
+            </>
+          )}
           {wish && (
             <div className={styles.wishFields}>
               <div className={styles.field}>
@@ -161,6 +192,16 @@ export default function LeadForm({ type, car, query, onClose }) {
               </div>
               {errors.slot && <p className={styles.error}>{t(lang, 'err.slot')}</p>}
             </div>
+          )}
+          {asksBudget && (
+            <fieldset className={styles.budgetFields}>
+              <legend>{t(lang, 'lead.budgetTitle')}</legend>
+              {field('income', t(lang, 'afford.income'),
+                <input className={styles.input} inputMode="numeric" placeholder="35000" value={form.income} onChange={setDigits('income')} {...aria('income')} />)}
+              {field('cash', t(lang, 'afford.cash'),
+                <input className={styles.input} inputMode="numeric" placeholder="200000" value={form.cash} onChange={setDigits('cash')} {...aria('cash')} />)}
+              {budgetMax > 0 && <p className={styles.hint} aria-live="polite">{t(lang, 'afford.result', { amount: formatPeso(budgetMax) })}</p>}
+            </fieldset>
           )}
           {field('note', t(lang, 'lead.note'),
             <textarea className={styles.textarea} rows={3} value={form.note} onChange={set('note')} {...aria('note')} />)}

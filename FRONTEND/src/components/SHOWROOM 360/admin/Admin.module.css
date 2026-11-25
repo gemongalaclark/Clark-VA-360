@@ -1,6 +1,7 @@
 /* Admin: the same dealer-site look as the public site (Look v4). Phone first (a
-   white top bar + bottom tabs), a dark sidebar band from 900px where the current
-   page is a white rounded block, like the public header's Contact button.
+   white top bar + bottom tabs), a sidebar from 900px that follows the theme: light
+   grey with a black block for the current page in light mode, dark grey with a white
+   block in dark mode.
    Headings are Inter on hairlines; lists are ruled rows; cards are 1px-bordered.
    Tokens come from .app in Showroom360.module.css. */
 
@@ -8,8 +9,10 @@
 .main { min-width: 0; }
 
 /* ── navigation ──
-   Phone: a white top bar and bottom tabs. From 900px: a dark band (--band, dark in
-   both themes) with the pages; the current one is a white rounded block. */
+   Phone: a top bar and bottom tabs. From 900px: a sidebar in the theme's colours
+   (Clark, 2026-11-25), one step off the page (--paper-2: light grey beside the white
+   page, lifted grey beside the dark one) so the two read apart; the current page is
+   an ink block, white text on black in light mode and black on white in dark mode. */
 
 .topBar {
   position: sticky; top: 0; z-index: 30; height: 56px; padding: 0 4px 0 16px;
@@ -34,7 +37,6 @@
   font-weight: 600; font-size: 0.75rem; line-height: 1.35; letter-spacing: 0.01em;
 }
 .roleOnPaper { border-color: var(--rule-2); color: var(--ink-2); }
-.roleOnBand { border-color: rgba(var(--on-band-rgb), 0.3); color: rgba(var(--on-band-rgb), 0.82); }
 .roleTag.roleSuper { border-color: var(--red); background: var(--red); color: #fff; }
 
 .navItem { position: relative; display: flex; align-items: center; gap: 10px; min-height: 44px; text-decoration: none; }
@@ -68,55 +70,54 @@
   .topBar, .bottomNav { display: none; }
   .sidebar {
     position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; gap: 16px;
-    padding: 20px 14px 16px; background: var(--band); color: var(--on-band);
+    padding: 20px 14px 16px; background: var(--paper-2); color: var(--ink); border-right: 1px solid var(--rule);
   }
 }
 .sideBrand {
   display: flex; align-items: center; gap: 12px; padding: 2px 4px 18px;
-  border-bottom: 1px solid rgba(var(--on-band-rgb), 0.12);
+  border-bottom: 1px solid var(--rule);
 }
 .sideBrandText { display: grid; justify-items: start; gap: 6px; min-width: 0; }
-.sideName { font-weight: 600; font-size: 1rem; letter-spacing: -0.02em; line-height: 1.2; color: var(--on-band); overflow-wrap: anywhere; }
+.sideName { font-weight: 600; font-size: 1rem; letter-spacing: -0.02em; line-height: 1.2; color: var(--ink); overflow-wrap: anywhere; }
 .sideNav { display: grid; gap: 14px; }
 .sideGroup { display: grid; gap: 2px; }
 /* Settings and History: the shop's own pages, under a hairline */
-.sideGroup + .sideGroup::before { content: ''; height: 1px; margin: 0 4px 12px; background: rgba(var(--on-band-rgb), 0.12); }
+.sideGroup + .sideGroup::before { content: ''; height: 1px; margin: 0 4px 12px; background: var(--rule); }
 .sideNav .navItem {
   padding: 10px 12px; border-radius: var(--radius);
-  color: rgba(var(--on-band-rgb), 0.72); font-weight: 500; font-size: 0.95rem; line-height: 1.2;
+  color: var(--ink-2); font-weight: 500; font-size: 0.95rem; line-height: 1.2;
   transition: color 0.15s, background-color 0.15s;
 }
-@media (hover: hover) { .sideNav .navItem:hover { color: var(--on-band); background: rgba(var(--on-band-rgb), 0.08); } }
+@media (hover: hover) { .sideNav .navItem:hover { color: var(--ink); background: rgba(var(--ink-rgb), 0.06); } }
 .sideNav .navIcon { position: static; }
 .sideNav .navLabel { flex: 1; }
 .sideNav .navCount {
-  display: block; flex: none; color: rgba(var(--on-band-rgb), 0.55);
+  display: block; flex: none; color: var(--ink-2);
   font-size: 0.78rem; font-weight: 500; font-variant-numeric: tabular-nums;
 }
 .sideNav .navBadge { top: 50%; right: 12px; transform: translateY(-50%); }
-/* the current page: a white rounded block */
-.sideNav .navItem[aria-current='page'] { background: var(--on-band); color: var(--band); font-weight: 600; }
+/* the current page: an ink block (black in light mode, white in dark mode) */
+.sideNav .navItem[aria-current='page'] { background: var(--ink); color: var(--on-ink); font-weight: 600; }
 .sideNav .navItem[aria-current='page'] svg { stroke-width: 2.25; }
-.sideNav .navItem[aria-current='page'] .navCount { color: rgba(var(--ink-rgb), 0.55); }
+.sideNav .navItem[aria-current='page'] .navCount { color: rgba(var(--on-ink-rgb), 0.68); }
 .sideFoot {
   margin-top: auto; display: grid; gap: 2px; padding-top: 12px;
-  border-top: 1px solid rgba(var(--on-band-rgb), 0.12);
+  border-top: 1px solid var(--rule);
 }
 .sideLink {
   display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 10px 12px; border: 0; border-radius: var(--radius);
-  background: none; color: rgba(var(--on-band-rgb), 0.72); font: inherit; font-weight: 500; font-size: 0.92rem; text-decoration: none; cursor: pointer; text-align: left;
+  background: none; color: var(--ink-2); font: inherit; font-weight: 500; font-size: 0.92rem; text-decoration: none; cursor: pointer; text-align: left;
   transition: color 0.15s, background-color 0.15s;
 }
-@media (hover: hover) { .sideLink:hover { color: var(--on-band); background: rgba(var(--on-band-rgb), 0.08); } }
+@media (hover: hover) { .sideLink:hover { color: var(--ink); background: rgba(var(--ink-rgb), 0.06); } }
 /* Lock signs out: its own outlined button at the very bottom */
 .lockBtn {
   display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; margin-top: 10px; padding: 10px 12px;
-  border: 1px solid rgba(var(--on-band-rgb), 0.35); border-radius: var(--radius); background: transparent; color: var(--on-band);
+  border: 1px solid var(--rule-2); border-radius: var(--radius); background: transparent; color: var(--ink);
   font-weight: 500; font-size: 0.92rem; line-height: 1; cursor: pointer; transition: border-color 0.15s;
 }
-@media (hover: hover) { .lockBtn:hover { border-color: var(--on-band); } }
-/* the focus ring is white on the dark band, ink on the white current block */
-.admin .sidebar :focus-visible { outline-color: var(--on-band); }
+@media (hover: hover) { .lockBtn:hover { border-color: var(--ink); } }
+/* the focus ring stands off the ink block so it doesn't merge with it */
 .admin .sidebar [aria-current='page']:focus-visible { outline-offset: 3px; }
 
 /* ── PIN gate: a white card on the dark band ── */
@@ -222,6 +223,8 @@
 }
 .todoActions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .todoActions > a, .todoActions > button { min-height: 44px; padding: 0 14px; font-size: 0.92rem; }
+/* "Open car" beside a button: centred on the same line */
+.todoActions > a { display: inline-flex; align-items: center; }
 .leadTask { display: grid; gap: 4px; margin-top: 8px; padding-top: 10px; border-top: 1px dashed var(--rule-2); }
 .leadWish { color: var(--ink); font-weight: 600; }
 
@@ -428,3 +431,29 @@
 .dangerZone > legend { color: var(--red-dark-text); border-bottom-color: var(--red); }
 
 .captionArea { min-height: 260px; font-size: 15px; line-height: 1.5; }
+
+/* ── dealer tools (2026-11-25) ── */
+
+/* agents: their link, and four numbers */
+.agentLink { margin: 2px 0 4px; padding: 8px 10px; border-radius: 6px; background: var(--paper-2); color: var(--ink-2); font-size: 0.85rem; overflow-wrap: anywhere; }
+.agentStats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 4px 0 0; }
+@media (min-width: 480px) { .agentStats { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.agentStats div { display: grid; gap: 2px; }
+.agentStats dt { color: var(--ink-2); font-size: 0.8rem; }
+.agentStats dd { margin: 0; color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+.agentOwed { color: var(--red-text) !important; }
+
+/* car form: the inspection report, one row per check */
+.inspGroup { display: grid; gap: 2px; margin-top: 12px; }
+.inspHead { margin: 14px 0 4px; color: var(--ink); font-weight: 600; font-size: 0.95rem; }
+.inspRow { display: grid; gap: 6px; padding: 8px 0; border-bottom: 1px solid var(--rule); }
+.inspLabel { color: var(--ink); font-size: 0.92rem; }
+.inspStates button { min-height: 40px; padding: 0 12px; font-size: 0.85rem; }
+.inspNote { grid-column: 1 / -1; }
+@media (min-width: 700px) {
+  .inspRow { grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 6px 16px; }
+}
+
+/* car form: the buyer's review and release photo */
+.reviewRow { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 8px; }
+.reviewPhoto { width: 120px; aspect-ratio: 4 / 3; border-radius: 6px; overflow: hidden; background: var(--paper-2); }

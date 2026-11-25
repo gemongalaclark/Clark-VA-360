@@ -67,7 +67,7 @@ Every piece is built at 360 px first, then widened. These rules apply everywhere
 | `--ink` (text, primary button fill) | #0a0a0a | #f4f4f5 |
 | `--ink-2` (secondary text) | #5f5f66 (≈6.3:1 on white) | #a1a1aa |
 | `--rule` / `--rule-2` | ink at 9% / 18% | ink at 12% / 24% |
-| `--band` (hero, footer, sidebar, photo bands) | #0a0a0a | #050506 |
+| `--band` (hero, footer, PIN page, photo bands) | #0a0a0a | #050506 |
 | `--red` / `--red-text` | #cb2525 / #cb2525 | #cb2525 / #ff7b72 |
 | `--radius` | 6px | 6px |
 
@@ -167,7 +167,7 @@ Under the columns: the "Photo credits" fold-out (unchanged) and "Made by Clark V
 ## Admin
 Same tokens, type and buttons as the public site.
 - **Phone top bar:** white, hairline bottom, logo + shop name (Inter 600) + role tag (small chip: outlined for Admin, red for Superadmin). Bottom tabs styled like the public bottom nav, with the red new-leads badge.
-- **Desktop sidebar:** `--band` (matches the footer). Items in white at 70%; hover brightens; **the current page is a white rounded block with black text** (Drivehub's white button), counts in grey. Sidebar foot (View site, Dark mode, Lock admin) as today, restyled.
+- **Desktop sidebar** (changed 2026-11-25 after Clark's review: the always-dark sidebar didn't change with the theme, and in dark mode the count on the white current block was unreadable): it follows the theme, one step off the page (`--paper-2`: light grey beside the white page, a lifted grey beside the dark one) with a hairline edge, so nav and page read apart. Items in `--ink-2`; hover is a faint ink tint; **the current page is an ink rounded block**: white text on black in light mode, black on white in dark mode, with its count at 68% of the block's text colour. Labels and counts meet 4.5:1 in both themes. Sidebar foot (View site, Dark mode, Lock admin) as today, restyled.
 - **PIN gate:** the page is the dark band; the form is a white rounded card (radius 12) with the logo, shop name, PIN field and a black Unlock button.
 - **Page heads:** Inter 600 title (about 1.75rem) with the actions on the right and a hairline under. **Block heads:** Inter 600 about 1.1rem, link on the right, no ink tabs.
 - **Dashboard stats:** separate white bordered cards (radius 8) in a 2-column grid on phones, 5 across on desktop; the new-leads stat shows its number in red.

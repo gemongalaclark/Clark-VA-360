@@ -1,10 +1,11 @@
-import { Clock, BellRing, Sparkles, TrendingDown, MessageCircle, MessageSquare, Copy, Check } from 'lucide-react';
+import { Clock, BellRing, Sparkles, TrendingDown, MessageCircle, MessageSquare, Copy, Check, FileCheck, CalendarClock, Hourglass, Banknote } from 'lucide-react';
 import s from '../Showroom360.module.css';
 import a from './Admin.module.css';
 import { useShowroom } from '../store.js';
-import { useNav, useToast, adminSaveError } from '../ui.jsx';
-import { carTitle, formatPeso, viberUrl, smsUrl } from '../showroomRules.js';
-import { taskMessage, recordContact, applyPriceDrop, skipPriceDrop, waitingFor } from '../autoRules.js';
+import { useNav, useToast, adminSaveError, Link } from '../ui.jsx';
+import { carTitle, formatPeso, viberUrl, smsUrl, PAPER_STEPS, reservedUntilFor, DEFAULT_RESERVATION } from '../showroomRules.js';
+import { taskMessage, recordContact, recordCarTask, markPaid, applyPriceDrop, skipPriceDrop, waitingFor } from '../autoRules.js';
+import { localISODate } from '../public/LeadForm.jsx';
 
 /* The autopilot's to-do list (dashboard) and one buyer's task (Leads page).
    Sending opens Viber or Messages with the text written; the dealer still presses Send. */
@@ -16,8 +17,15 @@ const KIND = {
   dropped: { label: 'Price dropped', Icon: TrendingDown },
   followup: { label: 'Follow up', Icon: MessageCircle },
   drop: { label: 'Drop price?', Icon: TrendingDown },
+  papers: { label: 'Update the buyer', Icon: FileCheck },
+  renew: { label: 'Renewal reminder', Icon: CalendarClock },
+  reserveEnds: { label: 'Reservation ends', Icon: Hourglass },
+  payout: { label: 'Pay the owner', Icon: Banknote },
+  commission: { label: 'Pay the agent', Icon: Banknote },
 };
-const TYPE = { 'test-drive': 'Test drive', reserve: 'Reservation', wish: 'Waitlist' };
+const STEP_LABEL = Object.fromEntries(PAPER_STEPS);
+const monthOf = (ym) => { const [y, m] = String(ym).split('-').map(Number); return new Date(y, m - 1, 1).toLocaleDateString('en-PH', { month: 'long', year: 'numeric' }); };
+const TYPE = { 'test-drive': 'Test drive', reserve: 'Reservation', wish: 'Waitlist', 'trade-in': 'Trade-in' };
 
 const waited = (min) => {
   if (min < 60) return `${min} min`;
@@ -31,28 +39,73 @@ const fmtDate = (ymd) => {
   return y ? new Date(y, m - 1, d).toLocaleDateString('en-PH', { weekday: 'short', month: 'short', day: 'numeric' }) : '';
 };
 const carName = (task) => (task.car ? carTitle(task.car) : String(task.lead?.carLabel || '').replace(/\s*\([^)]*\)\s*$/, ''));
+/* what a request is about: the search, the car being traded in, or the car asked about */
+const about = (task) => {
+  const l = task.lead;
+  if (l.type === 'wish') return l.carLabel;
+  if (l.type === 'trade-in') return `${l.tradeIn?.car || 'their car'}${task.car ? ` toward the ${carTitle(task.car)}` : ''}`;
+  return carName(task);
+};
 
 function detail(task, now) {
   const l = task.lead;
   switch (task.kind) {
-    case 'reply': return `${TYPE[l.type] || 'Request'} · ${l.type === 'wish' ? l.carLabel : carName(task)} · waiting ${waited(task.minutes)}`;
+    case 'reply': return `${TYPE[l.type] || 'Request'} · ${about(task)} · waiting ${waited(task.minutes)}`;
     case 'remind': return `Test drive ${task.when}${l.slot ? `, ${l.slot}` : ''} · ${carName(task)}`;
     case 'wish': return `Looking for ${l.carLabel}. Now in stock: ${task.items.map(i => `${carTitle(i.car)} at ${formatPeso(i.price)}`).join('; ')}`;
     case 'dropped': return `Asked about the ${carName(task)} · now ${formatPeso(task.price)}, was ${formatPeso(task.was)}`;
     case 'followup': {
       if (task.after) return `Test drive was ${fmtDate(l.date)} · ask how it went`;
       const last = Math.max(Date.parse(l.createdAt) || 0, Date.parse(l.contactedAt) || 0, Date.parse(l.lastContactAt) || 0);
-      return `${TYPE[l.type] || 'Request'} · ${carName(task)} · quiet for ${waited(Math.floor((now.getTime() - last) / 6e4))}`;
+      return `${TYPE[l.type] || 'Request'} · ${about(task)} · quiet for ${waited(Math.floor((now.getTime() - last) / 6e4))}`;
     }
     case 'drop': return `${task.days} days in stock · ${formatPeso(task.car.price)} → ${formatPeso(task.price)}`;
+    case 'papers': return `${STEP_LABEL[task.step]} · ${carTitle(task.car)}`;
+    case 'renew': return `Registration due ${monthOf(task.car.regUntil)} · ${carTitle(task.car)}`;
+    case 'reserveEnds': return `Reserved until ${fmtDate(task.until)} · close the sale or extend it`;
+    case 'payout': return `Sold · ${task.car.consign.owner} gets ${formatPeso(task.car.consign.net)}`;
+    case 'commission': return `${task.agent?.name || 'A removed agent'} · ${formatPeso(task.car.sale.commission)} for this sale`;
     default: return '';
   }
 }
 
-/* The message and the ways to send it, or Apply/Skip for a price drop */
+/* The message and the ways to send it, Apply/Skip for a price drop, Mark paid for
+   money owed, Extend for a reservation running out */
 export function TaskActions({ task }) {
   const { saveLead, saveCar, settings, leads, events } = useShowroom();
   const toast = useToast();
+
+  if (task.kind === 'payout' || task.kind === 'commission') {
+    const paid = async () => {
+      try {
+        await saveCar(markPaid(task.car, task.kind, new Date()));
+        toast(task.kind === 'payout' ? `Marked paid to ${task.car.consign.owner}.` : `Commission marked paid${task.agent ? ` to ${task.agent.name}` : ''}.`);
+      } catch (err) { toast(adminSaveError(err)); }
+    };
+    return (
+      <div className={a.todoActions}>
+        <button type="button" className={s.btnGhost} onClick={paid}><Check size={18} aria-hidden="true" />Mark paid</button>
+        <Link to={`/showroom/admin/cars/${task.car.id}`} className={s.textBtn}>Open car</Link>
+      </div>
+    );
+  }
+  if (task.kind === 'reserveEnds') {
+    const days = (settings.reservation || DEFAULT_RESERVATION).days;
+    const extend = async () => {
+      const today = localISODate();
+      const until = reservedUntilFor(task.until < today ? today : task.until, days);
+      try {
+        await saveCar({ ...task.car, reservedUntil: until });
+        toast(`${task.car.stockNo} held until ${fmtDate(until)}.`);
+      } catch (err) { toast(adminSaveError(err)); }
+    };
+    return (
+      <div className={a.todoActions}>
+        <button type="button" className={s.btnGhost} onClick={extend}><Hourglass size={18} aria-hidden="true" />Extend {days} days</button>
+        <Link to={`/showroom/admin/cars/${task.car.id}`} className={s.textBtn}>Open car</Link>
+      </div>
+    );
+  }
 
   if (task.kind === 'drop') {
     const apply = async () => {
@@ -77,9 +130,12 @@ export function TaskActions({ task }) {
     );
   }
 
-  const l = task.lead;
+  /* a buyer's request, or the buyer of a sold car (papers, renewal) */
+  const l = task.to || task.lead;
   const text = taskMessage(task, settings, (car) => `${window.location.origin}/showroom/cars/${car.id}`);
-  const record = () => saveLead(recordContact(l, task, new Date())).catch(err => toast(adminSaveError(err)));
+  const record = () => (task.lead
+    ? saveLead(recordContact(task.lead, task, new Date()))
+    : saveCar(recordCarTask(task.car, task, new Date()))).catch(err => toast(adminSaveError(err)));
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(text);
@@ -125,7 +181,7 @@ export default function TaskList({ tasks }) {
       {tasks.map(task => (
         <li key={task.key} className={a.todoItem}>
           <TaskTag task={task} />
-          <p className={a.todoWho}>{task.lead ? task.lead.name : carTitle(task.car)}</p>
+          <p className={a.todoWho}>{task.to?.name || task.lead?.name || carTitle(task.car)}</p>
           <p className={`${s.muted} ${a.todoWhy}`}>{detail(task, now)}</p>
           <TaskActions task={task} />
         </li>

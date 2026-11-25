@@ -1,17 +1,17 @@
 import { useState } from 'react';
-import { Phone, CalendarCheck, BookmarkCheck, BellRing, Check } from 'lucide-react';
+import { Phone, CalendarCheck, BookmarkCheck, BellRing, Check, Repeat } from 'lucide-react';
 import s from '../Showroom360.module.css';
 import a from './Admin.module.css';
 import { useShowroom } from '../store.js';
 import { useNav, Link } from '../ui.jsx';
 import { telHref } from '../public/Home.jsx';
-import { carTitle, formatPeso, effectivePrice } from '../showroomRules.js';
+import { carTitle, formatPeso, formatKm, effectivePrice } from '../showroomRules.js';
 import { todoList, withStatus, wishMatches } from '../autoRules.js';
 import { TaskTag, TaskActions } from './TaskList.jsx';
 
-const TYPES = [['', 'All'], ['test-drive', 'Test drives'], ['reserve', 'Reservations'], ['wish', 'Waitlist']];
-const TYPE_LABEL = { 'test-drive': 'Test drive', reserve: 'Reservation', wish: 'Waitlist' };
-const TYPE_ICON = { 'test-drive': CalendarCheck, reserve: BookmarkCheck, wish: BellRing };
+const TYPES = [['', 'All'], ['test-drive', 'Test drives'], ['reserve', 'Reservations'], ['wish', 'Waitlist'], ['trade-in', 'Trade-ins']];
+const TYPE_LABEL = { 'test-drive': 'Test drive', reserve: 'Reservation', wish: 'Waitlist', 'trade-in': 'Trade-in' };
+const TYPE_ICON = { 'test-drive': CalendarCheck, reserve: BookmarkCheck, wish: BellRing, 'trade-in': Repeat };
 const STATUSES = [['', 'Any status'], ['new', 'New'], ['contacted', 'Contacted'], ['closed', 'Closed']];
 const STATUS_RANK = { new: 0, contacted: 1, closed: 2 };
 
@@ -30,7 +30,7 @@ const fmtDate = (ymd) => {
 };
 
 export default function Leads() {
-  const { leads, cars, events, settings, saveLead } = useShowroom();
+  const { leads, cars, events, settings, agents, saveLead } = useShowroom();
   const { now } = useNav();
   const [type, setType] = useState('');
   const [status, setStatus] = useState('');
@@ -39,7 +39,7 @@ export default function Leads() {
     .filter(l => (!type || l.type === type) && (!status || l.status === status))
     .sort((x, y) => STATUS_RANK[x.status] - STATUS_RANK[y.status] || Date.parse(y.createdAt) - Date.parse(x.createdAt));
   const newCount = leads.filter(l => l.status === 'new').length;
-  const tasks = todoList({ leads, cars, events, settings }, now);
+  const tasks = todoList({ leads, cars, events, settings, agents }, now);
   const changeStatus = (l, next) => saveLead(withStatus(l, next, new Date()));
 
   return (
@@ -65,7 +65,7 @@ export default function Leads() {
       {list.length === 0 ? (
         <p className={`${s.muted} ${a.emptyLine}`}>
           {leads.length === 0
-            ? 'No leads yet. When a buyer books a test drive, reserves a car or joins the waitlist, it shows up here.'
+            ? 'No leads yet. When a buyer books a test drive, reserves a car, joins the waitlist or offers a trade-in, it shows up here.'
             : 'No leads match these filters.'}
         </p>
       ) : (
@@ -80,6 +80,7 @@ export default function Leads() {
                 <div className={a.leadTop}>
                   <span className={a.leadType}><TypeIcon size={16} strokeWidth={1.75} aria-hidden="true" />{TYPE_LABEL[l.type] || 'Request'}</span>
                   {l.status === 'new' && <span className={a.newDot}>New</span>}
+                  {l.agentCode && <span className={a.daysChip}>via {agents.find(ag => ag.code === l.agentCode)?.name || l.agentCode}</span>}
                   <span className={`${s.muted} ${a.leadAgo}`}>{ago(l.createdAt, now)}</span>
                 </div>
                 <p className={a.leadName}>{l.name}</p>
@@ -97,6 +98,19 @@ export default function Leads() {
                       </p>
                     )}
                   </>
+                ) : l.type === 'trade-in' ? (
+                  <>
+                    <p className={s.muted}>
+                      Selling <strong className={a.leadWish}>{l.tradeIn?.car}</strong>
+                      {l.tradeIn?.km ? ` · ${formatKm(l.tradeIn.km)}` : ''}
+                      {l.tradeIn?.asking ? ` · asking ${formatPeso(l.tradeIn.asking)}` : ''}
+                    </p>
+                    {l.carId && (
+                      <p className={s.muted}>
+                        Toward {car ? <Link to={`/showroom/admin/cars/${car.id}`} className={a.inlineLink}>{l.carLabel}</Link> : <>{l.carLabel} <em>(car removed)</em></>}
+                      </p>
+                    )}
+                  </>
                 ) : (
                   <p className={s.muted}>
                     {car ? <Link to={`/showroom/admin/cars/${car.id}`} className={a.inlineLink}>{l.carLabel}</Link> : <>{l.carLabel} <em>(car removed)</em></>}
@@ -104,6 +118,13 @@ export default function Leads() {
                 )}
                 {l.type === 'test-drive' && l.date && (
                   <p className={a.leadWhen}>{fmtDate(l.date)} · {l.slot === 'morning' ? 'Morning' : 'Afternoon'}</p>
+                )}
+                {l.budget?.max > 0 && (
+                  <p className={s.muted}>
+                    Can afford up to <strong className={a.leadWish}>{formatPeso(l.budget.max)}</strong>
+                    {car && effectivePrice(car, events, now).price > l.budget.max ? ' · below this car’s price' : ''}
+                    {' '}(pay {formatPeso(l.budget.income)}/mo, cash {formatPeso(l.budget.cash)})
+                  </p>
                 )}
                 {l.note && <p className={a.leadNote}>“{l.note}”</p>}
                 {task && (

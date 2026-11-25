@@ -119,6 +119,30 @@ export function featuredCars(cars, events, now, max = 8) {
 export const bandCars = (cars) =>
   cars.filter(c => c.status !== 'sold' && c.photoIds?.length > 0).sort(byNewest);
 
+/* "You might also like" under a car: cars a buyer can still ask about (not sold,
+   not reserved), the same body type first, then the closest price they'd pay now. */
+export function similarCars(cars, car, events, now, n = 4) {
+  const price = effectivePrice(car, events, now).price;
+  return cars
+    .filter(c => c.id !== car.id && c.status === 'available')
+    .map(c => ({ c, body: c.body === car.body ? 0 : 1, gap: Math.abs(effectivePrice(c, events, now).price - price) }))
+    .sort((a, b) => a.body - b.body || a.gap - b.gap || byNewest(a.c, b.c))
+    .slice(0, n)
+    .map(x => x.c);
+}
+
+/* Saved cars: ids kept in the buyer's own browser, newest saved first */
+export const toggleSaved = (ids, id) => (ids.includes(id) ? ids.filter(x => x !== id) : [id, ...ids]);
+
+export function parseSaved(text) {
+  try {
+    const v = JSON.parse(text);
+    return Array.isArray(v) ? [...new Set(v.filter(x => typeof x === 'string' && x.trim()))] : [];
+  } catch {
+    return [];
+  }
+}
+
 export const recentlySold = (cars, n = 6) =>
   cars.filter(c => c.status === 'sold')
     .sort((a, b) => Date.parse(b.soldAt || 0) - Date.parse(a.soldAt || 0))
@@ -197,6 +221,7 @@ export function parseQuery(search) {
   for (const k of TEXT_KEYS) { const v = (p.get(k) || '').trim(); if (v) out[k] = v; }
   for (const k of NUM_KEYS) { const v = Number(p.get(k)); if (Number.isFinite(v) && v > 0) out[k] = v; }
   if (p.get('onSale') === '1') out.onSale = true;
+  if (p.get('saved') === '1') out.saved = true;
   const sort = p.get('sort');
   if (sort && sort !== 'newest' && SORTS[sort]) out.sort = sort;
   return out;
@@ -251,6 +276,7 @@ export function toQuery(query) {
     if (v !== undefined && v !== null && String(v).trim() !== '' && v !== 0) p.set(k, String(v).trim());
   }
   if (query.onSale) p.set('onSale', '1');
+  if (query.saved) p.set('saved', '1');
   if (query.sort && query.sort !== 'newest') p.set('sort', query.sort);
   const s = p.toString();
   return s ? `?${s}` : '';
@@ -319,6 +345,7 @@ export function validateLead(lead, todayISO) {
     else if (lead.date < todayISO) e.date = 'Pick today or a later date.';
     if (lead.slot !== 'morning' && lead.slot !== 'afternoon') e.slot = 'Pick morning or afternoon.';
   }
+  if (lead.type === 'trade-in' && blank(lead.tradeCar)) e.tradeCar = 'Tell us your car’s year, make and model.';
   return e;
 }
 
@@ -329,7 +356,10 @@ export function validateLead(lead, todayISO) {
 export const newPhotoId = (now = new Date()) => `ph-${now.getTime()}-${Math.random().toString(36).slice(2, 8) || '0'}`;
 
 export function orphanPhotoIds(ids, data, now) {
-  const used = new Set([...(data.cars || []).flatMap(c => c.photoIds || []), data.settings?.logoPhotoId].filter(Boolean));
+  /* car photos, release photos on reviews, and the logo */
+  const used = new Set([
+    ...(data.cars || []).flatMap(c => [...(c.photoIds || []), c.sale?.review?.photoId]), data.settings?.logoPhotoId,
+  ].filter(Boolean));
   return ids.filter(id => {
     if (used.has(id)) return false;
     const m = /^ph-(\d+)-/.exec(id);
@@ -376,6 +406,7 @@ export function parseShowroomPath(pathname) {
   if (a?.toLowerCase() === 'admin') return { view: 'admin', sub: b || 'dashboard', id: c || null };
   if (a === 'cars' && b) return { view: 'car', id: b };
   if (a === 'cars') return { view: 'cars' };
+  if (a === 'compare' && !b) return { view: 'compare' };
   if (LEGAL_KINDS.includes(a) && !b) return { view: a };
   if (!a) return { view: 'home' };
   return { view: 'notfound' };
@@ -383,7 +414,7 @@ export function parseShowroomPath(pathname) {
 
 /* ── admin roles: one sign-in page, two PINs. A demo lock, not security. ── */
 
-const SUPER_ONLY = new Set(['settings', 'history']);
+const SUPER_ONLY = new Set(['settings', 'history', 'agents']);
 
 export function roleForPin(pin, settings) {
   const p = String(pin ?? '').trim();
@@ -480,4 +511,121 @@ export function clampView(view, box) {
 export function zoomAt(view, s2, fx, fy) {
   const k = s2 / view.s;
   return { s: s2, x: fx - (fx - view.x) * k, y: fy - (fy - view.y) * k };
+}
+
+/* ── dealer tools (2026-11-25) ── */
+
+/* Reservations: the fee, how long a car is held, and when the fee comes back */
+export const REFUND_RULES = { refundable: 'Refundable', denied: 'Refundable if the bank loan is denied', none: 'Non-refundable' };
+export const DEFAULT_RESERVATION = { fee: 5000, days: 7, refund: 'denied' };
+const ymdOf = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+export function reservedUntilFor(todayISO, days) {
+  const [y, m, d] = String(todayISO).split('-').map(Number);
+  return ymdOf(new Date(y, m - 1, d + (Number(days) || 0)));
+}
+
+/* Reservations past their last day go back on sale; the last day itself still holds */
+export const expireReservations = (cars, todayISO) => cars
+  .filter(c => c.status === 'reserved' && c.reservedUntil && c.reservedUntil < todayISO)
+  .map(c => ({ ...c, status: 'available', reservedUntil: null }));
+
+/* The inspection report: 20 checks in 5 groups (English labels for the admin;
+   buyers see insp.<id> in their language) */
+export const INSPECTION = [
+  { id: 'engine', label: 'Engine & transmission', items: [
+    ['start', 'Starts and idles smoothly'], ['leaks', 'No oil or fluid leaks'],
+    ['shift', 'Transmission shifts cleanly'], ['cooling', 'Radiator and hoses OK']] },
+  { id: 'under', label: 'Underside', items: [
+    ['rust', 'No heavy rust underneath'], ['suspension', 'Suspension and steering OK'],
+    ['brakes', 'Brakes OK'], ['tires', 'Tires have good tread']] },
+  { id: 'body', label: 'Body & frame', items: [
+    ['paint', 'Paint even, no hidden repaint'], ['panels', 'Doors, hood and trunk line up'],
+    ['frame', 'Frame straight, no welding'], ['lights', 'Lights and glass OK']] },
+  { id: 'inside', label: 'Interior & electricals', items: [
+    ['aircon', 'Aircon cold'], ['power', 'Power windows and locks work'],
+    ['dash', 'No warning lights on the dash'], ['seats', 'Seats and belts OK']] },
+  { id: 'flood', label: 'Flood check', items: [
+    ['silt', 'No mud or water marks under the carpets'], ['seatrust', 'No rust on seat rails and bolts'],
+    ['smell', 'No musty smell'], ['wiring', 'Wiring and connectors dry and clean']] },
+];
+const INSPECTION_IDS = INSPECTION.flatMap(g => g.items.map(([id]) => id));
+
+/* null until the report has a date and at least one result */
+export function inspectionSummary(insp) {
+  if (!insp?.date) return null;
+  const r = insp.results || {};
+  const done = INSPECTION_IDS.filter(id => r[id] === 'pass' || r[id] === 'fix');
+  if (!done.length) return null;
+  return {
+    total: INSPECTION_IDS.length,
+    checked: done.length,
+    passed: done.filter(id => r[id] === 'pass').length,
+    fix: done.filter(id => r[id] === 'fix').length,
+  };
+}
+
+/* After a sale: the paper steps the buyer hears about, in order */
+export const PAPER_STEPS = [['deed', 'Deed of sale signed'], ['hpg', 'HPG clearance'], ['lto', 'LTO transfer filed'], ['released', 'New OR/CR released']];
+
+/* Drawn on car photos the dealer adds, so a reposted photo still names the shop */
+export function watermarkLabel(s) {
+  if (s?.watermark === false) return '';
+  const name = String(s?.shopName || '').trim();
+  if (!name) return '';
+  const phone = String(s?.phone || '').trim();
+  return phone ? `${name} · ${phone}` : name;
+}
+
+/* ── agents ("ahente") ── */
+
+const slug = (v) => String(v || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9-]/g, '');
+
+/* the agent code in a link like /showroom?ref=ana */
+export const refCode = (search) => slug(new URLSearchParams(search || '').get('ref')).slice(0, 24);
+
+export function agentCodeFor(name, agents) {
+  const base = slug(String(name || '').trim().split(/\s+/)[0]) || 'agent';
+  const used = new Set(agents.map(a => a.code));
+  if (!used.has(base)) return base;
+  let n = 2;
+  while (used.has(`${base}-${n}`)) n++;
+  return `${base}-${n}`;
+}
+
+export function agentStats(agent, leads, cars) {
+  const sold = cars.filter(c => c.status === 'sold' && c.sale?.agentId === agent.id);
+  const amount = (c) => Number(c.sale.commission) || 0;
+  return {
+    leads: leads.filter(l => l.agentCode && l.agentCode === agent.code).length,
+    sold: sold.length,
+    owed: sold.filter(c => !c.sale.commissionPaidAt).reduce((n, c) => n + amount(c), 0),
+    paid: sold.filter(c => c.sale.commissionPaidAt).reduce((n, c) => n + amount(c), 0),
+  };
+}
+
+/* ── what a buyer can afford ──
+   About 30% of take-home pay goes to the monthly, at the longest term; the cash
+   covers the all-in downpayment (the minimum down plus fees). Checked against
+   loanQuote, so it never promises a car the calculator says is out of reach. */
+export const BUDGET_SHARE = 0.3;
+export function affordablePrice({ income, cash }, fin) {
+  const pay = Number(income) || 0;
+  const money = Number(cash) || 0;
+  if (pay <= 0 || money <= 0) return 0;
+  const terms = loanTerms(fin);
+  const term = terms[terms.length - 1];
+  const rate = (Number(fin.addOn[term]) || 0) / 100;
+  const fees = (Number(fin.feesPct) || 0) / 100;
+  const minDown = (Number(fin.minDownPct) || 0) / 100;
+  const budget = pay * BUDGET_SHARE;
+  const byDown = minDown + fees > 0 ? money / (minDown + fees) : Infinity;
+  const byMonthly = (budget * term / (1 + rate) + money) / (1 + fees);
+  const fits = (p) => {
+    const down = money - Math.round(p * fees);
+    return down / p >= minDown - 1e-9 && loanQuote(p, (down / p) * 100, term, fin).monthly <= budget;
+  };
+  let price = Math.floor(Math.min(byDown, byMonthly) / 10000) * 10000;
+  while (price > 0 && !fits(price)) price -= 10000;
+  return Math.max(0, price);
 }

@@ -4,9 +4,10 @@ import assert from 'node:assert/strict';
 import {
   carEntry, carDeletedEntry, eventEntry, eventDeletedEntry, settingsEntry, leadEntry, resetEntry,
   addToHistory, groupByDay, normalizeHistory, HISTORY_LIMIT, HISTORY_KINDS, promoEntry, promoDeletedEntry, redeemEntry,
+  agentEntry, agentDeletedEntry,
 } from './historyRules.js';
 import { DEFAULT_SETTINGS } from './seedData.js';
-import { applyPriceDrop, skipPriceDrop } from './autoRules.js';
+import { applyPriceDrop, skipPriceDrop, markPaid, recordCarTask } from './autoRules.js';
 
 const NOW = new Date(2026, 10, 23, 15, 42);
 const car = (over = {}) => ({
@@ -138,6 +139,8 @@ test('only lead changes the admin makes are logged, never a buyer’s new reques
   assert.equal(e.title, 'Maria Santos · Test drive');
   assert.deepEqual(row(e, 'Status'), { label: 'Status', from: 'New', to: 'Contacted' });
   assert.equal(leadEntry(lead, { ...lead }, NOW), null);
+  const trade = { ...lead, type: 'trade-in', carLabel: '' };
+  assert.equal(leadEntry(trade, { ...trade, status: 'contacted' }, NOW).title, 'Maria Santos · Trade-in');
 });
 
 test('history keeps the newest entries first and stops at the limit', () => {
@@ -238,4 +241,36 @@ test('adding a promo to an event is logged on the event', () => {
   assert.deepEqual(row(e, 'Promo'), { label: 'Promo', from: '—', to: 'Christmas Spin' });
   const off = eventEntry({ ...ev, promoId: 'promo-1' }, ev, [], NOW, [PROMO]);
   assert.deepEqual(row(off, 'Promo'), { label: 'Promo', from: 'Christmas Spin', to: '—' });
+});
+
+/* ── dealer tools (2026-11-25) ── */
+
+test('the dealer-tool fields of a car show up in its history, but messages sent do not', () => {
+  const before = car({ status: 'sold', sale: { buyer: 'Ben S.', mobile: '0900 000 0106', steps: { deed: '2026-11-20' }, told: {} } });
+  const res = carEntry(car(), car({ status: 'reserved', reservedUntil: '2026-11-30' }), NOW);
+  assert.deepEqual(row(res, 'Reserved until'), { label: 'Reserved until', from: '—', to: 'Nov 30, 2026' });
+  const insp = carEntry(car(), car({ inspection: { date: '2026-11-20', results: { start: 'pass' } } }), NOW);
+  assert.deepEqual(row(insp, 'Inspection report'), { label: 'Inspection report', note: 'added' });
+  const hpg = carEntry(car(), car({ hpgCleared: '2026-11-18' }), NOW);
+  assert.equal(row(hpg, 'HPG clearance').to, 'Nov 18, 2026');
+  /* a paper-step message sent to the buyer is not an edit */
+  assert.equal(carEntry(before, recordCarTask(before, { kind: 'papers', step: 'deed' }, NOW), NOW), null);
+  const steps = carEntry(before, { ...before, sale: { ...before.sale, steps: { deed: '2026-11-20', hpg: '2026-11-22' } } }, NOW);
+  assert.deepEqual(row(steps, 'Sale and papers'), { label: 'Sale and papers', note: 'updated' });
+  const consigned = car({ status: 'sold', consign: { owner: 'Rico P.', net: 800000 } });
+  const paid = carEntry(consigned, markPaid(consigned, 'payout', NOW), NOW);
+  assert.equal(paid.action, 'Owner paid');
+  const agentSale = car({ status: 'sold', sale: { agentId: 'ag1', commission: 5000 } });
+  assert.equal(carEntry(agentSale, markPaid(agentSale, 'commission', NOW), NOW).action, 'Commission paid');
+});
+
+test('agents are logged when added, changed and deleted', () => {
+  assert.equal(HISTORY_KINDS.agent, 'Agents');
+  const ana = { id: 'ag1', name: 'Ana R.', mobile: '0900 000 0301', code: 'ana', rate: 5000 };
+  const added = agentEntry(undefined, ana, NOW);
+  assert.deepEqual([added.kind, added.action, added.title], ['agent', 'Added', 'Ana R.']);
+  const edited = agentEntry(ana, { ...ana, rate: 7000 }, NOW);
+  assert.deepEqual(row(edited, 'Commission per sale'), { label: 'Commission per sale', from: '₱5,000', to: '₱7,000' });
+  assert.equal(agentEntry(ana, { ...ana }, NOW), null);
+  assert.deepEqual([agentDeletedEntry(ana, NOW).action, agentDeletedEntry(ana, NOW).title], ['Deleted', 'Ana R.']);
 });

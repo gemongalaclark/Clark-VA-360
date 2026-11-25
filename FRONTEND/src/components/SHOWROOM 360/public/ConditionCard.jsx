@@ -21,10 +21,15 @@ export default function ConditionCard({ car }) {
   const owners = car.owners && car.owners !== 'unknown' ? t(lang, `owners.${car.owners}`) : null;
   const orcr = car.orcr && car.orcr !== 'unknown' ? t(lang, `orcr.${car.orcr}`) : null;
   const reg = monthYear(car.regUntil);
+  const [hy, hm, hd] = String(car.hpgCleared || '').split('-').map(Number);
+  const hpg = hy && hm && hd
+    ? t(lang, 'cond.hpgDone', { date: new Date(hy, hm - 1, hd).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }) })
+    : null;
   const papers = [
     { key: 'owners', label: t(lang, 'cond.owners'), text: owners },
     { key: 'orcr', label: t(lang, 'cond.orcr'), text: orcr },
     { key: 'regUntil', label: t(lang, 'cond.regUntil'), text: reg },
+    { key: 'hpg', label: t(lang, 'cond.hpg'), text: hpg },
   ];
 
   return (

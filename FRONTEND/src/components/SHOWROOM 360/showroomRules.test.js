@@ -4,18 +4,20 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { SAMPLE_ANGLES, isSamplePhoto, samplePhotoUrl, sampleCredit } from './samplePhotos.js';
 import {
-  carTitle, formatPeso, nextStockNo, eventStatus, effectivePrice, featuredCars, recentlySold, bandCars,
+  carTitle, formatPeso, nextStockNo, eventStatus, effectivePrice, featuredCars, recentlySold, bandCars, similarCars, toggleSaved, parseSaved,
   loanQuote, monthlyFrom, filterCars, parseQuery, toQuery, daysInStock, AGING_DAYS,
   isPhMobile, validateCar, validateEvent, validateLead, inquiryText, fbCaption, DEFAULT_FINANCING,
   messengerUrl, viberUrl, toIntlMobile, mapsOpenUrl, parseShowroomPath,
   clampDownPct, newPhotoId, orphanPhotoIds, saveErrorKind, liveEventsWithCars,
   priceBounds, priceFilter, parsePesoInput, priceAtPosition, positionOfPrice, PRICE_POSITIONS,
   roleForPin, canOpen, canAddEvent, canManagePromos, themeFor, themeToSave, clampView, zoomAt, ZOOM_MAX, smsUrl,
+  reservedUntilFor, expireReservations, INSPECTION, inspectionSummary, watermarkLabel, refCode, agentCodeFor, agentStats,
+  affordablePrice,
 } from './showroomRules.js';
-import { makeSeed, normalizeData, applySamplePhotos, applySampleLeads, sampleLeads, applySamplePromo, DEFAULT_SETTINGS } from './seedData.js';
+import { makeSeed, normalizeData, applySamplePhotos, applySampleLeads, sampleLeads, applySamplePromo, applySampleTools, DEFAULT_SETTINGS } from './seedData.js';
 import { validatePromo, activePromo } from './promoRules.js';
 import { todoList, waitingFor, applyPriceDrop, suggestedDropPrice } from './autoRules.js';
-import { t, DICT } from './i18n.js';
+import { t, DICT, FINANCING_DOCS, FAQ_IDS } from './i18n.js';
 import { legalDoc, LEGAL_KINDS } from './legalText.js';
 import { MODELS } from '../CARMARK 360/carData.js';
 
@@ -114,6 +116,48 @@ test('bandCars picks unsold cars with photos, newest listed first', () => {
   assert.deepEqual(bandCars(cars).map(c => c.id), ['reserved', 'older']);
   assert.deepEqual(cars.map(c => c.id), ['sold', 'bare', 'older', 'reserved']);
   assert.deepEqual(bandCars([]), []);
+});
+
+test('similarCars puts the same body type first, then the closest price', () => {
+  const here = car({ id: 'here', body: 'suv', price: 1000000 });
+  const cars = [
+    here,
+    car({ id: 'sedan-close', body: 'sedan', price: 1000000 }),
+    car({ id: 'suv-far', body: 'suv', price: 1600000 }),
+    car({ id: 'suv-near', body: 'suv', price: 950000 }),
+    car({ id: 'sedan-far', body: 'sedan', price: 400000 }),
+  ];
+  assert.deepEqual(similarCars(cars, here, [], NOW).map(c => c.id), ['suv-near', 'suv-far', 'sedan-close', 'sedan-far']);
+});
+
+test('similarCars leaves out this car, sold and reserved cars, and stops at n', () => {
+  const here = car({ id: 'here' });
+  const cars = [
+    here,
+    car({ id: 'sold', status: 'sold' }),
+    car({ id: 'reserved', status: 'reserved' }),
+    ...['a', 'b', 'c', 'd', 'e'].map((id, i) => car({ id, price: 548000 + (i + 1) * 10000 })),
+  ];
+  assert.deepEqual(similarCars(cars, here, [], NOW).map(c => c.id), ['a', 'b', 'c', 'd']);
+  assert.deepEqual(similarCars(cars, here, [], NOW, 2).map(c => c.id), ['a', 'b']);
+  assert.deepEqual(similarCars([here], here, [], NOW), []);
+});
+
+test('similarCars compares the prices buyers pay now (sale prices)', () => {
+  const here = car({ id: 'here', price: 500000 });
+  const cars = [
+    here,
+    car({ id: 'listed-near', price: 560000 }),
+    car({ id: 'on-sale', price: 700000 }),
+  ];
+  const sale = ev({ items: [{ carId: 'on-sale', salePrice: 520000 }] });
+  assert.deepEqual(similarCars(cars, here, [sale], NOW).map(c => c.id), ['on-sale', 'listed-near']);
+});
+
+test('similarCars lists newer cars first when the match is equal', () => {
+  const here = car({ id: 'here' });
+  const cars = [here, car({ id: 'old', listedAt: at(-20) }), car({ id: 'new', listedAt: at(-1) })];
+  assert.deepEqual(similarCars(cars, here, [], NOW).map(c => c.id), ['new', 'old']);
 });
 
 /* ── financing ── */
@@ -222,6 +266,38 @@ test('validateLead needs a name and mobile, and a future date and slot for test 
   assert.ok(validateLead({ ...ok, mobile: '123' }, today).mobile);
   assert.ok(validateLead({ ...ok, name: '' }, today).name);
   assert.deepEqual(validateLead({ type: 'reserve', name: 'Ana', mobile: '09171234567', date: '', slot: '' }, today), {});
+});
+
+test('a trade-in needs the car being traded, and nothing a test drive needs', () => {
+  const today = '2026-11-23';
+  const ok = { type: 'trade-in', name: 'Ana', mobile: '09171234567', date: '', slot: '', tradeCar: '2016 Toyota Vios 1.3 E MT' };
+  assert.deepEqual(validateLead(ok, today), {});
+  assert.ok(validateLead({ ...ok, tradeCar: '  ' }, today).tradeCar);
+  assert.ok(validateLead({ ...ok, tradeCar: undefined }, today).tradeCar);
+  assert.equal(validateLead({ type: 'reserve', name: 'Ana', mobile: '09171234567' }, today).tradeCar, undefined);
+});
+
+/* ── saved cars (kept in the buyer's browser) ── */
+
+test('toggleSaved puts a car at the front of the list, or takes it off', () => {
+  const ids = ['a', 'b'];
+  assert.deepEqual(toggleSaved(ids, 'c'), ['c', 'a', 'b']);
+  assert.deepEqual(toggleSaved(ids, 'a'), ['b']);
+  assert.deepEqual(ids, ['a', 'b']);
+});
+
+test('parseSaved reads the saved list and shrugs off anything broken', () => {
+  assert.deepEqual(parseSaved('["a","b","a",""," ",3]'), ['a', 'b']);
+  assert.deepEqual(parseSaved(null), []);
+  assert.deepEqual(parseSaved('not json'), []);
+  assert.deepEqual(parseSaved('{"a":1}'), []);
+});
+
+test('the saved-cars filter survives the address bar', () => {
+  assert.deepEqual(parseQuery('?saved=1'), { saved: true });
+  assert.deepEqual(parseQuery('?saved=0'), {});
+  assert.equal(toQuery({ body: 'suv', saved: true }), '?body=suv&saved=1');
+  assert.equal(toQuery({ saved: false }), '');
 });
 
 /* ── messages ── */
@@ -480,6 +556,10 @@ test('orphanPhotoIds finds photos no car or logo uses, but spares fresh uploads'
   const data = { cars: [car({ photoIds: [used] })], settings: { logoPhotoId: logo } };
   assert.match(old, /^ph-\d+-[a-z0-9]+$/);
   assert.deepEqual(orphanPhotoIds([old, fresh, used, logo, 'ph-legacy-id'], data, NOW), [old, 'ph-legacy-id']);
+  /* a release photo on a sold car's review is in use too */
+  const release = newPhotoId(new Date(NOW.getTime() - 5 * DAY));
+  const sold = { ...data, cars: [...data.cars, car({ id: 'c2', status: 'sold', sale: { review: { photoId: release } } })] };
+  assert.deepEqual(orphanPhotoIds([release, old], sold, NOW), [old]);
 });
 
 test('saveErrorKind tells a full storage apart from other failures', () => {
@@ -502,6 +582,22 @@ test('every English text has a Cebuano version', () => {
   const missing = Object.keys(DICT.en).filter(k => !(k in DICT.ceb));
   assert.deepEqual(missing, []);
   for (const k of ['car.prevPhoto', 'car.nextPhoto', 'home.soldStamp', 'common.dismiss', 'lead.failed', 'lead.full']) assert.ok(DICT.en[k], k);
+});
+
+test('the financing checklist and the FAQ have every line in both languages', () => {
+  for (const [group, n] of Object.entries(FINANCING_DOCS)) {
+    for (let i = 1; i <= n; i++) {
+      for (const lang of ['en', 'ceb']) assert.ok(DICT[lang][`req.${group}.${i}`], `${lang} req.${group}.${i}`);
+    }
+  }
+  assert.deepEqual(Object.keys(FINANCING_DOCS), ['all', 'employed', 'business', 'ofw']);
+  assert.ok(FAQ_IDS.length >= 5);
+  for (const id of FAQ_IDS) {
+    for (const lang of ['en', 'ceb']) assert.ok(DICT[lang][`faq.q.${id}`] && DICT[lang][`faq.a.${id}`], `${lang} faq ${id}`);
+  }
+  /* the downpayment answer names the shop's own minimum */
+  assert.match(t('en', 'faq.a.down', { pct: 30 }), /30%/);
+  assert.match(t('ceb', 'faq.a.down', { pct: 30 }), /30%/);
 });
 
 test('cash-only cars never show a monthly payment', () => {
@@ -569,12 +665,12 @@ test('one sign-in, two PINs: 0361 opens the superadmin, 0360 the admin', () => {
   assert.equal(roleForPin('', { ...DEFAULT_SETTINGS, pin: '' }), null);
 });
 
-test('only the superadmin can open Settings and History', () => {
+test('only the superadmin can open Settings, History and Agents', () => {
   for (const page of ['dashboard', 'cars', 'events', 'leads']) {
     assert.equal(canOpen('admin', page), true, page);
     assert.equal(canOpen('superadmin', page), true, page);
   }
-  for (const page of ['settings', 'history']) {
+  for (const page of ['settings', 'history', 'agents']) {
     assert.equal(canOpen('admin', page), false, page);
     assert.equal(canOpen('superadmin', page), true, page);
   }
@@ -755,4 +851,135 @@ test('the sample policies cover the promo wheel', () => {
   assert.match(text, /DTI/);
   assert.match(text, /30 days/);
   assert.match(text, /one spin/i);
+});
+
+/* ── dealer tools (2026-11-25) ── */
+
+test('a reservation holds for the set days, counted from today', () => {
+  assert.equal(reservedUntilFor('2026-11-25', 7), '2026-12-02');
+  assert.equal(reservedUntilFor('2026-12-30', 3), '2027-01-02');
+});
+
+test('a reservation past its date goes back to available; one ending today still holds', () => {
+  const cars = [
+    car({ id: 'old', status: 'reserved', reservedUntil: '2026-11-24' }),
+    car({ id: 'today', status: 'reserved', reservedUntil: '2026-11-25' }),
+    car({ id: 'open', status: 'reserved' }),
+    car({ id: 'avail', status: 'available', reservedUntil: '2026-11-01' }),
+  ];
+  const changed = expireReservations(cars, '2026-11-25');
+  assert.deepEqual(changed.map(c => [c.id, c.status, c.reservedUntil]), [['old', 'available', null]]);
+  assert.equal(cars[0].status, 'reserved');
+});
+
+test('the inspection report has 20 checks in 5 groups, each with its own id', () => {
+  const ids = INSPECTION.flatMap(g => g.items.map(([id]) => id));
+  assert.equal(INSPECTION.length, 5);
+  assert.equal(ids.length, 20);
+  assert.equal(new Set(ids).size, 20);
+  for (const id of ids) for (const lang of ['en', 'ceb']) assert.ok(DICT[lang][`insp.${id}`], `${lang} insp.${id}`);
+  for (const g of INSPECTION) for (const lang of ['en', 'ceb']) assert.ok(DICT[lang][`insp.g.${g.id}`], `${lang} insp.g.${g.id}`);
+});
+
+test('inspectionSummary counts passed and needs-work checks, and is empty until there is a report', () => {
+  const [first, second] = INSPECTION[0].items.map(([id]) => id);
+  assert.equal(inspectionSummary(undefined), null);
+  assert.equal(inspectionSummary({ date: '', results: { [first]: 'pass' } }), null);
+  assert.equal(inspectionSummary({ date: '2026-11-20', results: {} }), null);
+  assert.deepEqual(
+    inspectionSummary({ date: '2026-11-20', results: { [first]: 'pass', [second]: 'fix', bogus: 'pass' } }),
+    { total: 20, checked: 2, passed: 1, fix: 1 });
+});
+
+test('the watermark names the shop and its phone, and can be turned off', () => {
+  assert.equal(watermarkLabel({ shopName: 'Demo Motors Cebu', phone: '0900 000 0000' }), 'Demo Motors Cebu · 0900 000 0000');
+  assert.equal(watermarkLabel({ shopName: 'Demo Motors Cebu', phone: '' }), 'Demo Motors Cebu');
+  assert.equal(watermarkLabel({ shopName: 'Demo Motors Cebu', phone: '0900', watermark: false }), '');
+  assert.equal(watermarkLabel({ shopName: '  ', phone: '' }), '');
+});
+
+test('an agent link code is read safely from the address bar', () => {
+  assert.equal(refCode('?ref=Ana-2'), 'ana-2');
+  assert.equal(refCode('?sort=newest&ref=%3Cb%3Ejun%3C%2Fb%3E'), 'bjunb');
+  assert.equal(refCode('?ref='), '');
+  assert.equal(refCode(''), '');
+  assert.equal(refCode(`?ref=${'x'.repeat(40)}`).length, 24);
+});
+
+test('a new agent gets a short code from their first name, never one in use', () => {
+  assert.equal(agentCodeFor('Ana Reyes', []), 'ana');
+  assert.equal(agentCodeFor('Ana Cruz', [{ code: 'ana' }]), 'ana-2');
+  assert.equal(agentCodeFor('Ana Lim', [{ code: 'ana' }, { code: 'ana-2' }]), 'ana-3');
+  assert.equal(agentCodeFor('Ñoño Sy', []), 'nono');
+  assert.equal(agentCodeFor('  ', []), 'agent');
+});
+
+test('agentStats counts an agent’s buyers, sales and the commission owed and paid', () => {
+  const agent = { id: 'ag1', code: 'ana', rate: 5000 };
+  const leads = [{ agentCode: 'ana' }, { agentCode: 'ana' }, { agentCode: 'jun' }, {}];
+  const cars = [
+    car({ id: 's1', status: 'sold', sale: { agentId: 'ag1', commission: 5000 } }),
+    car({ id: 's2', status: 'sold', sale: { agentId: 'ag1', commission: 7000, commissionPaidAt: '2026-11-20T00:00:00Z' } }),
+    car({ id: 's3', status: 'sold', sale: { agentId: 'ag2', commission: 5000 } }),
+    car({ id: 'a1', status: 'available', sale: { agentId: 'ag1', commission: 5000 } }),
+  ];
+  assert.deepEqual(agentStats(agent, leads, cars), { leads: 2, sold: 2, owed: 5000, paid: 7000 });
+});
+
+test('affordablePrice: 30% of take-home pay at the longest term, cash covering the all-in downpayment', () => {
+  const fin = DEFAULT_FINANCING;
+  /* the downpayment is the limit: ₱200,000 covers 30% down + 5% fees up to ₱571k */
+  assert.equal(affordablePrice({ income: 40000, cash: 200000 }, fin), 570000);
+  /* the monthly is the limit: ₱7,500 a month */
+  const p = affordablePrice({ income: 25000, cash: 300000 }, fin);
+  assert.equal(p, 580000);
+  const down = 300000 - Math.round(p * fin.feesPct / 100);
+  assert.ok(loanQuote(p, down / p * 100, 60, fin).monthly <= 7500);
+  assert.equal(affordablePrice({ income: 0, cash: 300000 }, fin), 0);
+  assert.equal(affordablePrice({ income: 40000, cash: 0 }, fin), 0);
+  assert.equal(affordablePrice({ income: 'abc', cash: 100000 }, fin), 0);
+});
+
+test('the compare page has its own address', () => {
+  assert.deepEqual(parseShowroomPath('/showroom/compare'), { view: 'compare' });
+  assert.deepEqual(parseShowroomPath('/showroom/compare/x'), { view: 'notfound' });
+});
+
+test('a fresh demo shows the dealer tools with sample data', () => {
+  const seed = makeSeed(NOW);
+  const byId = Object.fromEntries(seed.cars.map(c => [c.id, c]));
+  assert.equal(seed.settings.sampleTools, 1);
+  assert.deepEqual(seed.settings.reservation, { fee: 5000, days: 7, refund: 'denied' });
+  assert.equal(seed.agents.length, 2);
+  assert.equal(inspectionSummary(byId['car-04'].inspection).fix, 1);
+  assert.equal(inspectionSummary(byId['car-01'].inspection).passed, 20);
+  assert.ok(byId['car-05'].consign.net < byId['car-05'].price);
+  assert.equal(byId['car-08'].status, 'reserved');
+  assert.ok(byId['car-08'].reservedUntil > '2026-11-23');
+  assert.equal(byId['car-10'].sale.agentId, seed.agents[0].id);
+  const reviewed = seed.cars.filter(c => c.sale?.review);
+  assert.ok(reviewed.length > 0 && reviewed.every(c => c.status === 'sold' && c.sale.review.sample && c.sale.review.consent));
+  assert.equal(seed.leads.find(l => l.id === 'lead-sample-6').agentCode, 'ana');
+  /* placeholders, never a real registration */
+  assert.match(seed.settings.dtiNo, /^0+$/);
+});
+
+test('an older demo gets the sample dealer tools once, leaving what the dealer changed alone', () => {
+  const seed = makeSeed(NOW);
+  const old = {
+    ...seed,
+    agents: [],
+    cars: seed.cars.map(({ inspection, hpgCleared, consign, reservedUntil, sale, ...c }) => (c.id === 'car-04' ? { ...c, model: 'Hilux' } : c)),
+    leads: seed.leads.map(({ agentCode, ...l }) => l),
+  };
+  const { cars, agents, leads } = applySampleTools(old, NOW);
+  const ids = cars.map(c => c.id);
+  assert.ok(!ids.includes('car-04'));
+  assert.ok(ids.includes('car-01') && ids.includes('car-10'));
+  assert.equal(agents.length, 2);
+  assert.deepEqual(leads.map(l => [l.id, l.agentCode]), [['lead-sample-6', 'ana']]);
+  /* a demo with its own agents keeps them; a filled field is never overwritten */
+  assert.deepEqual(applySampleTools({ ...old, agents: [{ id: 'x', code: 'x' }] }, NOW).agents, []);
+  const inspected = { ...old, cars: old.cars.map(c => (c.id === 'car-01' ? { ...c, hpgCleared: '2026-01-01' } : c)) };
+  assert.equal(applySampleTools(inspected, NOW).cars.find(c => c.id === 'car-01').hpgCleared, '2026-01-01');
 });

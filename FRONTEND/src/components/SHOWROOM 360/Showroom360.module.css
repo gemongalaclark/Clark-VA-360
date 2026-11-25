@@ -188,6 +188,13 @@ a.stripItem { min-height: 44px; }
 .langSwitch button[aria-pressed='true'] { color: var(--on-band); text-decoration: underline 1.5px; text-underline-offset: 6px; }
 .header .iconBtn { color: var(--on-band); }
 @media (hover: hover) { .header .iconBtn:hover { background: rgba(var(--on-band-rgb), 0.12); } }
+/* the saved-cars heart, with how many (shown once a car is saved) */
+.savedLink { position: relative; text-decoration: none; }
+.savedCount {
+  position: absolute; top: 4px; right: 2px; min-width: 18px; height: 18px; padding: 0 4px; display: grid; place-items: center;
+  border-radius: 999px; background: var(--on-band); color: var(--band);
+  font-size: 0.75rem; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums;
+}
 .contactBtn { display: none; }
 @media (min-width: 900px) {
   .contactBtn {
@@ -287,6 +294,8 @@ a.stripItem { min-height: 44px; }
   color: var(--ink-2); text-decoration: underline; text-underline-offset: 3px; cursor: pointer;
 }
 .textBtn:hover { color: var(--ink); }
+/* a text button led by an icon (the car page's trade-in link) */
+.tradeLink { display: inline-flex; align-items: center; gap: 6px; }
 .iconBtn {
   width: 44px; height: 44px; flex: none; display: grid; place-items: center;
   border: 0; border-radius: var(--radius); background: transparent; color: var(--ink); cursor: pointer;
@@ -472,6 +481,26 @@ a.stripItem { min-height: 44px; }
 .wishBand .bandInner { display: grid; justify-items: start; gap: 16px; padding-top: 72px; padding-bottom: 72px; }
 @media (min-width: 900px) { .wishBand .bandInner { padding-top: 128px; padding-bottom: 128px; } }
 .wishBand .h2 { max-width: 16ch; }
+
+/* trade-in or sell: a quiet grey box with one button */
+.tradeBox { display: grid; justify-items: start; gap: 22px; padding: 28px 20px; border-radius: 12px; background: var(--paper-2); }
+.tradeText { display: grid; justify-items: start; gap: 10px; }
+.tradeText .lead { margin-top: 4px; }
+@media (min-width: 900px) {
+  .tradeBox { grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 40px; padding: 48px; }
+}
+
+/* FAQ: the heading on the left, the questions on hairlines on the right */
+.faq { display: grid; gap: 20px; scroll-margin-top: var(--header-h); }
+.faq .sectionHead { margin-bottom: 12px; }
+.faqList { border-top: 1px solid var(--rule); }
+.faqItem { border-bottom: 1px solid var(--rule); }
+.faqList .faqItem > summary { padding: 18px 0; font-size: 1.05rem; }   /* beats the shared summary padding below */
+.faqAnswer { display: grid; justify-items: start; gap: 16px; max-width: 64ch; padding: 0 0 22px; color: var(--ink-2); }
+.faqAnswer .reqs { width: 100%; }
+@media (min-width: 900px) {
+  .faq { grid-template-columns: minmax(0, 1fr) minmax(0, 1.7fr); gap: 64px; align-items: start; }
+}
 .wishText { max-width: 52ch; color: rgba(var(--on-band-rgb), 0.82) !important; }
 .wishBand .btnPrimary { margin-top: 8px; white-space: normal; text-align: left; }
 /* ── footer: a dark band in both themes. Columns (stacked on phones), the credits,
@@ -747,7 +776,7 @@ a.stripItem { min-height: 44px; }
 @media (min-width: 700px) { .cardGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px 20px; } }
 @media (min-width: 900px) { .inventoryBody .cardGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (min-width: 1100px) { .cardGrid { grid-template-columns: repeat(4, minmax(0, 1fr)); } .inventoryBody .cardGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-.card { min-width: 0; }
+.card { position: relative; min-width: 0; }
 .cardLink {
   display: flex; flex-direction: column; height: 100%; color: inherit; text-decoration: none;
   background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; overflow: hidden;
@@ -761,12 +790,22 @@ a.stripItem { min-height: 44px; }
   .cardLink:hover .cardMedia .photo { transform: scale(1.03); }
 }
 .cardBadges { display: flex; flex-wrap: wrap; gap: 4px; }
-.cardMedia .cardBadges { position: absolute; z-index: 1; top: 8px; left: 8px; right: 8px; }
+.cardMedia .cardBadges { position: absolute; z-index: 1; top: 8px; left: 8px; right: 50px; }
 /* a small dark chip, so it reads over a photo as well as over a drawing */
 .cardStock {
   position: absolute; z-index: 1; right: 8px; bottom: 8px; padding: 2px 6px; border-radius: 4px;
   background: rgba(0, 0, 0, 0.58); color: #fff; font-size: 0.75rem; font-weight: 500; letter-spacing: 0.03em; line-height: 1.3;
 }
+/* the heart over the photo, top right (sale chips sit top left); a sibling of the
+   card link, since a button can't sit inside a link */
+.cardSave {
+  position: absolute; z-index: 2; top: 7px; right: 7px; width: 36px; height: 36px; display: grid; place-items: center;
+  border: 0; border-radius: 50%; background: rgba(var(--paper-rgb), 0.92); color: var(--ink); cursor: pointer;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.18); transition: transform 0.15s;
+}
+.cardSave::before { content: ''; position: absolute; inset: -4px; }   /* a 44px touch target */
+@media (hover: hover) { .cardSave:hover { transform: scale(1.06); } }
+.cardSave:active { transform: scale(0.94); }
 .cardBody { padding: 12px 12px 10px; display: grid; gap: 8px; container-type: inline-size; }
 .cardHead { display: grid; gap: 2px; min-width: 0; }
 .cardBody .cardTitle {
@@ -800,6 +839,22 @@ a.stripItem { min-height: 44px; }
   color: var(--ink-2); font-weight: 500; font-size: 0.9rem; text-decoration: none;
 }
 @media (hover: hover) { .crumb:hover { color: var(--ink); } }
+/* "← All cars" on the left, Save and Share on the right */
+.crumbRow { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 4px; }
+.crumbRow .crumb { margin-bottom: 0; }
+.crumbActions { display: flex; gap: 8px; }
+@media (max-width: 379px) { .crumbActions .crumbBtn { padding: 0 12px; } }
+.crumbBtn {
+  display: inline-flex; align-items: center; gap: 7px; min-height: 44px; padding: 0 16px;
+  border: 1px solid var(--rule-2); border-radius: var(--radius); background: transparent; color: var(--ink);
+  font: inherit; font-weight: 500; font-size: 0.9rem; line-height: 1; white-space: nowrap; cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+@media (hover: hover) { .crumbBtn:hover { border-color: var(--ink); background: var(--paper-2); } }
+.crumbBtn:active { transform: translateY(1px); }
+/* under the car: up to four similar cars a buyer can still ask about */
+.moreCars { margin-top: 64px; }
+@media (min-width: 960px) { .moreCars { margin-top: 104px; } }
 .soldBanner {
   display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; margin-bottom: 16px; padding: 14px 16px;
   background: var(--ink); color: var(--paper); border-radius: 8px;
@@ -1127,6 +1182,21 @@ a.stripItem { min-height: 44px; }
 }
 .range::-moz-range-thumb { box-sizing: border-box; width: 22px; height: 22px; border-radius: 50%; background: var(--ink); border: 3px solid var(--surface); box-shadow: 0 0 0 1px var(--ink); }
 .loan .segmented button { flex: 1; min-width: 52px; padding: 0 6px; }
+/* what banks ask for: folded under the calculator, and open inside the FAQ */
+.reqBox { border: 1px solid var(--rule); border-radius: 10px; background: var(--surface); }
+.reqBox > summary, .faqItem > summary {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 52px; padding: 14px 16px;
+  color: var(--ink); font-weight: 600; line-height: 1.3; cursor: pointer; list-style: none;
+}
+.reqBox > summary::-webkit-details-marker, .faqItem > summary::-webkit-details-marker { display: none; }
+.reqBox > summary svg, .faqItem > summary svg { flex: none; color: var(--ink-2); transition: transform 0.2s var(--ease); }
+.reqBox[open] > summary svg, .faqItem[open] > summary svg { transform: rotate(180deg); }
+.reqBox .reqs { padding: 0 16px 16px; }
+.reqs { display: grid; gap: 14px; }
+.reqs .segmented button { min-width: 0; padding: 0 10px; font-size: 0.88rem; }
+.reqList { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; color: var(--ink); }
+.reqList li { display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 10px; align-items: start; line-height: 1.45; }
+.reqList svg { margin-top: 3px; color: var(--yes); }
 .loanFacts { margin: 0; display: grid; }
 .loanFacts div { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--rule); }
 .loanFacts div:first-child { border-top: 1px solid var(--rule); }
@@ -1182,9 +1252,83 @@ a.stripItem { min-height: 44px; }
   .tickerTrack { animation: none; }
   .reservedOverlay[open] { animation: none; }
   .slide, .slideActive, .slideMedia, .dot::after { transition: none; }
-  .header, .cardLink, .cardMedia .photo, .cardMonthly svg, .arrowLink, .btnPrimary, .btnGhost, .topNav .navLink::after, .thumb, .promoFab { transition: none; }
+  .header, .cardLink, .cardMedia .photo, .cardMonthly svg, .arrowLink, .btnPrimary, .btnGhost, .crumbBtn, .cardSave, .reqBox > summary svg, .faqItem > summary svg, .affordBox > summary svg, .topNav .navLink::after, .thumb, .promoFab { transition: none; }
   .cardLink:hover .cardMedia .photo, .cardLink:hover .cardMonthly svg, .promoFab:hover { transform: none; }
   .btnPrimary:active, .btnGhost:active, .promoFab:active { transform: none; }
   .sheet[open], .toast { animation: none; }
   .viewerImg { transition: none; }
 }
+
+/* ── dealer tools (2026-11-25) ── */
+
+/* inspection report: the count, then each group of checks */
+.inspSummary { display: grid; gap: 2px; margin: -6px 0 16px; }
+.inspSummary strong { color: var(--ink); font-size: 1.05rem; font-weight: 600; }
+.inspSummary span { color: var(--ink-2); font-size: 0.9rem; }
+.inspGroups { display: grid; gap: 20px; }
+.inspGroupHead { margin: 0 0 2px; color: var(--ink-2); font-size: 0.8rem; font-weight: 600; letter-spacing: 0.02em; }
+.inspFix .condValue { color: var(--note-text); }
+.inspNote { display: block; margin-top: 4px; color: var(--ink-2); font-size: 0.85rem; line-height: 1.4; }
+
+/* the reservation terms in the Reserve form */
+.resTerms { padding: 10px 12px; border-radius: 8px; background: var(--paper-2); color: var(--ink); font-size: 0.9rem; line-height: 1.45; }
+
+/* an optional budget on test drive and reserve requests */
+.budgetFields { display: grid; gap: 12px; margin: 4px 0 0; padding: 14px 0 0; border: 0; border-top: 1px solid var(--rule); min-width: 0; }
+.budgetFields legend { padding: 0; margin-bottom: 10px; color: var(--ink-2); font-size: 0.85rem; font-weight: 500; float: left; width: 100%; }
+
+/* About: the registered business lines */
+.trustBox { display: grid; gap: 8px; width: 100%; max-width: 46ch; margin-top: 4px; padding: 14px 16px; border: 1px solid var(--rule); border-radius: 10px; }
+.trustHead { display: flex; align-items: center; gap: 8px; color: var(--ink); font-weight: 600; }
+.trustHead svg { color: var(--yes); }
+.trustList { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; color: var(--ink-2); font-size: 0.9rem; }
+
+/* Recently sold: the buyer's words */
+.soldQuote { margin: 8px 0 0; display: grid; gap: 6px; }
+.soldQuote blockquote { margin: 0; color: var(--ink); font-size: 0.92rem; line-height: 1.45; }
+.soldQuote figcaption { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; color: var(--ink-2); font-size: 0.85rem; }
+.sampleTag { padding: 1px 7px; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--rule-2); font-size: 0.75rem; font-weight: 600; }
+
+/* Cars page: what can I afford, folded above the results */
+.affordBox { margin-bottom: 16px; border: 1px solid var(--rule); border-radius: 10px; background: var(--surface); }
+.affordBox > summary {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 52px; padding: 12px 16px;
+  color: var(--ink); font-weight: 600; cursor: pointer; list-style: none;
+}
+.affordBox > summary::-webkit-details-marker { display: none; }
+.affordBox > summary svg { flex: none; color: var(--ink-2); transition: transform 0.2s var(--ease); }
+.affordBox[open] > summary svg { transform: rotate(180deg); }
+.affordBody { display: grid; justify-items: start; gap: 12px; padding: 0 16px 16px; }
+.affordFields { display: grid; gap: 12px; width: 100%; }
+@media (min-width: 560px) { .affordFields { grid-template-columns: 1fr 1fr; } }
+.affordResult { color: var(--ink); font-size: 1.15rem; font-weight: 600; letter-spacing: -0.01em; }
+.affordResult:empty { display: none; }
+.compareBtn { margin-bottom: 16px; }
+
+/* compare: cars in columns, the row names pinned on the left */
+.comparePage { max-width: 1200px; margin: 0 auto; padding: 4px 16px 72px; }
+@media (min-width: 960px) { .comparePage { padding: 16px 24px 96px; } }
+.comparePage .h2 { margin: 4px 0 8px; }
+.compareHint { margin-bottom: 12px; }
+@media (min-width: 900px) { .compareHint { display: none; } }
+.compareScroll { overflow-x: auto; margin: 0 -16px; padding: 0 16px; }
+@media (min-width: 960px) { .compareScroll { margin: 0; padding: 0; } }
+.compareTable { width: 100%; min-width: calc(110px + var(--cols) * 150px); border-collapse: collapse; table-layout: fixed; font-size: 0.92rem; }
+.compareTable th, .compareTable td { padding: 10px 8px; border-bottom: 1px solid var(--rule); text-align: left; vertical-align: top; }
+.compareTable thead th, .compareTable thead td { border-bottom: 0; }
+.compareTable tbody th {
+  position: sticky; left: 0; z-index: 1; width: 110px; background: var(--paper);
+  color: var(--ink-2); font-weight: 500; font-size: 0.85rem;
+}
+.compareTable thead td { position: sticky; left: 0; z-index: 1; width: 110px; background: var(--paper); }
+.compareTable td { color: var(--ink); font-weight: 500; }
+.compareCar { position: relative; }
+.compareLink { display: grid; gap: 8px; color: var(--ink); font-weight: 600; line-height: 1.3; text-decoration: none; }
+.compareMedia { display: block; aspect-ratio: 4 / 3; border-radius: 8px; overflow: hidden; background: var(--paper-2); }
+.compareMedia .photoArt { padding: 14% 8% 8%; }
+.compareRemove {
+  position: absolute; top: 6px; right: 6px; width: 32px; height: 32px; display: grid; place-items: center;
+  border: 0; border-radius: 50%; background: rgba(var(--paper-rgb), 0.92); color: var(--ink); cursor: pointer;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.18);
+}
+.compareRemove::before { content: ''; position: absolute; inset: -6px; }

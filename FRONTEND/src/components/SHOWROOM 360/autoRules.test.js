@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import {
   REPLY_AFTER_MIN, FOLLOW_UP_DAYS, describeQuery, wishMatches, waitingFor, suggestedDropPrice, priceDropsDue,
   todoList, taskMessage, recordContact, withStatus, applyPriceDrop, skipPriceDrop, weekRange, weekReport, reportText,
-  similarQuery, mergeWishQuery,
+  similarQuery, mergeWishQuery, markPaid, recordCarTask,
 } from './autoRules.js';
 import { effectivePrice, recentDrop, DROP_SHOWN_DAYS, DEFAULT_PRICE_RULE } from './showroomRules.js';
 import { DEFAULT_SETTINGS } from './seedData.js';
@@ -28,6 +28,10 @@ const lead = (over = {}) => ({
 const wish = (over = {}) => lead({
   id: 'w1', type: 'wish', carId: null, carLabel: 'SUV · up to ₱900,000', date: '', slot: '', name: 'Ramon T.',
   query: { body: 'suv', priceMax: 900000 }, notifiedCarIds: [], status: 'contacted', createdAt: ago(8 * DAY), ...over,
+});
+const trade = (over = {}) => lead({
+  id: 't1', type: 'trade-in', carId: null, carLabel: '', date: '', slot: '', name: 'Joy R.',
+  tradeIn: { car: '2016 Toyota Vios 1.3 E MT', km: 80000, asking: 350000 }, ...over,
 });
 const data = (over = {}) => ({
   leads: [], cars: [car()], events: [], settings: { ...DEFAULT_SETTINGS, priceRule: { ...DEFAULT_PRICE_RULE } }, ...over,
@@ -255,6 +259,28 @@ test('every message reads cleanly, even with no shop address', () => {
   assert.equal(taskMessage({ ...remind, lead: { ...remind.lead, lang: 'ceb' } }, s, carUrl), taskMessage(remind, s, carUrl, 'ceb'));
 });
 
+test('a trade-in gets its own reply and follow-up, naming the car being traded', () => {
+  const d = data({
+    leads: [
+      /* trading toward the Montero on the lot */
+      trade({ carId: 'c1', carLabel: '2017 Mitsubishi Montero Sport GLS AT (SR-0001)', createdAt: ago(2 * 60 * MIN) }),
+      trade({ id: 't2', status: 'contacted', contactedAt: ago(4 * DAY), createdAt: ago(5 * DAY) }),
+    ],
+  });
+  const tasks = todoList(d, NOW);
+  assert.deepEqual(tasks.map(x => x.kind), ['reply', 'followup']);
+  for (const task of tasks) {
+    for (const lang of ['en', 'ceb']) {
+      const text = taskMessage(task, DEFAULT_SETTINGS, carUrl, lang);
+      assert.match(text, /^Hi Joy R\.!/, text);
+      assert.match(text, /2016 Toyota Vios 1\.3 E MT/, text);
+      assert.doesNotMatch(text, /undefined|null|NaN|\{\w+\}| ,|,,|\.\.| \./, text);
+    }
+  }
+  assert.match(taskMessage(tasks[0], DEFAULT_SETTINGS, carUrl, 'en'), /photos/);
+  assert.notEqual(taskMessage(tasks[0], DEFAULT_SETTINGS, carUrl, 'en'), taskMessage(tasks[1], DEFAULT_SETTINGS, carUrl, 'en'));
+});
+
 test('sending a message records it, and the first one marks the request contacted', () => {
   const l = lead({ createdAt: ago(2 * 60 * MIN) });
   const sent = recordContact(l, { kind: 'reply' }, NOW);
@@ -310,7 +336,7 @@ test('the week report counts only that week', () => {
     car({ id: 'c4', listedAt: t(-60 * DAY), status: 'available' }),
   ];
   const r = weekReport({ leads, cars }, range, NOW);
-  assert.deepEqual(r.requests, { total: 3, testDrive: 1, reserve: 1, wish: 1 });
+  assert.deepEqual(r.requests, { total: 3, testDrive: 1, reserve: 1, wish: 1, tradeIn: 0 });
   assert.equal(r.reply.avgMin, 75);                    /* (30 + 120) / 2 */
   assert.equal(r.reply.overHour, 2);                   /* c waited 2 hrs, d still waiting */
   assert.deepEqual(r.sold, { count: 1, total: 900000, avgDays: 23 });
@@ -324,6 +350,14 @@ test('the week report counts only that week', () => {
   assert.match(text, /Nov 22/);
   assert.match(text, /₱900,000/);
   assert.doesNotMatch(text, /undefined|null|NaN/);
+});
+
+test('the week report counts trade-ins', () => {
+  const range = weekRange(NOW, 'last');
+  const at = new Date(range.start.getTime() + DAY).toISOString();
+  const r = weekReport({ leads: [trade({ createdAt: at, contactedAt: at })], cars: [] }, range, NOW);
+  assert.equal(r.requests.tradeIn, 1);
+  assert.match(reportText(r, DEFAULT_SETTINGS, range), /1 trade-in/);
 });
 
 test('a quiet week still reads cleanly', () => {
@@ -353,4 +387,73 @@ test('the waitlist form keeps the filters a buyer set and changes only what they
   assert.deepEqual(mergeWishQuery(base, { make: '', body: '', q: '', priceMax: '200000' }), { transmission: 'automatic', priceMax: 200000 });
   assert.deepEqual(mergeWishQuery({}, { make: '', body: '', q: '', priceMax: '' }), {});
   assert.equal(describeQuery(mergeWishQuery({}, { body: 'suv', priceMax: '900000' }), 'en'), 'SUV · up to ₱900,000');
+});
+
+/* ── dealer tools: reservations, payouts, commissions, papers, renewals ── */
+
+const soldCar = (over = {}) => car({
+  id: 'sold1', status: 'sold', soldAt: ago(5 * DAY), regUntil: '2027-06',
+  sale: { buyer: 'Ben S.', mobile: '0900 000 0106', lang: 'en', steps: {}, told: {} }, ...over,
+});
+
+test('a reservation ending within 2 days asks the dealer to extend it or close the sale', () => {
+  const tasks = (until) => todoList(data({ cars: [car({ status: 'reserved', reservedUntil: until })] }), NOW);
+  assert.deepEqual(tasks(ymd(2)).map(x => x.kind), ['reserveEnds']);
+  assert.deepEqual(tasks(ymd(0)).map(x => [x.kind, x.until]), [['reserveEnds', ymd(0)]]);
+  assert.deepEqual(tasks(ymd(3)), []);
+  assert.deepEqual(todoList(data({ cars: [car({ status: 'reserved' })] }), NOW), []);
+});
+
+test('a sold consigned car asks for the owner’s payout until it is marked paid', () => {
+  const consigned = soldCar({ sale: undefined, consign: { owner: 'Rico P.', mobile: '0900 000 0200', net: 800000 } });
+  assert.deepEqual(todoList(data({ cars: [consigned] }), NOW).map(x => x.kind), ['payout']);
+  const paid = markPaid(consigned, 'payout', NOW);
+  assert.equal(paid.consign.paidAt, NOW.toISOString());
+  assert.deepEqual(todoList(data({ cars: [paid] }), NOW), []);
+  /* not sold yet: nothing to pay */
+  assert.deepEqual(todoList(data({ cars: [{ ...consigned, status: 'available' }] }), NOW), []);
+});
+
+test('an agent’s commission waits on the to-do list until it is paid', () => {
+  const agents = [{ id: 'ag1', name: 'Ana R.', code: 'ana', rate: 5000 }];
+  const c = soldCar({ sale: { buyer: 'Ben S.', mobile: '', agentId: 'ag1', commission: 5000 } });
+  const [task] = todoList(data({ cars: [c], agents }), NOW);
+  assert.equal(task.kind, 'commission');
+  assert.equal(task.agent.name, 'Ana R.');
+  assert.deepEqual(todoList(data({ cars: [markPaid(c, 'commission', NOW)], agents }), NOW), []);
+  assert.deepEqual(todoList(data({ cars: [soldCar({ sale: { agentId: 'ag1', commission: 0 } })], agents }), NOW), []);
+});
+
+test('each paper step the buyer hasn’t heard about becomes one message, in their language', () => {
+  const steps = { deed: ymd(-3), hpg: ymd(-1) };
+  const c = soldCar({ sale: { buyer: 'Ben S.', mobile: '0900 000 0106', lang: 'ceb', steps, told: { deed: ago(2 * DAY) } } });
+  const [task] = todoList(data({ cars: [c] }), NOW);
+  assert.deepEqual([task.kind, task.step, task.to.name], ['papers', 'hpg', 'Ben S.']);
+  for (const lang of ['en', 'ceb']) {
+    const text = taskMessage(task, DEFAULT_SETTINGS, carUrl, lang);
+    assert.match(text, /^Hi Ben S\.!/, text);
+    assert.match(text, /Montero Sport/, text);
+    assert.doesNotMatch(text, /undefined|null|NaN|\{\w+\}| ,|,,|\.\.| \./, text);
+  }
+  assert.equal(taskMessage(task, DEFAULT_SETTINGS, carUrl), taskMessage(task, DEFAULT_SETTINGS, carUrl, 'ceb'));
+  const told = recordCarTask(c, task, NOW);
+  assert.equal(told.sale.told.hpg, NOW.toISOString());
+  assert.deepEqual(todoList(data({ cars: [told] }), NOW), []);
+  /* no buyer number: nothing to send */
+  assert.deepEqual(todoList(data({ cars: [soldCar({ sale: { buyer: 'Ben S.', mobile: '', steps } })] }), NOW), []);
+});
+
+test('a sold car’s owner hears about the registration a month ahead, once per registration', () => {
+  const due = soldCar({ regUntil: '2026-12' });           /* NOW is Nov 24, 2026 */
+  const [task] = todoList(data({ cars: [due] }), NOW);
+  assert.equal(task.kind, 'renew');
+  for (const lang of ['en', 'ceb']) {
+    const text = taskMessage(task, DEFAULT_SETTINGS, carUrl, lang);
+    assert.match(text, /^Hi Ben S\.!/, text);
+    assert.doesNotMatch(text, /undefined|null|NaN|\{\w+\}| ,|,,|\.\.| \./, text);
+  }
+  const told = recordCarTask(due, task, NOW);
+  assert.equal(told.sale.renewToldFor, '2026-12');
+  assert.deepEqual(todoList(data({ cars: [told] }), NOW), []);
+  assert.deepEqual(todoList(data({ cars: [soldCar({ regUntil: '2027-06' })] }), NOW), []);
 });

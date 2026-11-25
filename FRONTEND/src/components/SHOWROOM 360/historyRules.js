@@ -7,7 +7,7 @@ import {
 } from './showroomRules.js';
 
 export const HISTORY_LIMIT = 500;
-export const HISTORY_KINDS = { car: 'Cars', event: 'Events', settings: 'Settings', lead: 'Leads', promo: 'Promos' };
+export const HISTORY_KINDS = { car: 'Cars', event: 'Events', settings: 'Settings', lead: 'Leads', promo: 'Promos', agent: 'Agents' };
 
 const DASH = '—';
 const LONG = Symbol('long text');
@@ -20,10 +20,14 @@ const monthYear = (ym) => {
   return y && m ? new Date(y, m - 1, 1).toLocaleDateString('en-PH', { month: 'short', year: 'numeric' }) : String(ym);
 };
 const pct = (v) => `${Number(v)}%`;
+const ymdDate = (ymd) => {
+  const [y, m, d] = String(ymd).split('-').map(Number);
+  return y && m && d ? new Date(y, m - 1, d).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }) : String(ymd);
+};
 
 const STATUS = { available: 'Available', reserved: 'Reserved', sold: 'Sold' };
 const LEAD_STATUS = { new: 'New', contacted: 'Contacted', closed: 'Closed' };
-const LEAD_TYPE = { 'test-drive': 'Test drive', reserve: 'Reservation', wish: 'Waitlist' };
+const LEAD_TYPE = { 'test-drive': 'Test drive', reserve: 'Reservation', wish: 'Waitlist', 'trade-in': 'Trade-in' };
 
 let seq = 0;
 const entryId = (now) => `h-${now.getTime()}-${(seq++).toString(36)}${Math.random().toString(36).slice(2, 6)}`;
@@ -62,6 +66,7 @@ const CAR_FIELDS = [
   ['plateEnding', 'Plate ends in'],
   ['floodFree', 'Flood-free', v => TRI[v]], ['accidentFree', 'Accident-free', v => TRI[v]], ['casaMaintained', 'Casa maintained', v => TRI[v]],
   ['listedAt', 'Date listed', shortDate],
+  ['reservedUntil', 'Reserved until', ymdDate], ['hpgCleared', 'HPG clearance', ymdDate],
   ['description', 'Description', LONG], ['knownIssues', 'Known issues', LONG],
 ];
 
@@ -73,6 +78,36 @@ function photoRow(a = [], b = []) {
   if (removed) parts.push(`${removed} removed`);
   if (!parts.length && a.join() !== b.join()) parts.push(a[0] !== b[0] ? 'new cover photo' : 'reordered');
   return parts.length ? { label: 'Photos', note: parts.join(', ') } : null;
+}
+
+/* The dealer tools keep whole records on a car (inspection, consignment, sale):
+   one row says it changed. Blank parts don't count, nor do messages sent to the
+   buyer (told, renewToldFor) or a payment (its own row). */
+const clean = (v) => {
+  if (v === null || v === undefined || (typeof v === 'string' && !v.trim())) return null;
+  if (typeof v !== 'object') return v;
+  const out = {};
+  for (const [k, x] of Object.entries(v)) { const c = clean(x); if (c !== null) out[k] = c; }
+  return Object.keys(out).length ? out : null;
+};
+const without = (o, keys) => (o ? Object.fromEntries(Object.entries(o).filter(([k]) => !keys.includes(k))) : o);
+function recordRow(label, a, b) {
+  const x = clean(a);
+  const y = clean(b);
+  if (JSON.stringify(x) === JSON.stringify(y)) return null;
+  return { label, note: x === null ? 'added' : y === null ? 'removed' : 'updated' };
+}
+function toolRows(before, after) {
+  const rows = [
+    recordRow('Inspection report', before.inspection, after.inspection),
+    recordRow('Consignment', without(before.consign, ['paidAt']), without(after.consign, ['paidAt'])),
+    recordRow('Sale and papers', without(before.sale, ['told', 'renewToldFor', 'commissionPaidAt', 'review']),
+      without(after.sale, ['told', 'renewToldFor', 'commissionPaidAt', 'review'])),
+    recordRow('Review', before.sale?.review, after.sale?.review),
+  ];
+  if (after.consign?.paidAt && !before.consign?.paidAt) rows.push({ label: 'Owner paid', to: shortDate(after.consign.paidAt) });
+  if (after.sale?.commissionPaidAt && !before.sale?.commissionPaidAt) rows.push({ label: 'Commission paid', to: shortDate(after.sale.commissionPaidAt) });
+  return rows.filter(Boolean);
 }
 
 export function carEntry(before, after, now) {
@@ -87,10 +122,12 @@ export function carEntry(before, after, now) {
   const changes = diffRows(before, after, CAR_FIELDS);
   const photos = photoRow(before.photoIds, after.photoIds);
   if (photos) changes.push(photos);
+  changes.push(...toolRows(before, after));
   if (!changes.length) return null;
   let action = 'Edited';
   if (changes.length === 1 && changes[0].label === 'Status') action = `Marked ${STATUS[after.status]?.toLowerCase() || after.status}`;
   if (changes.length === 1 && changes[0].label === 'Featured on home') action = after.featured ? 'Featured on home' : 'Removed from home';
+  if (changes.length === 1 && (changes[0].label === 'Owner paid' || changes[0].label === 'Commission paid')) action = changes[0].label;
   /* applied from the autopilot's "Drop price?" task */
   if (changes.length === 1 && changes[0].label === 'Price' && after.priceDrop?.at && after.priceDrop.at !== before.priceDrop?.at) action = 'Price dropped';
   return entry(now, 'car', action, carTitle(after), after.id, changes);
@@ -103,6 +140,23 @@ export function carDeletedEntry(car, events, now) {
   if (names.length) changes.push({ label: 'Removed from', to: names.join(', ') });
   return entry(now, 'car', 'Deleted', carTitle(car), null, changes);
 }
+
+/* ── agents ── */
+
+const AGENT_FIELDS = [['name', 'Name'], ['mobile', 'Mobile'], ['code', 'Link code'], ['rate', 'Commission per sale', formatPeso]];
+
+export function agentEntry(before, after, now) {
+  if (!before) {
+    return entry(now, 'agent', 'Added', after.name, after.id, [
+      { label: 'Commission per sale', to: formatPeso(after.rate) }, { label: 'Link code', to: after.code },
+    ]);
+  }
+  const changes = diffRows(before, after, AGENT_FIELDS);
+  return changes.length ? entry(now, 'agent', 'Edited', after.name, after.id, changes) : null;
+}
+
+export const agentDeletedEntry = (agent, now) =>
+  (agent ? entry(now, 'agent', 'Deleted', agent.name, null, [{ label: 'Link code', to: agent.code }]) : null);
 
 /* ── events ── */
 

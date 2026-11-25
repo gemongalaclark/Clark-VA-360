@@ -1,7 +1,7 @@
 /* Sample shop for the pitch demo. Everything here is made up: the shop, the phone
    number (0900 is not a live prefix) and the cars. Prices sit inside CarMark 360's
    used-price range for the same generation (genId), checked by the tests. */
-import { DEFAULT_FINANCING, DEFAULT_PRICE_RULE, carTitle } from './showroomRules.js';
+import { DEFAULT_FINANCING, DEFAULT_PRICE_RULE, DEFAULT_RESERVATION, INSPECTION, carTitle } from './showroomRules.js';
 import { samplePhotoSet } from './samplePhotos.js';
 
 export const DEFAULT_SETTINGS = {
@@ -21,6 +21,11 @@ export const DEFAULT_SETTINGS = {
   superPin: '0361',     /* superadmin: everything, plus Settings and History */
   financing: DEFAULT_FINANCING,
   priceRule: DEFAULT_PRICE_RULE,
+  reservation: DEFAULT_RESERVATION,
+  watermark: true,      /* shop name and phone on car photos added in the admin */
+  dtiNo: '',            /* "Registered business" on the About section */
+  permitNo: '',
+  since: '',
 };
 
 const DAY = 864e5;
@@ -100,10 +105,12 @@ export function normalizeData(data, now = new Date()) {
       prizes: Array.isArray(p.prizes) ? p.prizes.filter(isObj) : [],
     })),
     claims: list(data?.claims).map(c => ({ redeemedAt: null, stockNo: '', ...c })),
+    agents: list(data?.agents).map(a => ({ name: '', mobile: '', code: '', rate: 0, ...a })),
     settings: {
       ...DEFAULT_SETTINGS, ...s,
       financing: { ...DEFAULT_FINANCING, ...fin, addOn },
       priceRule: { ...DEFAULT_PRICE_RULE, ...(isObj(s.priceRule) ? s.priceRule : {}) },
+      reservation: { ...DEFAULT_RESERVATION, ...(isObj(s.reservation) ? s.reservation : {}) },
     },
   };
 }
@@ -140,11 +147,16 @@ export function makeSeed(now = new Date()) {
     ],
   };
 
+  const leads = sampleLeads(now, cars);
+  const tools = applySampleTools({ cars, leads, agents: [], settings: {} }, now);
+  const merge = (list, changed) => list.map(x => changed.find(c => c.id === x.id) || x);
   return {
-    cars, events: [event], leads: sampleLeads(now, cars), promos: [samplePromo(now)], claims: [],
+    cars: merge(cars, tools.cars), events: [event], leads: merge(leads, tools.leads), promos: [samplePromo(now)], claims: [],
+    agents: tools.agents,
     settings: {
-      ...DEFAULT_SETTINGS, samplePhotos: 1, sampleLeads: 1, samplePromo: 1,
+      ...DEFAULT_SETTINGS, samplePhotos: 1, sampleLeads: 1, samplePromo: 1, sampleTools: 1, ...tools.settings,
       financing: { ...DEFAULT_FINANCING, addOn: { ...DEFAULT_FINANCING.addOn } }, priceRule: { ...DEFAULT_PRICE_RULE },
+      reservation: { ...DEFAULT_RESERVATION },
     },
   };
 }
@@ -249,4 +261,65 @@ export function applySamplePhotos(data, now = new Date()) {
     return next;
   });
   return { data: { ...data, cars, settings: { ...data.settings, samplePhotos: 1 } }, cars: changed };
+}
+
+/* Sample dealer tools (2026-11-25): an inspected Vios and Fortuner with HPG clearance,
+   a consigned Montero, a reservation ending tomorrow, two agents, and the papers and a
+   sample review for the sold Civic and HiAce. Names and numbers are made up. */
+export const SAMPLE_AGENTS = [
+  { id: 'agent-ana', name: 'Ana R.', mobile: '0900 000 0301', code: 'ana', rate: 5000 },
+  { id: 'agent-jun', name: 'Jun M.', mobile: '0900 000 0302', code: 'jun', rate: 5000 },
+];
+const SAMPLE_TRUST = { dtiNo: '0000000', permitNo: '0000-00000', since: 2014 };
+
+function sampleTools(now) {
+  const ymd = (days) => {
+    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + days);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+  const at = (days) => new Date(now.getTime() + days * DAY).toISOString();
+  const pass = (except = {}) => Object.fromEntries(INSPECTION.flatMap(g => g.items.map(([id]) => [id, except[id] || 'pass'])));
+  const mechanic = 'Jun (shop mechanic)';
+  return {
+    'car-01': ['Toyota', 'Vios', { hpgCleared: ymd(-20), inspection: { date: ymd(-10), by: mechanic, results: pass(), notes: {} } }],
+    'car-04': ['Toyota', 'Fortuner', {
+      hpgCleared: ymd(-4),
+      inspection: { date: ymd(-5), by: mechanic, results: pass({ tires: 'fix' }), notes: { tires: 'Rear tires about 40% left. We replace them before release.' } },
+    }],
+    'car-05': ['Mitsubishi', 'Montero Sport', { consign: { owner: 'Rico P.', mobile: '0900 000 0201', net: 860000 } }],
+    'car-08': ['Toyota', 'Avanza', { reservedUntil: ymd(1) }],
+    'car-10': ['Honda', 'Civic', { sale: {
+      buyer: 'Ben S.', mobile: '0900 000 0106', lang: 'en', agentId: 'agent-ana', commission: 5000,
+      steps: { deed: ymd(-6), hpg: ymd(-1) }, told: { deed: at(-6) },
+      review: { quote: 'Smooth from the test drive to the release. They handled the transfer papers for us.', name: 'Ben S.', consent: true, sample: true },
+    } }],
+    'car-12': ['Toyota', 'HiAce', { sale: {
+      buyer: 'Grace T.', mobile: '0900 000 0107', lang: 'ceb',
+      steps: { deed: ymd(-15), hpg: ymd(-12), lto: ymd(-8), released: ymd(-2) },
+      told: { deed: at(-15), hpg: at(-12), lto: at(-8), released: at(-2) },
+      review: { quote: 'Klaro ang papeles ug dali ra ang tanan. Salamat!', name: 'Grace T.', consent: true, sample: true },
+    } }],
+  };
+}
+
+/* What the sample dealer tools add to a demo: only to sample cars that are still the
+   same car, only fields still blank (a reservation date only on a reserved car, a sale
+   only on a sold one); agents only when there are none. */
+export function applySampleTools(data, now = new Date()) {
+  const plan = sampleTools(now);
+  const blank = (v) => v === undefined || v === null || v === '';
+  const cars = [];
+  for (const car of data.cars) {
+    const p = plan[car.id];
+    if (!p || car.make !== p[0] || car.model !== p[1]) continue;
+    const add = Object.fromEntries(Object.entries(p[2]).filter(([k]) => blank(car[k])
+      && (k !== 'reservedUntil' || car.status === 'reserved') && (k !== 'sale' || car.status === 'sold')));
+    if (Object.keys(add).length) cars.push({ ...car, ...add });
+  }
+  return {
+    cars,
+    agents: data.agents?.length ? [] : SAMPLE_AGENTS.map(a => ({ ...a })),
+    leads: data.leads.filter(l => l.id === 'lead-sample-6' && !l.agentCode).map(l => ({ ...l, agentCode: 'ana' })),
+    settings: Object.fromEntries(Object.entries(SAMPLE_TRUST).filter(([k]) => blank(data.settings?.[k]))),
+  };
 }

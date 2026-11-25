@@ -1,14 +1,15 @@
 import { Component, lazy, Suspense, useCallback, useEffect, useLayoutEffect, useState } from 'react';
-import { Home as HomeIcon, CarFront, Phone, SearchX } from 'lucide-react';
+import { Home as HomeIcon, CarFront, Phone, SearchX, Heart } from 'lucide-react';
 import styles from './Showroom360.module.css';
 import { ShowroomContext, useShowroomStore, useShowroom } from './store.js';
 import { useLang, t } from './i18n.js';
-import { NavContext, useNav, ToastProvider, ShopLogo, useTheme, ThemeToggle } from './ui.jsx';
+import { NavContext, useNav, ToastProvider, ShopLogo, useTheme, ThemeToggle, useSaved, rememberRef } from './ui.jsx';
 import { parseShowroomPath, carTitle } from './showroomRules.js';
 import { sampleCredit } from './samplePhotos.js';
 import Home, { telHref } from './public/Home.jsx';
 import Inventory from './public/Inventory.jsx';
 import CarPage from './public/CarPage.jsx';
+import Compare from './public/Compare.jsx';
 import Legal from './public/Legal.jsx';
 import PromoPopup from './public/PromoPopup.jsx';
 import TopStrip from './public/TopStrip.jsx';
@@ -142,6 +143,11 @@ function useOverHero(pageKey) {
 function PublicShell() {
   const { settings, persistent, cars } = useShowroom();
   const { loc, navigate, lang, setLang, onBackToPortfolio } = useNav();
+  const [saved] = useSaved();
+  /* an agent's link (/showroom?ref=ana): their buyers' requests say "via" them */
+  useEffect(() => { rememberRef(loc.search); }, [loc.search]);
+  /* hearted cars still for sale: the header's heart shows once there's one */
+  const savedCount = cars.filter(c => c.status !== 'sold' && saved.includes(c.id)).length;
   /* every bundled sample photo still on a car, for the credits in the footer */
   const credits = cars.flatMap(car => car.photoIds
     .map(id => ({ id, car, credit: sampleCredit(id) }))
@@ -150,19 +156,21 @@ function PublicShell() {
   const overHero = useOverHero(`${loc.view}/${loc.id || ''}`);
 
   const go = (url) => (e) => { e.preventDefault(); navigate(url); };
-  const goContact = (e) => {
+  /* a place on the home page: scroll there, or open the home page at it */
+  const goSection = (id) => (e) => {
     e.preventDefault();
     const smooth = !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    if (loc.view === 'home') document.getElementById('contact')?.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto' });
-    else navigate('/showroom#contact');
+    if (loc.view === 'home') document.getElementById(id)?.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto' });
+    else navigate(`/showroom#${id}`);
   };
+  const goContact = goSection('contact');
 
   const links = [
     { id: 'home', href: '/showroom', label: t(lang, 'nav.home'), Icon: HomeIcon, onClick: go('/showroom') },
     { id: 'cars', href: '/showroom/cars', label: t(lang, 'nav.cars'), Icon: CarFront, onClick: go('/showroom/cars') },
     { id: 'contact', href: '/showroom#contact', label: t(lang, 'nav.contact'), Icon: Phone, onClick: goContact },
   ];
-  const current = loc.view === 'car' ? 'cars' : atContact ? 'contact' : loc.view;
+  const current = loc.view === 'car' || loc.view === 'compare' ? 'cars' : atContact ? 'contact' : loc.view;
   /* Contact is a place on the home page, not a page of its own */
   const ariaCurrent = (id) => (current !== id ? undefined : id === 'contact' ? 'location' : 'page');
 
@@ -200,6 +208,16 @@ function PublicShell() {
                 <button key={id} type="button" aria-pressed={lang === id} onClick={() => setLang(id)}>{label}</button>
               ))}
             </div>
+            {savedCount > 0 && (
+              <a
+                href="/showroom/cars?saved=1" onClick={go('/showroom/cars?saved=1')}
+                className={`${styles.iconBtn} ${styles.savedLink}`}
+                aria-label={t(lang, 'save.nav', { n: savedCount })} title={t(lang, 'save.nav', { n: savedCount })}
+              >
+                <Heart size={20} strokeWidth={1.75} aria-hidden="true" />
+                <span className={styles.savedCount} aria-hidden="true">{savedCount}</span>
+              </a>
+            )}
             <ThemeToggle className={styles.iconBtn} />
             <a href={contact.href} onClick={contact.onClick} className={styles.contactBtn} aria-current={ariaCurrent('contact')}>
               {contact.label}
@@ -212,6 +230,7 @@ function PublicShell() {
         {loc.view === 'home' && <Home />}
         {loc.view === 'cars' && <Inventory />}
         {loc.view === 'car' && <CarPage key={loc.id} id={loc.id} />}
+        {loc.view === 'compare' && <Compare />}
         {LEGAL_KINDS.includes(loc.view) && <Legal kind={loc.view} />}
         {loc.view === 'notfound' && (
           <div className={styles.empty}>
@@ -236,6 +255,7 @@ function PublicShell() {
             <nav className={styles.footerCol} aria-label={t(lang, 'nav.menu')}>
               <p className={styles.footerHead}>{t(lang, 'nav.menu')}</p>
               {links.map(l => <span key={l.id}>{footLink(l.href, l.onClick, l.label, ariaCurrent(l.id))}</span>)}
+              <span>{footLink('/showroom#faq', goSection('faq'), t(lang, 'nav.faq'))}</span>
             </nav>
             <nav className={styles.footerCol} aria-label={t(lang, 'legal.nav')}>
               <p className={styles.footerHead}>{t(lang, 'legal.nav')}</p>

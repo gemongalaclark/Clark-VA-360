@@ -6,12 +6,12 @@
    If IndexedDB is unavailable (some private windows), everything still works in
    memory and `persistent` is false so the UI can say changes won't be kept. */
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { makeSeed, normalizeData, applySamplePhotos, applySampleLeads, applySamplePromo } from './seedData.js';
-import { newPhotoId, orphanPhotoIds } from './showroomRules.js';
+import { makeSeed, normalizeData, applySamplePhotos, applySampleLeads, applySamplePromo, applySampleTools } from './seedData.js';
+import { newPhotoId, orphanPhotoIds, expireReservations } from './showroomRules.js';
 import { isSamplePhoto, samplePhotoUrl } from './samplePhotos.js';
 import {
   carEntry, carDeletedEntry, eventEntry, eventDeletedEntry, settingsEntry, leadEntry, resetEntry,
-  addToHistory, normalizeHistory, promoEntry, promoDeletedEntry, redeemEntry,
+  addToHistory, normalizeHistory, promoEntry, promoDeletedEntry, redeemEntry, agentEntry, agentDeletedEntry,
 } from './historyRules.js';
 
 const DB_NAME = 'showroom360';
@@ -62,7 +62,7 @@ function idbBackend(db) {
   return {
     async load() {
       const t = db.transaction([...RECORD_STORES, 'kv'], 'readonly');
-      const [cars, events, leads, settings, history, promos, claims] = await Promise.all([
+      const [cars, events, leads, settings, history, promos, claims, agents] = await Promise.all([
         req(t.objectStore('cars').getAll()),
         req(t.objectStore('events').getAll()),
         req(t.objectStore('leads').getAll()),
@@ -70,8 +70,9 @@ function idbBackend(db) {
         req(t.objectStore('kv').get('history')),
         req(t.objectStore('kv').get('promos')),
         req(t.objectStore('kv').get('claims')),
+        req(t.objectStore('kv').get('agents')),
       ]);
-      return { cars, events, leads, settings, history, promos, claims };
+      return { cars, events, leads, settings, history, promos, claims, agents };
     },
     async photoIds() { return req(db.transaction('photos').objectStore('photos').getAllKeys()); },
     async photo(id) { return req(db.transaction('photos').objectStore('photos').get(id)); },
@@ -100,13 +101,14 @@ function idbBackend(db) {
       t.objectStore('kv').put(seed.settings, 'settings');
       t.objectStore('kv').put(seed.promos || [], 'promos');
       t.objectStore('kv').put(seed.claims || [], 'claims');
+      t.objectStore('kv').put(seed.agents || [], 'agents');
       if (entry) t.objectStore('kv').put([entry], 'history');
     }),
   };
 }
 
 function memoryBackend() {
-  let mem = { cars: [], events: [], leads: [], settings: null, history: [], promos: [], claims: [] };
+  let mem = { cars: [], events: [], leads: [], settings: null, history: [], promos: [], claims: [], agents: [] };
   const log = (entry) => { if (entry) mem = { ...mem, history: addToHistory(mem.history, entry) }; };
   const photos = new Map();
   const upsert = (list, v) => [...list.filter(x => x.id !== v.id), v];
@@ -130,7 +132,7 @@ function memoryBackend() {
       photos.clear();
       mem = {
         cars: seed.cars, events: seed.events, leads: seed.leads, settings: seed.settings,
-        promos: seed.promos || [], claims: seed.claims || [], history: entry ? [entry] : [],
+        promos: seed.promos || [], claims: seed.claims || [], agents: seed.agents || [], history: entry ? [entry] : [],
       };
     },
   };
@@ -138,8 +140,10 @@ function memoryBackend() {
 
 /* ── photos ── */
 
-/* Shrinks a phone photo before saving it. Rejects files the browser can't decode (e.g. HEIC in Chrome). */
-export async function resizeImage(file, maxEdge = 1600, quality = 0.82) {
+/* Shrinks a phone photo before saving it, and writes `label` (the shop's name and
+   phone) in the bottom-right corner when given. Rejects files the browser can't
+   decode (e.g. HEIC in Chrome). */
+export async function resizeImage(file, maxEdge = 1600, quality = 0.82, label = '') {
   let bitmap;
   try { bitmap = await createImageBitmap(file); } catch { throw new Error('unreadable'); }
   const scale = Math.min(1, maxEdge / Math.max(bitmap.width, bitmap.height));
@@ -154,6 +158,23 @@ export async function resizeImage(file, maxEdge = 1600, quality = 0.82) {
   ctx.fillRect(0, 0, w, h);
   ctx.drawImage(bitmap, 0, 0, w, h);
   bitmap.close?.();
+  if (label) {
+    const size = Math.max(12, Math.round(Math.min(w, h) * 0.035));
+    const pad = Math.round(size * 0.6);
+    ctx.font = `600 ${size}px Inter, system-ui, sans-serif`;
+    const tw = Math.min(ctx.measureText(label).width, w - pad * 4);
+    const bw = tw + pad * 2;
+    const bh = size + pad * 1.4;
+    const x = w - bw - pad;
+    const y = h - bh - pad;
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+    ctx.beginPath();
+    ctx.roundRect ? ctx.roundRect(x, y, bw, bh, size * 0.3) : ctx.rect(x, y, bw, bh);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, x + pad, y + bh / 2, tw);
+  }
   return new Promise((resolve, reject) =>
     canvas.toBlob(b => (b ? resolve(b) : reject(new Error('unreadable'))), 'image/jpeg', quality));
 }
@@ -161,7 +182,7 @@ export async function resizeImage(file, maxEdge = 1600, quality = 0.82) {
 /* ── the hook, used once at the app root and shared through ShowroomContext ── */
 
 export function useShowroomStore() {
-  const [state, setState] = useState({ ready: false, persistent: true, cars: [], events: [], leads: [], promos: [], claims: [], settings: null, history: [] });
+  const [state, setState] = useState({ ready: false, persistent: true, cars: [], events: [], leads: [], promos: [], claims: [], agents: [], settings: null, history: [] });
   const backend = useRef(null);
   /* Who is signed in to the admin ('admin' | 'superadmin'); stamped on each history entry */
   const actor = useRef(null);
@@ -230,9 +251,26 @@ export function useShowroomStore() {
             settings = { ...settings, samplePromo: 1 };
             await b.putSettings(settings);
           }
+          if (!settings.sampleTools) {
+            const current = normalizeData(await b.load());
+            const tools = applySampleTools(current, new Date());
+            for (const car of tools.cars) await b.put('cars', car);
+            for (const lead of tools.leads) await b.put('leads', lead);
+            if (tools.agents.length) await b.putList('agents', tools.agents);
+            settings = { ...settings, ...tools.settings, sampleTools: 1 };
+            await b.putSettings(settings);
+          }
           /* Clear photos left behind by forms that were never saved (older than a day) */
           const orphans = orphanPhotoIds(await b.photoIds(), normalizeData(loaded), new Date());
           if (orphans.length) await b.delPhotos(orphans);
+        }
+        /* Reservations past their last day go back on sale, logged as the autopilot's doing */
+        const now = new Date();
+        const cars = normalizeData(await b.load()).cars;
+        const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        for (const car of expireReservations(cars, today)) {
+          const logged = carEntry(cars.find(c => c.id === car.id), car, now);
+          await b.put('cars', car, logged && { ...logged, action: 'Reservation ended', by: 'auto' });
         }
         navigator.storage?.persist?.().catch(() => {});
       } catch {
@@ -295,8 +333,9 @@ export function useShowroomStore() {
       const next = { ...claim, redeemedAt: now.toISOString(), stockNo: String(stockNo || '').trim() };
       return b.putList('claims', upsertList(state.claims, next), stamp(redeemEntry(next, next.stockNo, now)));
     }),
-    async addPhoto(file, maxEdge) {
-      const blob = await resizeImage(file, maxEdge);
+    /* `label`: the watermark for car photos (watermarkLabel), none for the logo */
+    async addPhoto(file, maxEdge, label = '') {
+      const blob = await resizeImage(file, maxEdge, 0.82, label);
       const id = newPhotoId();
       fresh.current.add(id);
       await backend.current.putPhoto(id, blob);
@@ -315,6 +354,10 @@ export function useShowroomStore() {
       const url = samplePhotoUrl(id);
       try { return url ? await (await fetch(url)).blob() : null; } catch { return null; }
     },
+    saveAgent: (agent) => commit(b => b.putList('agents', upsertList(state.agents, agent),
+      stamp(agentEntry(state.agents.find(x => x.id === agent.id), agent, new Date())))),
+    deleteAgent: (id) => commit(b => b.putList('agents', state.agents.filter(x => x.id !== id),
+      stamp(agentDeletedEntry(state.agents.find(x => x.id === id), new Date())))),
     resetDemo: () => commit(b => b.reset(makeSeed(new Date()), stamp(resetEntry(new Date())))),
   };
 

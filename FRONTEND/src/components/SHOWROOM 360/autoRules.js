@@ -6,12 +6,13 @@
    Kinds, most urgent first: reply, remind, wish, dropped, followup, drop. */
 import {
   BODY_TYPES, TRANSMISSIONS, FUELS, carTitle, formatPeso, filterCars, effectivePrice, eventStatus, daysInStock,
+  isPhMobile, PAPER_STEPS,
 } from './showroomRules.js';
 import { t } from './i18n.js';
 
 export const REPLY_AFTER_MIN = 60;
 export const FOLLOW_UP_DAYS = 3;
-const KIND_ORDER = ['reply', 'remind', 'wish', 'dropped', 'followup', 'drop'];
+const KIND_ORDER = ['reply', 'remind', 'papers', 'wish', 'dropped', 'followup', 'reserveEnds', 'payout', 'commission', 'renew', 'drop'];
 const MIN = 6e4;
 const DAY = 864e5;
 /* a wish message lists at most this many new arrivals */
@@ -146,7 +147,35 @@ function leadTask(lead, { cars, events }, now) {
   return now.getTime() - last >= FOLLOW_UP_DAYS * DAY ? { kind: 'followup', lead, car, after: false } : null;
 }
 
-export function todoList({ leads = [], cars = [], events = [], settings }, now) {
+/* Tasks about cars rather than buyers' requests: a reservation running out, money
+   owed (a consignment owner, an agent), and the buyer of a sold car (papers, renewal) */
+function carTasks(cars, agents, now) {
+  const soon = localDate(new Date(now.getFullYear(), now.getMonth(), now.getDate() + 2));
+  const out = [];
+  for (const car of cars) {
+    if (car.status === 'reserved' && car.reservedUntil && car.reservedUntil <= soon) out.push({ kind: 'reserveEnds', car, until: car.reservedUntil });
+    if (car.status !== 'sold') continue;
+    if (car.consign && !car.consign.paidAt) out.push({ kind: 'payout', car });
+    const sale = car.sale || {};
+    if (sale.agentId && Number(sale.commission) > 0 && !sale.commissionPaidAt) {
+      out.push({ kind: 'commission', car, agent: agents.find(a => a.id === sale.agentId) || null });
+    }
+    const to = { name: String(sale.buyer || '').trim(), mobile: sale.mobile, lang: sale.lang === 'ceb' ? 'ceb' : 'en' };
+    if (!to.name || !isPhMobile(sale.mobile)) continue;
+    /* the latest step with a date, once: earlier steps are covered by it */
+    const dated = PAPER_STEPS.map(([id]) => id).filter(id => sale.steps?.[id]);
+    const last = dated[dated.length - 1];
+    if (last && !sale.told?.[last]) out.push({ kind: 'papers', car, step: last, to });
+    if (/^\d{4}-\d{2}$/.test(car.regUntil || '') && sale.renewToldFor !== car.regUntil) {
+      const [y, m] = car.regUntil.split('-').map(Number);
+      const due = new Date(y, m - 1, 1);
+      if (now.getTime() >= due.getTime() - 30 * DAY && now < new Date(y, m, 1)) out.push({ kind: 'renew', car, to });
+    }
+  }
+  return out;
+}
+
+export function todoList({ leads = [], cars = [], events = [], settings, agents = [] }, now) {
   const tasks = leads
     .filter(l => l.status !== 'closed')
     .map(l => leadTask(l, { cars, events }, now))
@@ -155,7 +184,8 @@ export function todoList({ leads = [], cars = [], events = [], settings }, now) 
   const drops = priceDropsDue(cars, events, settings?.priceRule, now)
     .map(d => ({ kind: 'drop', key: `drop:${d.car.id}`, car: d.car, price: d.price, days: d.days }));
   const rank = (x) => KIND_ORDER.indexOf(x.kind);
-  return [...tasks, ...drops].sort((a, b) =>
+  const forCars = carTasks(cars, agents, now).map(x => ({ ...x, key: `${x.kind}:${x.car.id}` }));
+  return [...tasks, ...forCars, ...drops].sort((a, b) =>
     rank(a) - rank(b) || (a.lead && b.lead ? ms(a.lead.createdAt) - ms(b.lead.createdAt) : (b.days || 0) - (a.days || 0)));
 }
 
@@ -163,18 +193,20 @@ export function todoList({ leads = [], cars = [], events = [], settings }, now) 
 
 const nameOf = (task, lang) => (task.car ? carTitle(task.car) : String(task.lead?.carLabel || '').replace(/\s*\([^)]*\)\s*$/, '') || t(lang, 'auto.yourCar'));
 
-export function taskMessage(task, settings, carUrl, lang = task.lead?.lang || 'en') {
-  const l = task.lead;
+export function taskMessage(task, settings, carUrl, lang = (task.to || task.lead)?.lang || 'en') {
+  const l = task.lead || {};
   const vars = {
-    name: String(l.name || '').trim(),
+    name: String((task.to || l).name || '').trim(),
     shop: String(settings?.shopName || '').trim() || t(lang, 'auto.shop'),
     car: nameOf(task, lang),
+    trade: String(l.tradeIn?.car || '').trim(),
   };
   const msg = (key, extra) => t(lang, key, { ...vars, ...extra });
 
   switch (task.kind) {
     case 'reply': {
       if (l.type === 'wish') return msg('auto.reply.wish', { search: describeQuery(l.query, lang) });
+      if (l.type === 'trade-in') return msg('auto.reply.trade-in');
       if (l.type === 'reserve' || !l.date) return msg('auto.reply.reserve');
       const date = dateOf(l.date).toLocaleDateString('en-PH', { weekday: 'short', month: 'short', day: 'numeric' });
       return msg('auto.reply.test-drive', { when: l.slot ? `${date}, ${t(lang, `auto.slot.${l.slot}`)}` : date });
@@ -194,7 +226,14 @@ export function taskMessage(task, settings, carUrl, lang = task.lead?.lang || 'e
     }
     case 'dropped':
       return msg('auto.dropped', { price: formatPeso(task.price), was: formatPeso(task.was), url: carUrl(task.car) });
+    case 'papers':
+      return msg(`auto.papers.${task.step}`);
+    case 'renew': {
+      const [y, m] = task.car.regUntil.split('-').map(Number);
+      return msg('auto.renew', { month: new Date(y, m - 1, 1).toLocaleDateString('en-PH', { month: 'long', year: 'numeric' }) });
+    }
     case 'followup':
+      if (l.type === 'trade-in') return msg('auto.follow.trade');
       return msg(task.after ? 'auto.follow.after' : 'auto.follow.quiet');
     default:
       return '';
@@ -213,6 +252,28 @@ export function recordContact(lead, task, now) {
 }
 
 /* A status change; the first move out of New stamps when the buyer was first contacted */
+/* A message to a sold car's buyer was sent: remember it (a paper step also covers
+   the earlier ones; a renewal reminder is once per registration date) */
+export function recordCarTask(car, task, now) {
+  const at = now.toISOString();
+  const sale = { ...(car.sale || {}) };
+  if (task.kind === 'papers') {
+    const ids = PAPER_STEPS.map(([id]) => id);
+    const upTo = ids.slice(0, ids.indexOf(task.step) + 1).filter(id => sale.steps?.[id] && !sale.told?.[id]);
+    sale.told = { ...(sale.told || {}), ...Object.fromEntries(upTo.map(id => [id, at])) };
+  }
+  if (task.kind === 'renew') sale.renewToldFor = car.regUntil;
+  return { ...car, sale };
+}
+
+/* Money handed over: the consignment owner's payout, or an agent's commission */
+export function markPaid(car, kind, now) {
+  const at = now.toISOString();
+  if (kind === 'payout') return { ...car, consign: { ...car.consign, paidAt: at } };
+  if (kind === 'commission') return { ...car, sale: { ...car.sale, commissionPaidAt: at } };
+  return car;
+}
+
 export const withStatus = (lead, status, now) => ({
   ...lead, status,
   ...(lead.status === 'new' && status !== 'new' && !lead.contactedAt ? { contactedAt: now.toISOString() } : {}),
@@ -259,6 +320,7 @@ export function weekReport({ leads = [], cars = [] }, range, now) {
       testDrive: reqs.filter(l => l.type === 'test-drive').length,
       reserve: reqs.filter(l => l.type === 'reserve').length,
       wish: reqs.filter(l => l.type === 'wish').length,
+      tradeIn: reqs.filter(l => l.type === 'trade-in').length,
     },
     reply: { avgMin: avg(replies), overHour },
     sold: {
@@ -293,6 +355,7 @@ export function reportLines(r) {
     q.testDrive && plural(q.testDrive, 'test drive', 'test drives'),
     q.reserve && plural(q.reserve, 'reservation', 'reservations'),
     q.wish && `${q.wish} waitlist`,
+    q.tradeIn && plural(q.tradeIn, 'trade-in', 'trade-ins'),
   ].filter(Boolean).join(', ');
   const waited = r.reply.overHour ? `${plural(r.reply.overHour, 'buyer', 'buyers')} waited over an hour` : '';
   const lines = [['New requests', q.total ? `${q.total} (${kinds})` : 'none']];

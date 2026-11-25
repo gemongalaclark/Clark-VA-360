@@ -6,7 +6,7 @@
 import { useEffect, useState } from 'react';
 import {
   LayoutDashboard, CarFront, CalendarRange, Inbox, Settings as SettingsIcon, History as HistoryIcon,
-  ExternalLink, Lock, SearchX, ShieldAlert, Gift,
+  ExternalLink, Lock, SearchX, ShieldAlert, Gift, Handshake,
 } from 'lucide-react';
 import s from '../Showroom360.module.css';
 import a from './Admin.module.css';
@@ -22,6 +22,7 @@ import Settings from './Settings.jsx';
 import History from './History.jsx';
 import Promos from './Promos.jsx';
 import PromoForm from './PromoForm.jsx';
+import Agents from './Agents.jsx';
 import { roleForPin, canOpen, canAddEvent, canManagePromos, liveEvents } from '../showroomRules.js';
 import { promoStatus } from '../promoRules.js';
 
@@ -36,6 +37,7 @@ const PAGES = [
   { id: 'events', label: 'Events', path: '/showroom/admin/events', Icon: CalendarRange },
   { id: 'promos', label: 'Promos', path: '/showroom/admin/promos', Icon: Gift, noTab: true },
   { id: 'leads', label: 'Leads', path: '/showroom/admin/leads', Icon: Inbox },
+  { id: 'agents', label: 'Agents', path: '/showroom/admin/agents', Icon: Handshake, noTab: true, shop: true },
   { id: 'history', label: 'History', path: '/showroom/admin/history', Icon: HistoryIcon, noTab: true, shop: true },
   { id: 'settings', label: 'Settings', path: '/showroom/admin/settings', Icon: SettingsIcon, shop: true },
 ];
@@ -89,6 +91,7 @@ export default function Admin() {
   else if (sub === 'promos') page = <PromoForm key={loc.id} id={loc.id} />;
   else if (sub === 'leads') page = <Leads />;
   else if (sub === 'settings') page = <Settings />;
+  else if (sub === 'agents') page = <Agents />;
   else if (sub === 'history') page = <History />;
   else page = <AdminNotFound />;
 
@@ -113,7 +116,7 @@ export default function Admin() {
           <ShopLogo settings={settings} />
           <div className={a.sideBrandText}>
             <p className={a.sideName}>{settings.shopName}</p>
-            {roleTag(a.roleOnBand)}
+            {roleTag(a.roleOnPaper)}
           </div>
         </div>
         <nav className={a.sideNav} aria-label="Admin pages">
